@@ -1,12 +1,18 @@
 {
   "schema": 1,
-  "id": "laptop/common",
+  "id": "laptop/framework",
   "class": "laptop",
-  "inherits": [],
+  "vendor": "Framework",
+  "match": {
+    "sysVendor": [
+      "Framework"
+    ]
+  },
+  "inherits": [
+    "laptop/common"
+  ],
   "modules": [
-    "default.nix",
-    "battery.nix",
-    "boot.nix"
+    "default.nix"
   ],
   "lifecycle": {
     "status": "supported"

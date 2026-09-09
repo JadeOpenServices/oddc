@@ -1,12 +1,18 @@
 {
   "schema": 1,
-  "id": "laptop/common",
+  "id": "laptop/hp",
   "class": "laptop",
-  "inherits": [],
+  "vendor": "HP",
+  "match": {
+    "sysVendor": [
+      "HP"
+    ]
+  },
+  "inherits": [
+    "laptop/common"
+  ],
   "modules": [
-    "default.nix",
-    "battery.nix",
-    "boot.nix"
+    "default.nix"
   ],
   "lifecycle": {
     "status": "supported"
