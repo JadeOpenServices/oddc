@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "id": "laptop/common",
+  "class": "laptop",
+  "inherits": [],
+  "modules": [
+    "default.nix"
+  ],
+  "lifecycle": {
+    "status": "supported"
+  },
+  "validation": {
+    "lastValidatedNixOS": "",
+    "lastValidatedGjallarOSRevision": "",
+    "lastValidatedAt": ""
+  }
+}
