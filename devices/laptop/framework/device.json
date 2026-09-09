@@ -21,5 +21,33 @@
     "lastValidatedNixOS": "",
     "lastValidatedGjallarOSRevision": "",
     "lastValidatedAt": ""
+  },
+  "secureBootFirmware": {
+    "supported": true,
+    "firmwareName": "Framework UEFI",
+    "setupModeStrategy": "clear-platform-key",
+    "enrollmentBackend": "sbctl",
+    "requiredPresent": [
+      "KEK",
+      "db",
+      "dbx"
+    ],
+    "requiredAbsent": [
+      "PK"
+    ],
+    "preserveFirmwareBuiltin": [
+      "KEK",
+      "db"
+    ],
+    "untouched": [
+      "dbx"
+    ],
+    "factoryOwnershipProof": "pk-equals-pkdefault",
+    "instructions": [
+      "Enter the firmware Secure Boot settings.",
+      "Delete only the Platform Key (PK) to enter Setup Mode.",
+      "Keep KEK, db, and dbx intact.",
+      "Do not use an erase-all or reset-all Secure Boot keys action."
+    ]
   }
 }
