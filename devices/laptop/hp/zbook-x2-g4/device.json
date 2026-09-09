@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "laptop/hp/zbook-x2-g4",
+  "class": "laptop",
+  "vendor": "HP",
+  "match": {
+    "sysVendor": [
+      "HP"
+    ],
+    "productName": [
+      "HP ZBook x2 G4"
+    ],
+    "boardName": [
+      "824C"
+    ]
+  },
+  "inherits": [
+    "laptop/hp"
+  ],
+  "modules": [
+    "default.nix"
+  ],
+  "lifecycle": {
+    "status": "experimental"
+  },
+  "validation": {
+    "lastValidatedNixOS": "",
+    "lastValidatedGjallarOSRevision": "",
+    "lastValidatedAt": ""
+  }
+}
