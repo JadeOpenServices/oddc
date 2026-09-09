@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "id": "laptop/hp",
+  "class": "laptop",
+  "vendor": "HP",
+  "match": {
+    "sysVendor": [
+      "HP"
+    ]
+  },
+  "inherits": [
+    "laptop/common"
+  ],
+  "modules": [
+    "default.nix"
+  ],
+  "lifecycle": {
+    "status": "supported"
+  },
+  "validation": {
+    "lastValidatedNixOS": "",
+    "lastValidatedGjallarOSRevision": "",
+    "lastValidatedAt": ""
+  }
+}
