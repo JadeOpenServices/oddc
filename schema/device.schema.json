@@ -91,6 +91,12 @@
         "lastValidatedGjallarOSRevision": {
           "type": "string"
         },
+        "lastValidatedDeviceID": {
+          "type": "string"
+        },
+        "lastValidatedODDCRevision": {
+          "type": "string"
+        },
         "lastValidatedAt": {
           "type": "string"
         }
