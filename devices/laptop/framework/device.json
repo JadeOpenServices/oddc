@@ -49,5 +49,6 @@
       "Keep KEK, db, and dbx intact.",
       "Do not use an erase-all or reset-all Secure Boot keys action."
     ]
-  }
+  },
+  "selectable": false
 }
