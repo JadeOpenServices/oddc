@@ -26,5 +26,6 @@
     "supported": false,
     "setupModeStrategy": "unsupported",
     "unsupportedReason": "HP Secure Boot ownership transfer has not been validated by GjallarOS for this device family."
-  }
+  },
+  "selectable": false
 }

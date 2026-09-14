@@ -20,6 +20,11 @@
   "modules": [
     "default.nix"
   ],
+  "graphics": {
+    "integratedKernelDriver": "i915",
+    "discreteKernelDriver": "nvidia",
+    "driverBranch": "legacy_580"
+  },
   "lifecycle": {
     "status": "experimental"
   },
