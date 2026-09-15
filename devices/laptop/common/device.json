@@ -1,19 +1,20 @@
 {
-  "schema": 1,
-  "id": "laptop/common",
   "class": "laptop",
+  "id": "laptop/common",
   "inherits": [],
-  "modules": [
-    "default.nix",
-    "battery.nix",
-    "boot.nix"
-  ],
   "lifecycle": {
     "status": "supported"
   },
+  "modules": [
+    "default.nix",
+    "modules/battery.nix",
+    "modules/boot.nix",
+    "modules/fan-control.nix"
+  ],
+  "schema": 1,
   "validation": {
-    "lastValidatedNixOS": "",
+    "lastValidatedAt": "",
     "lastValidatedGjallarOSRevision": "",
-    "lastValidatedAt": ""
+    "lastValidatedNixOS": ""
   }
 }
