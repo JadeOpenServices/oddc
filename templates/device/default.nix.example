@@ -1,0 +1,4 @@
+{ ... }:
+{
+  # Add only policy unique to this concrete device.
+}

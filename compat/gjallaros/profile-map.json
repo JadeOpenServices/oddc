@@ -1,0 +1,8 @@
+{
+  "$schema": "../../schemas/compat-profile-map.schema.json",
+  "schemaVersion": "2.0.0",
+  "profiles": {
+    "framework-laptop-13-amd-ryzen-7040": "laptop/framework/laptop-13-amd-ryzen-7040",
+    "hp-zbook-x2-g4": "laptop/hp/zbook-x2-g4"
+  }
+}
