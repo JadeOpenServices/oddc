@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "identification": {
+      "linuxCpuInfo": {
+        "cpuFamily": "25",
+        "model": "116",
+        "modelName": "AMD Ryzen 7 7840U w/ Radeon  780M Graphics",
+        "stepping": "1",
+        "vendorId": "AuthenticAMD"
+      }
+    },
+    "model": {
+      "name": "AMD Ryzen 7 7840U"
+    },
+    "vendor": {
+      "name": "AMD"
+    }
+  },
+  "kind": "ProcessorComponent",
+  "metadata": {
+    "id": "processor/amd/ryzen-7-7840u",
+    "name": "AMD Ryzen 7 7840U"
+  }
+}

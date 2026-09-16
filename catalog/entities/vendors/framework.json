@@ -1,0 +1,46 @@
+{
+  "$schema": "../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Vendor",
+  "metadata": {
+    "id": "vendor/framework",
+    "name": "Framework"
+  },
+  "data": {
+    "identity": {
+      "dmi": {
+        "systemVendor": "Framework"
+      }
+    },
+    "policy": {
+      "secureBoot": {
+        "enrollmentBackend": "sbctl",
+        "factoryOwnershipProof": "pk-equals-pkdefault",
+        "firmwareName": "Framework UEFI",
+        "instructions": {
+          "enterFirmware": "Enter the firmware Secure Boot settings.",
+          "enterSetupMode": "Remove ONLY the active Platform Key (PK) to enter UEFI Setup Mode; preserve KEK, db, and dbx.",
+          "preserveDatabases": "Keep KEK, db, and dbx intact.",
+          "avoidResetAll": "Do not use an erase-all or reset-all Secure Boot keys action."
+        },
+        "preserveFirmwareBuiltin": {
+          "KEK": true,
+          "db": true
+        },
+        "requiredAbsent": {
+          "PK": true
+        },
+        "requiredPresent": {
+          "KEK": true,
+          "db": true,
+          "dbx": true
+        },
+        "setupModeStrategy": "clear-platform-key",
+        "supported": true,
+        "untouched": {
+          "dbx": true
+        }
+      }
+    }
+  }
+}

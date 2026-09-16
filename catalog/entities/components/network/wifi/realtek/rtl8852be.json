@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "WifiComponent",
+  "metadata": {
+    "id": "wifi/realtek/rtl8852be",
+    "name": "RTL8852BE"
+  },
+  "data": {
+    "vendor": {
+      "name": "Realtek"
+    },
+    "model": {
+      "name": "RTL8852BE"
+    },
+    "bus": "pci",
+    "deviceId": "10ec:b852",
+    "driver": "rtw89_8852be"
+  }
+}

@@ -1,90 +1,41 @@
 { lib, ... }:
 
 let
-  inherit (lib) mkEnableOption mkOption types;
+  inherit (lib) mkOption types;
 in
 {
-  options.oddc.hardware = {
-    catalog = {
-      deviceId = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = "Stable ODDC catalog device identity.";
-      };
-
-      facts = mkOption {
-        type = types.attrs;
-        default = { };
-        description = "Resolved portable hardware facts from the ODDC catalog.";
-      };
-
-      blocks = mkOption {
-        type = types.attrs;
-        default = { };
-        description = "Raw device-level ODDC policy blocks.";
-      };
+  options.oddc = {
+    device = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "model/framework/laptop-13-amd-ryzen-7040";
+      description = ''
+        Stable ODDC model entity ID selected for this machine.
+      '';
     };
 
-    thermal.fanControl = {
-      enable = mkEnableOption "ODDC fan control";
+    overrides = mkOption {
+      type = types.attrs;
+      default = { };
+      description = ''
+        Explicit local overrides applied after resolving canonical ODDC data.
+        Canonical catalog entities are never modified by these values.
+      '';
+    };
 
-      backend = mkOption {
-        type = types.enum [ "fw-fanctrl" ];
-        default = "fw-fanctrl";
-      };
+    availableModels = mkOption {
+      type = types.listOf types.str;
+      readOnly = true;
+      description = "Model IDs available in the canonical ODDC entity registry.";
+    };
 
-      defaultStrategy = mkOption {
-        type = types.str;
-        default = "balanced";
-      };
-
-      strategyOnDischarging = mkOption {
-        type = types.str;
-        default = "quiet";
-      };
-
-      strategies = mkOption {
-        type = types.attrsOf types.anything;
-        default = { };
-        description = "Named fan strategies keyed by stable strategy ID.";
-      };
-
-      policy = {
-        quietStrategy = mkOption {
-          type = types.str;
-          default = "quiet";
-        };
-
-        quietEnterC = mkOption {
-          type = types.int;
-          default = 60;
-        };
-
-        quietExitC = mkOption {
-          type = types.int;
-          default = 68;
-        };
-
-        performanceStrategy = mkOption {
-          type = types.str;
-          default = "performance";
-        };
-
-        thermalOverrideStrategy = mkOption {
-          type = types.str;
-          default = "max";
-        };
-
-        thermalEnterC = mkOption {
-          type = types.int;
-          default = 82;
-        };
-
-        thermalExitC = mkOption {
-          type = types.int;
-          default = 74;
-        };
-      };
+    resolved = mkOption {
+      type = types.attrs;
+      readOnly = true;
+      description = ''
+        Fully resolved read-only ODDC view for the selected model after local
+        overrides have been applied.
+      '';
     };
   };
 }

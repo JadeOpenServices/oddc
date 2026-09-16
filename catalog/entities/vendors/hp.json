@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Vendor",
+  "metadata": {
+    "id": "vendor/hp",
+    "name": "HP"
+  },
+  "data": {
+    "identity": {
+      "dmi": {
+        "systemVendor": "HP"
+      }
+    },
+    "policy": {
+      "secureBoot": {
+        "setupModeStrategy": "unsupported",
+        "supported": false,
+        "unsupportedReason": "HP Secure Boot ownership transfer has not been validated by GjallarOS for this device family."
+      }
+    }
+  }
+}

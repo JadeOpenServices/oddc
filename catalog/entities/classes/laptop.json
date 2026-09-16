@@ -1,0 +1,19 @@
+{
+  "$schema": "../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "DeviceClass",
+  "metadata": {
+    "id": "class/laptop",
+    "name": "Laptop"
+  },
+  "data": {
+    "formFactor": "laptop",
+    "policy": {
+      "power": {
+        "powerProfilesDaemon": {
+          "enable": true
+        }
+      }
+    }
+  }
+}

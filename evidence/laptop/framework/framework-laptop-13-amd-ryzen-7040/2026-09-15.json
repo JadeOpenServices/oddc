@@ -1,6 +1,6 @@
 {
   "$schema": "../../../../schemas/evidence.schema.json",
-  "deviceId": "framework-laptop-13-amd-ryzen-7040",
+  "deviceId": "model/framework/laptop-13-amd-ryzen-7040",
   "environment": {
     "os": "GjallarOS"
   },

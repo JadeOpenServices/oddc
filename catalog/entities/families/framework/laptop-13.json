@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "DeviceFamily",
+  "metadata": {
+    "id": "family/framework/laptop-13",
+    "name": "Framework Laptop 13"
+  },
+  "data": {
+    "vendor": {
+      "ref": "vendor/framework"
+    },
+    "model": {
+      "family": "Laptop 13"
+    }
+  }
+}

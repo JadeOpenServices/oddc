@@ -1,49 +1,105 @@
 # ODDC
 
-ODDC is a portable hardware knowledge catalog with reusable NixOS integration.
+ODDC is a portable, normalized hardware knowledge base.
 
-## Public structure
+Its central rule is:
 
-    catalog/    portable hardware facts and named policy blocks
-    evidence/   sanitized append-only real-machine validation
-    schemas/    machine-readable public contracts
-    nixos/      reusable NixOS modules
-    lib/        directly importable Nix helpers
-    devices/    GjallarOS runtime compatibility adapter
-    docs/       architecture and override documentation
+> Every hardware fact, policy value, and implementation behavior has one
+> authoritative owner.
 
-## Portable device identity
+See [CONTRIBUTING.md](CONTRIBUTING.md) before changing catalog data.
 
-Catalog IDs are stable public identities and do not depend on directory layout.
+## Canonical storage
+
+Canonical entities live under:
+
+    oddc/catalog/entities/
+
+The registry contains reusable vendors, families, models, components and
+quirks.
+
+Device models reference reusable entities rather than copying their facts.
 
 Examples:
 
-    framework-laptop-13-amd-ryzen-7040
-    hp-zbook-x2-g4
+    model/framework/laptop-13-amd-ryzen-7040
+    model/hp/zbook-x2-g4
 
-## NixOS use
+## Resolution
 
-A consuming project can import:
+The Go registry resolver and Nix resolver expand references into a convenient
+hierarchical view.
 
-    oddc/nixos/modules/devices/framework-laptop-13-amd-ryzen-7040.nix
+Examples:
 
-The public override namespace is:
+    vendor.name
+    model.name
+    hardware.processor.primary.name
+    hardware.graphics.integrated.driver
+    hardware.network.wifi.primary.driver
+    policy.thermal.fanControl.policy.thermalEnterC
 
-    oddc.hardware.*
+The resolved representation is generated and is not another editable source
+of truth.
 
-Example:
+## CLI
 
-    oddc.hardware.thermal.fanControl.policy.thermalEnterC = 85;
+Validate the canonical registry and evidence:
 
-The GjallarOS runtime namespace remains available internally for compatibility.
+    oddcctl validate --root ./oddc
 
-## Override order
+Resolve a model:
 
-    class
-    vendor
-    family
-    device
-    project
-    host
+    oddcctl resolve \
+      --root ./oddc \
+      --device model/framework/laptop-13-amd-ryzen-7040
 
-Use `oddcctl explain` to inspect the effective value and its provenance.
+Explain a value and its ownership:
+
+    oddcctl explain \
+      --root ./oddc \
+      --device model/framework/laptop-13-amd-ryzen-7040 \
+      --path hardware.network.wifi.primary.driver
+
+Project and host overrides are documented in
+[docs/overrides.md](docs/overrides.md).
+
+## NixOS
+
+ODDC exports one generic NixOS module.
+
+    {
+      imports = [
+        inputs.oddc.nixosModules.default
+      ];
+
+      oddc.device = "model/framework/laptop-13-amd-ryzen-7040";
+    }
+
+See [docs/nixos.md](docs/nixos.md).
+
+## Evidence
+
+Real-machine observations live under:
+
+    oddc/evidence/
+
+Evidence validates canonical knowledge but is not itself a second editable
+hardware catalog.
+
+## Transitional GjallarOS runtime adapter
+
+During GJAL-91 migration, the older tree under:
+
+    oddc/devices/
+
+remains temporarily because the GjallarOS installer and recovery path still
+materialize its runtime Nix modules.
+
+It is not canonical portable hardware storage.
+
+`oddc/compat/gjallaros/profile-map.json` temporarily maps canonical model IDs
+to those runtime profile IDs.
+
+Both transitional mechanisms should disappear after installer and recovery
+consume canonical model IDs directly.

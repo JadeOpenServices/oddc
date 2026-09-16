@@ -6,7 +6,13 @@
 }:
 
 let
-  cfg = config.oddc.hardware.thermal.fanControl;
+  fan = lib.attrByPath [
+    "policy"
+    "thermal"
+    "fanControl"
+  ] null config.oddc.resolved;
+
+  enabled = fan != null && (fan.enable or true);
 
   normalizeStrategy =
     _: strategy:
@@ -25,33 +31,33 @@ let
       inherit speedCurve;
     };
 
-  backendConfig = {
-    defaultStrategy = cfg.defaultStrategy;
-    strategyOnDischarging = cfg.strategyOnDischarging;
-    strategies = lib.mapAttrs normalizeStrategy cfg.strategies;
-  };
+  backendConfig =
+    if fan == null then
+      { }
+    else
+      {
+        defaultStrategy = fan.defaultStrategy;
+        strategyOnDischarging = fan.strategyOnDischarging;
+        strategies = lib.mapAttrs normalizeStrategy fan.strategies;
+      };
 
   configJson = builtins.toJSON backendConfig;
 
   restartTrigger = pkgs.writeText "oddc-fw-fanctrl-config.json" configJson;
 in
 {
-  imports = [
-    ../public-interface.nix
-  ];
-
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf enabled {
     assertions = [
       {
-        assertion = cfg.backend == "fw-fanctrl";
+        assertion = fan.backend == "fw-fanctrl";
         message = "ODDC fan-control backend must be fw-fanctrl.";
       }
       {
-        assertion = builtins.hasAttr cfg.defaultStrategy cfg.strategies;
+        assertion = builtins.hasAttr fan.defaultStrategy fan.strategies;
         message = "ODDC default fan strategy must exist in strategies.";
       }
       {
-        assertion = builtins.hasAttr cfg.strategyOnDischarging cfg.strategies;
+        assertion = builtins.hasAttr fan.strategyOnDischarging fan.strategies;
         message = "ODDC discharge fan strategy must exist in strategies.";
       }
     ];
@@ -79,7 +85,7 @@ in
           "${pkgs.fw-fanctrl}/bin/fw-fanctrl"
           + " run"
           + " --config /etc/fw-fanctrl/config.json"
-          + " --silent ${cfg.defaultStrategy}";
+          + " --silent ${fan.defaultStrategy}";
       };
     };
   };
