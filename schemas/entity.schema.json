@@ -1,14 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://openjade.de/oddc/schemas/overlay.schema.json",
-  "title": "ODDC resolved-model override",
+  "$id": "https://openjade.de/oddc/schemas/entity.schema.json",
+  "title": "ODDC canonical entity",
   "type": "object",
   "required": [
     "apiVersion",
-    "id",
     "kind",
-    "targetModel",
-    "overrides"
+    "metadata",
+    "data"
   ],
   "properties": {
     "$schema": {
@@ -17,21 +16,32 @@
     "apiVersion": {
       "const": "oddc.openjade.de/v2"
     },
-    "id": {
-      "type": "string",
-      "minLength": 1
-    },
     "kind": {
-      "enum": [
-        "project",
-        "host"
-      ]
-    },
-    "targetModel": {
       "type": "string",
-      "pattern": "^model/"
+      "pattern": "^[A-Z][A-Za-z0-9]*$"
     },
-    "overrides": {
+    "metadata": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[/-][a-z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "data": {
+      "$ref": "#/$defs/object"
+    },
+    "sources": {
       "$ref": "#/$defs/object"
     }
   },
@@ -57,6 +67,9 @@
     },
     "object": {
       "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
       "additionalProperties": {
         "$ref": "#/$defs/node"
       }

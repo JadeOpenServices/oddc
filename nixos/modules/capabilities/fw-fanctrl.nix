@@ -6,80 +6,152 @@
 }:
 
 let
-  cfg = config.oddc.hardware.thermal.fanControl;
+  fan =
+    lib.attrByPath [
+      "policy"
+      "thermal"
+      "fanControl"
+    ] null config.oddc.resolved;
+
+  enabled =
+    fan != null
+    && (fan.enable or true);
 
   normalizeStrategy =
     _: strategy:
     let
       speedMap = strategy.speedByTemperatureC or { };
 
-      speedCurve = lib.sort (a: b: a.temp < b.temp) (
-        lib.mapAttrsToList (temperature: speed: {
-          temp = builtins.fromJSON temperature;
-          inherit speed;
-        }) speedMap
-      );
+      speedCurve =
+        lib.sort
+          (a: b: a.temp < b.temp)
+          (
+            lib.mapAttrsToList
+              (temperature: speed: {
+                temp = builtins.fromJSON temperature;
+                inherit speed;
+              })
+              speedMap
+          );
     in
     (builtins.removeAttrs strategy [ "speedByTemperatureC" ])
     // lib.optionalAttrs (speedMap != { }) {
       inherit speedCurve;
     };
 
-  backendConfig = {
-    defaultStrategy = cfg.defaultStrategy;
-    strategyOnDischarging = cfg.strategyOnDischarging;
-    strategies = lib.mapAttrs normalizeStrategy cfg.strategies;
-  };
+  backendConfig =
+    if fan == null then
+      { }
+    else
+      {
+        defaultStrategy = fan.defaultStrategy;
+        strategyOnDischarging =
+          fan.strategyOnDischarging or null;
 
-  configJson = builtins.toJSON backendConfig;
+        strategies =
+          lib.mapAttrs
+            normalizeStrategy
+            fan.strategies;
+      };
 
-  restartTrigger = pkgs.writeText "oddc-fw-fanctrl-config.json" configJson;
+  runtimeConfig =
+    if fan == null then
+      { }
+    else
+      {
+        schema = 1;
+        enabled = true;
+        backend = fan.backend;
+        profile = config.oddc.device or "";
+        defaultStrategy = fan.defaultStrategy;
+
+        strategyOnDischarging =
+          fan.strategyOnDischarging or null;
+
+        strategies =
+          builtins.attrNames fan.strategies;
+
+        systemPolicy =
+          fan.policy or { };
+      };
+
+  backendJson = builtins.toJSON backendConfig;
+  runtimeJson = builtins.toJSON runtimeConfig;
+
+  restartTrigger =
+    pkgs.writeText
+      "oddc-fan-runtime-config.json"
+      runtimeJson;
 in
 {
-  imports = [
-    ../public-interface.nix
-  ];
-
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf enabled {
     assertions = [
       {
-        assertion = cfg.backend == "fw-fanctrl";
+        assertion = fan.backend == "fw-fanctrl";
         message = "ODDC fan-control backend must be fw-fanctrl.";
       }
       {
-        assertion = builtins.hasAttr cfg.defaultStrategy cfg.strategies;
-        message = "ODDC default fan strategy must exist in strategies.";
+        assertion =
+          builtins.hasAttr
+            fan.defaultStrategy
+            fan.strategies;
+        message =
+          "ODDC default fan strategy must exist in strategies.";
       }
       {
-        assertion = builtins.hasAttr cfg.strategyOnDischarging cfg.strategies;
-        message = "ODDC discharge fan strategy must exist in strategies.";
+        assertion =
+          fan.strategyOnDischarging == null
+          || builtins.hasAttr
+            fan.strategyOnDischarging
+            fan.strategies;
+        message =
+          "ODDC discharge fan strategy must exist in strategies.";
+      }
+      {
+        assertion =
+          (fan.policy or { }) != { };
+        message =
+          "ODDC fan control requires system hysteresis policy.";
       }
     ];
 
-    environment.etc."fw-fanctrl/config.json".text = configJson;
+    environment.etc."fw-fanctrl/config.json".text =
+      backendJson;
+
+    environment.etc."gjallarOS/fan-control.json".text =
+      runtimeJson;
 
     environment.systemPackages = [
       pkgs.fw-fanctrl
     ];
 
-    systemd.services.oddc-fw-fanctrl = {
-      description = "ODDC fw-fanctrl hardware policy";
-      wantedBy = [ "multi-user.target" ];
+    systemd.tmpfiles.rules = [
+      "d /run/gjallarOS 0755 root root - -"
+    ];
+
+    systemd.services.gjallar-fan-controller = {
+      description =
+        "GjallarOS ODDC fan policy controller";
+
+      wantedBy = [
+        "multi-user.target"
+      ];
 
       restartTriggers = [
         restartTrigger
       ];
 
+      environment.GJALLAR_FW_FANCTRL_BIN =
+        "${pkgs.fw-fanctrl}/bin/fw-fanctrl";
+
       serviceConfig = {
         Type = "simple";
-        Restart = "always";
-        RestartSec = "2s";
 
         ExecStart =
-          "${pkgs.fw-fanctrl}/bin/fw-fanctrl"
-          + " run"
-          + " --config /etc/fw-fanctrl/config.json"
-          + " --silent ${cfg.defaultStrategy}";
+          "/run/current-system/sw/bin/gjallarctl fan controller";
+
+        Restart = "on-failure";
+        RestartSec = "2s";
       };
     };
   };

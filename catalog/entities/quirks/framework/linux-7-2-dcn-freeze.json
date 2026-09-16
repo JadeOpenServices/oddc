@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Quirk",
+  "metadata": {
+    "id": "quirk/framework/linux-7-2-dcn-freeze",
+    "name": "Framework AMD 7040 Linux 7.2 DCN freeze"
+  },
+  "data": {
+    "affected": {
+      "kernel": {
+        "minimum": "7.2",
+        "maximumBefore": "7.3"
+      }
+    },
+    "fallbackPackage": "linuxPackages_7_1"
+  }
+}

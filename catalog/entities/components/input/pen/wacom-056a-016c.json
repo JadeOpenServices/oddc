@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "hid",
+    "classification": "pen",
+    "deviceId": "056a:016c",
+    "vendor": {
+      "name": "Wacom"
+    }
+  },
+  "kind": "PenComponent",
+  "metadata": {
+    "id": "pen/wacom/056a-016c",
+    "name": "Wacom Digitizer 056A:016C"
+  },
+  "sources": {
+    "gjal84": {
+      "implementation": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report.go",
+      "tests": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report_test.go",
+      "type": "validated-implementation"
+    }
+  }
+}

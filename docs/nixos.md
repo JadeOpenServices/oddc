@@ -1,34 +1,52 @@
 # ODDC NixOS integration
 
-The public NixOS modules are standalone consumers of the portable ODDC
-catalog.
+ODDC exposes one generic NixOS module.
 
-They do not import the GjallarOS runtime adapter under `oddc/devices`.
+Device-specific Nix modules are intentionally avoided. Canonical device
+knowledge lives in the ODDC entity registry and is resolved dynamically.
 
-A project can use:
+Import ODDC:
 
-    inputs.oddc.url = "...";
+    {
+      imports = [
+        inputs.oddc.nixosModules.default
+      ];
 
-and:
+      oddc.device = "model/framework/laptop-13-amd-ryzen-7040";
+    }
 
-    imports = [
-      inputs.oddc.nixosModules.framework-laptop-13-amd-ryzen-7040
-    ];
+The selected model is resolved through its stable entity references.
 
-Device defaults use ordinary Nix module priorities and may be overridden.
+Examples:
+
+    config.oddc.resolved.model.name
+
+    config.oddc.resolved.vendor.name
+
+    config.oddc.resolved.family.name
+
+    config.oddc.resolved.hardware.processor.primary.name
+
+    config.oddc.resolved.hardware.graphics.integrated.name
+
+    config.oddc.resolved.hardware.network.wifi.primary.driver
+
+    config.oddc.resolved.policy.thermal.fanControl.policy.thermalEnterC
+
+`oddc.resolved` is generated and read-only.
+
+Local policy changes belong under `oddc.overrides`.
 
 Example:
 
-    oddc.hardware.thermal.fanControl.policy.thermalEnterC = 85;
+    oddc.overrides.policy.thermal.fanControl.policy.thermalEnterC = 85;
 
-The public module reads hardware defaults from the catalog and exposes them
-under stable `oddc.hardware.*` option paths.
+The override changes the resolved host configuration without modifying the
+canonical Framework model.
 
-`oddc.hardware.catalog.facts` provides the machine-readable hardware facts
-associated with the selected catalog device.
+Available canonical models are exposed through:
 
-The portable Framework module configures the validated fw-fanctrl curves and
-kernel compatibility quirk directly.
+    config.oddc.availableModels
 
-GjallarOS may layer additional operating-system policy on top through its
-runtime compatibility adapter.
+Adding another ordinary device model should not require another public NixOS
+module.
