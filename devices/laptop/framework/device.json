@@ -1,54 +1,54 @@
 {
-  "schema": 1,
-  "id": "laptop/framework",
   "class": "laptop",
-  "vendor": "Framework",
+  "id": "laptop/framework",
+  "inherits": [
+    "laptop/common"
+  ],
+  "lifecycle": {
+    "status": "supported"
+  },
   "match": {
     "sysVendor": [
       "Framework"
     ]
   },
-  "inherits": [
-    "laptop/common"
-  ],
   "modules": [
     "default.nix"
   ],
-  "lifecycle": {
-    "status": "supported"
-  },
-  "validation": {
-    "lastValidatedNixOS": "",
-    "lastValidatedGjallarOSRevision": "",
-    "lastValidatedAt": ""
-  },
+  "schema": 1,
   "secureBootFirmware": {
-    "supported": true,
-    "firmwareName": "Framework UEFI",
-    "setupModeStrategy": "clear-platform-key",
     "enrollmentBackend": "sbctl",
-    "requiredPresent": [
-      "KEK",
-      "db",
-      "dbx"
-    ],
-    "requiredAbsent": [
-      "PK"
+    "factoryOwnershipProof": "pk-equals-pkdefault",
+    "firmwareName": "Framework UEFI",
+    "instructions": [
+      "Enter the firmware Secure Boot settings.",
+      "Remove ONLY the active Platform Key (PK) to enter UEFI Setup Mode; preserve KEK, db, and dbx.",
+      "Keep KEK, db, and dbx intact.",
+      "Do not use an erase-all or reset-all Secure Boot keys action."
     ],
     "preserveFirmwareBuiltin": [
       "KEK",
       "db"
     ],
-    "untouched": [
+    "requiredAbsent": [
+      "PK"
+    ],
+    "requiredPresent": [
+      "KEK",
+      "db",
       "dbx"
     ],
-    "factoryOwnershipProof": "pk-equals-pkdefault",
-    "instructions": [
-      "Enter the firmware Secure Boot settings.",
-      "Delete only the Platform Key (PK) to enter Setup Mode.",
-      "Keep KEK, db, and dbx intact.",
-      "Do not use an erase-all or reset-all Secure Boot keys action."
+    "setupModeStrategy": "clear-platform-key",
+    "supported": true,
+    "untouched": [
+      "dbx"
     ]
   },
-  "selectable": false
+  "selectable": false,
+  "validation": {
+    "lastValidatedAt": "",
+    "lastValidatedGjallarOSRevision": "",
+    "lastValidatedNixOS": ""
+  },
+  "vendor": "Framework"
 }

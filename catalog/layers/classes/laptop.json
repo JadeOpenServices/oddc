@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../schemas/catalog.schema.json",
+  "blocks": {
+    "power": {
+      "power-profiles-daemon": {
+        "enable": true
+      }
+    }
+  },
+  "facts": {
+    "formFactor": "laptop"
+  },
+  "id": "class/laptop",
+  "kind": "class",
+  "schemaVersion": "2.0.0"
+}

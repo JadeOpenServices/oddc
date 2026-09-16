@@ -1,17 +1,49 @@
-# oddc
+# ODDC
 
-oddc is the declarative device collection consumed by GjallarOS.
+ODDC is a portable hardware knowledge catalog with reusable NixOS integration.
 
-It is embedded in this repository for now, but the directory is treated as an
-independent source boundary so it can later move to
-openDeclarativeDeviceCollectionProject without redesigning the installer.
+## Public structure
 
-Device policy composes from broad to specific:
+    catalog/    portable hardware facts and named policy blocks
+    evidence/   sanitized append-only real-machine validation
+    schemas/    machine-readable public contracts
+    nixos/      reusable NixOS modules
+    lib/        directly importable Nix helpers
+    devices/    GjallarOS runtime compatibility adapter
+    docs/       architecture and override documentation
 
-1. device-class common policy
-2. vendor common policy
-3. concrete product/model policy
-4. machine-generated hardware-configuration.nix
+## Portable device identity
 
-Machine-local device capsules and generated hardware state do not belong in
-this source tree.
+Catalog IDs are stable public identities and do not depend on directory layout.
+
+Examples:
+
+    framework-laptop-13-amd-ryzen-7040
+    hp-zbook-x2-g4
+
+## NixOS use
+
+A consuming project can import:
+
+    oddc/nixos/modules/devices/framework-laptop-13-amd-ryzen-7040.nix
+
+The public override namespace is:
+
+    oddc.hardware.*
+
+Example:
+
+    oddc.hardware.thermal.fanControl.policy.thermalEnterC = 85;
+
+The GjallarOS runtime namespace remains available internally for compatibility.
+
+## Override order
+
+    class
+    vendor
+    family
+    device
+    project
+    host
+
+Use `oddcctl explain` to inspect the effective value and its provenance.

@@ -1,0 +1,29 @@
+{
+  "class": "laptop",
+  "id": "laptop/framework/laptop-13-amd-ryzen-7040",
+  "inherits": [
+    "laptop/framework"
+  ],
+  "lifecycle": {
+    "status": "experimental"
+  },
+  "match": {
+    "productName": [
+      "Laptop 13 (AMD Ryzen 7040Series)"
+    ],
+    "sysVendor": [
+      "Framework"
+    ]
+  },
+  "modules": [
+    "default.nix",
+    "profile.json"
+  ],
+  "schema": 1,
+  "validation": {
+    "lastValidatedAt": "",
+    "lastValidatedGjallarOSRevision": "",
+    "lastValidatedNixOS": ""
+  },
+  "vendor": "Framework"
+}
