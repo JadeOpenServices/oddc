@@ -497,16 +497,10 @@ Forbidden canonical data includes:
 
 GjallarOS consumes the same ODDC API that another NixOS project can consume.
 
-During migration, compatibility adapters may temporarily exist.
+GjallarOS consumes canonical ODDC model IDs directly.
 
-They must be clearly marked transitional and must never become new canonical ownership points.
-
-The target is to remove:
-
-    oddc/devices/
-    oddc/compat/gjallaros/profile-map.json
-
-once installer and recovery consumers use stable catalog IDs directly.
+Compatibility maps, legacy runtime profile IDs, and parallel hardware ownership
+trees are not part of the ODDC v2 architecture and must not be reintroduced.
 
 ---
 
@@ -712,3 +706,49 @@ Hardware support should become easier as the catalog grows because new models in
 The design succeeds when:
 
 > adding support for another machine mostly means describing what hardware it contains, not writing another operating-system configuration.
+
+## Optional policy presence semantics
+
+Do not add negative placeholder policy objects merely to record that a feature
+is unsupported.
+
+For Secure Boot firmware ownership specifically:
+
+- absence of `policy.secureBoot` means ODDC has no trusted supported policy for
+  that entity;
+- presence of `policy.secureBoot` means support is explicitly known and the
+  operational policy must be complete and validated;
+- do not add `supported: true` or `supported: false` fields to canonical
+  Secure Boot policy data.
+
+Consumers must fail closed when the policy is absent.
+
+This keeps canonical data declarative: it records knowledge that exists rather
+than maintaining duplicated negative capability flags.
+
+## ODDC versus operating-system policy
+
+ODDC must not become a dumping ground for general GjallarOS laptop behavior.
+
+A setting belongs in ODDC only when it is hardware-specific knowledge,
+hardware-specific policy, or the activation of a reusable hardware
+implementation.
+
+Examples that belong in GjallarOS rather than ODDC:
+
+- generic low-battery warnings;
+- generic emergency shutdown thresholds;
+- generic laptop lid behavior;
+- generic boot-loader presentation;
+- operating-system-wide laptop power-management defaults.
+
+Examples that belong in ODDC:
+
+- a stable hardware identity;
+- a model-specific kernel quirk;
+- a device-specific runtime power workaround;
+- a validated fan policy for a known embedded controller;
+- hardware-specific driver selection.
+
+The canonical graph describes the hardware-specific condition or policy.
+Reusable Nix modules implement it.

@@ -1,38 +1,36 @@
-# oddc device contribution template
+# ODDC model contribution template
 
-Copy this template into the appropriate path below:
+Add a concrete hardware model under:
 
-oddc/devices/<class>/<vendor>/<model>/
+oddc/catalog/entities/models/<vendor>/<model>.json
 
 Example:
 
-oddc/devices/laptop/hp/zbook-x2-g4/
+oddc/catalog/entities/models/framework/laptop-13-amd-ryzen-7040.json
 
-The directory path and manifest id must match exactly.
+Use the hardware vendor's public product naming where practical so users can
+find the model easily in documentation and search engines.
 
-For example:
+## Keep ownership explicit
 
-directory:
-oddc/devices/laptop/hp/zbook-x2-g4/
+The catalog describes what hardware is.
 
-device.json:
-"id": "laptop/hp/zbook-x2-g4"
+Validation evidence belongs under:
 
-## Keep the profile small
+oddc/evidence/
 
-Only add behavior unique to this device.
+Reusable hardware facts belong in component entities when they are stable,
+substantial and independently useful.
 
-Before adding a module, check whether it belongs in:
+Reusable exceptional behavior belongs in quirk entities.
 
-1. <class>/common
-2. <class>/<vendor>
-3. the concrete device
+Hardware-independent GjallarOS behavior does not belong in ODDC.
 
-Do not duplicate generic laptop or vendor behavior in a model directory.
+Do not create a per-device Nix module merely because a model exists.
 
 ## Required evidence
 
-Record hardware identity from the real machine.
+Record identity from a real machine.
 
 At minimum verify:
 
@@ -44,51 +42,42 @@ At minimum verify:
 - board_version when meaningful
 - chassis/form factor
 
-Only declare hardware capabilities actually observed or validated.
+Only declare capabilities actually observed or validated.
 
 Do not guess firmware controls, fan controls, Secure Boot behavior, sensors,
 graphics requirements, power controls or kernel quirks.
 
 ## Secure Boot
 
-Secure Boot behavior is device-specific.
+Secure Boot support is presence-based.
 
-Document firmware prerequisites and limitations when known.
+If a trusted Secure Boot policy exists, define the complete policy on the
+authoritative entity.
 
-If Secure Boot behavior has not been validated, leave it explicitly
-unvalidated. Do not copy another vendor's firmware procedure.
+If no trusted policy exists, omit it.
+
+Do not copy another vendor or model's firmware procedure.
 
 ## Validation
 
-lastValidated metadata is not manually advanced merely because a newer release
-exists.
+Canonical validation evidence is updated only after the real-device validation
+gate succeeds.
 
-It is updated only after the real-device validation gate succeeds.
+Normal probing must never rewrite canonical catalog or validation state.
 
-Normal users must not update upstream validation state.
+## Nix behavior
 
-## Files
+Canonical models are selected through:
 
-A typical concrete device may contain:
+oddc.device = "model/<vendor>/<model>";
 
-device.json
-README.md
-default.nix
-graphics.nix
-thermal.nix
-tablet.nix
-secure-boot.nix
-quirks.nix
-
-Only create files the device actually needs.
+The public ODDC Nix module resolves the entity graph and applies reusable
+capabilities and quirks.
 
 ## Auditability
 
-Keep each module focused.
+Keep each entity focused.
 
-Avoid giant device files containing unrelated policy.
+Prefer one authoritative owner for every hardware fact or policy.
 
-Prefer declarative Nix over shell where possible.
-
-Any imperative behavior should have a clear hardware reason and a focused
-validation test.
+Do not duplicate generic laptop behavior inside model data.

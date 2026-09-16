@@ -139,6 +139,14 @@
       "linux72DcnFreeze": {
         "enabled": true,
         "ref": "quirk/framework/linux-7-2-dcn-freeze"
+      },
+      "usbCExpansionPower": {
+        "enabled": true,
+        "ref": "quirk/framework/usb-c-expansion-power"
+      },
+      "fprintdResume": {
+        "enabled": true,
+        "ref": "quirk/framework/fprintd-resume"
       }
     },
     "vendor": {

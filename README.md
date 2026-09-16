@@ -86,20 +86,3 @@ Real-machine observations live under:
 
 Evidence validates canonical knowledge but is not itself a second editable
 hardware catalog.
-
-## Transitional GjallarOS runtime adapter
-
-During GJAL-91 migration, the older tree under:
-
-    oddc/devices/
-
-remains temporarily because the GjallarOS installer and recovery path still
-materialize its runtime Nix modules.
-
-It is not canonical portable hardware storage.
-
-`oddc/compat/gjallaros/profile-map.json` temporarily maps canonical model IDs
-to those runtime profile IDs.
-
-Both transitional mechanisms should disappear after installer and recovery
-consume canonical model IDs directly.

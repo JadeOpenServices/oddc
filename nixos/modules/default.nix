@@ -50,6 +50,8 @@ in
     ./public-interface.nix
     ./capabilities/fw-fanctrl.nix
     ./quirks/framework-7040-linux-7-2-dcn-freeze.nix
+    ./quirks/framework-usb-c-expansion-power.nix
+    ./quirks/framework-fprintd-resume.nix
   ];
 
   config = lib.mkMerge [
