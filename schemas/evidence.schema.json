@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openjade.de/oddc/schemas/evidence.schema.json",
+  "title": "ODDC validation evidence",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "deviceId",
+    "observedAt",
+    "status",
+    "results"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": "2.0.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[-/][a-z0-9]+)*$"
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "observedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "documented",
+        "detected",
+        "configured",
+        "runtime-verified",
+        "hardware-validated"
+      ]
+    },
+    "environment": {
+      "type": "object"
+    },
+    "results": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

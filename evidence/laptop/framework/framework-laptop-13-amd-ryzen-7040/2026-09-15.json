@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../../schemas/evidence.schema.json",
+  "deviceId": "framework-laptop-13-amd-ryzen-7040",
+  "environment": {
+    "os": "GjallarOS"
+  },
+  "id": "framework-7040-gjallaros-2026-09-15",
+  "observedAt": "2026-09-15",
+  "results": {
+    "amdPstate": "pass",
+    "audio": "pass",
+    "backlight": "pass",
+    "battery": "pass",
+    "bluetooth": "pass",
+    "camera": "absent",
+    "chargeThresholds": "not-exposed",
+    "embeddedController": "pass",
+    "fanTelemetry": "pass",
+    "fingerprint": "pass",
+    "graphics": "pass",
+    "identity": "pass",
+    "platformProfile": "pass",
+    "platformSecurity": "pass",
+    "sensors": "pass",
+    "touchpad": "pass",
+    "usb4": "pass",
+    "wifi": "pass"
+  },
+  "schemaVersion": "2.0.0",
+  "status": "hardware-validated"
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../../../schemas/catalog.schema.json",
+  "blocks": {},
+  "extends": [
+    "vendor/hp"
+  ],
+  "facts": {
+    "graphics": {
+      "discreteKernelDriver": "nvidia",
+      "driverBranch": "legacy_580",
+      "integratedKernelDriver": "i915"
+    },
+    "identity": {
+      "boardName": [
+        "824C"
+      ],
+      "productName": [
+        "HP ZBook x2 G4"
+      ],
+      "sysVendor": [
+        "HP"
+      ]
+    }
+  },
+  "id": "hp-zbook-x2-g4",
+  "kind": "device",
+  "schemaVersion": "2.0.0"
+}
