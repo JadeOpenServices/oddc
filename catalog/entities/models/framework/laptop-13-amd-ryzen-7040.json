@@ -24,14 +24,16 @@
       "input": {
         "touchpad": {
           "primary": {
-            "ref": "touchpad/pixart/0274"
+            "ref": "touchpad/pixart/0274",
+            "attachment": "internal"
           }
         }
       },
       "network": {
         "bluetooth": {
           "primary": {
-            "ref": "bluetooth/realtek/3571"
+            "ref": "bluetooth/realtek/3571",
+            "attachment": "internal"
           }
         },
         "wifi": {
@@ -48,7 +50,8 @@
       "security": {
         "fingerprint": {
           "primary": {
-            "ref": "fingerprint/goodix/609c"
+            "ref": "fingerprint/goodix/609c",
+            "attachment": "internal"
           }
         }
       }

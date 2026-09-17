@@ -10,7 +10,7 @@
     "vendor": {
       "name": "PixArt"
     },
-    "bus": "usb",
+    "bus": "i2c",
     "deviceId": "093a:0274",
     "driver": "hid-multitouch"
   }
