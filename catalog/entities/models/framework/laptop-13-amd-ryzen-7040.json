@@ -4,6 +4,7 @@
   "data": {
     "capabilities": {
       "amdPstate": true,
+      "chargeThresholds": false,
       "embeddedController": "cros_ec",
       "platformProfiles": true,
       "usb4": true

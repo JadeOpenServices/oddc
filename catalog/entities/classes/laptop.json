@@ -8,6 +8,9 @@
   },
   "data": {
     "formFactor": "laptop",
+    "capabilities": {
+      "battery": true
+    },
     "policy": {
       "power": {
         "powerProfilesDaemon": {

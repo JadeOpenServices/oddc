@@ -10,11 +10,11 @@ Catalog identity is permanent and independent from directory layout.
 
 ## GjallarOS runtime adapter
 
-`devices/` remains the currently validated GjallarOS installer and recovery
-runtime interface.
+GjallarOS consumes the resolved ODDC catalog directly.
 
-Catalog devices map to this interface through `legacyProfileId` while the
-runtime resolver is migrated separately.
+Device-specific identity, capabilities, validated quirks, and hardware policy
+belong in ODDC. Generic operating-system behavior belongs in GjallarOS modules.
+No machine-profile compatibility layer sits between those two boundaries.
 
 ## Layer order
 
