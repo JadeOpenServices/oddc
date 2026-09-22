@@ -15,6 +15,15 @@
       "power": {
         "powerProfilesDaemon": {
           "enable": true
+        },
+        "chargeThresholds": {
+          "startPercent": 75,
+          "endPercent": 95
+        },
+        "batteryProtection": {
+          "lowWarningPercent": 10,
+          "criticalWarningPercent": 5,
+          "shutdownPercent": 2
         }
       }
     }

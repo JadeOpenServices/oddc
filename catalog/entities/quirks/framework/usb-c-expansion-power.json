@@ -7,15 +7,18 @@
     "name": "Framework USB-C expansion controller runtime power workaround"
   },
   "data": {
-    "pci": {
-      "deviceId": "15b9",
-      "subsystemDeviceId": "0006",
-      "subsystemVendorId": "f111",
-      "vendorId": "1022"
-    },
-    "usb": {
-      "productId": "8156",
-      "vendorId": "0bda"
+    "runtimePower": {
+      "control": "on",
+      "pci": {
+        "deviceId": "15b9",
+        "subsystemDeviceId": "0006",
+        "subsystemVendorId": "f111",
+        "vendorId": "1022"
+      },
+      "usb": {
+        "productId": "8156",
+        "vendorId": "0bda"
+      }
     }
   }
 }

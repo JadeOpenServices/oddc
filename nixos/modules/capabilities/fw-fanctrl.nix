@@ -89,7 +89,7 @@ let
       backendJson;
 
   waitForBackend =
-    pkgs.writeShellScript "gjallar-fw-fanctrl-ready" ''
+    pkgs.writeShellScript "fan-control-backend-ready" ''
       for attempt in $(${pkgs.coreutils}/bin/seq 1 50); do
         if ${pkgs.fw-fanctrl}/bin/fw-fanctrl \
           --output-format JSON \
@@ -152,9 +152,9 @@ in
       "d /run/gjallarOS 0755 root root - -"
     ];
 
-    systemd.services.gjallar-fw-fanctrl = {
+    systemd.services.fan-control-backend = {
       description =
-        "GjallarOS fw-fanctrl backend";
+        "fw-fanctrl backend";
 
       wantedBy = [
         "multi-user.target"
@@ -180,20 +180,20 @@ in
       };
     };
 
-    systemd.services.gjallar-fan-controller = {
+    systemd.services.fan-policy-controller = {
       description =
-        "GjallarOS ODDC fan policy controller";
+        "ODDC fan policy controller";
 
       requires = [
-        "gjallar-fw-fanctrl.service"
+        "fan-control-backend.service"
       ];
 
       after = [
-        "gjallar-fw-fanctrl.service"
+        "fan-control-backend.service"
       ];
 
       partOf = [
-        "gjallar-fw-fanctrl.service"
+        "fan-control-backend.service"
       ];
 
       wantedBy = [

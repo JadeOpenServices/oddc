@@ -15,6 +15,9 @@
     },
     "bus": "pci",
     "deviceId": "1002:15bf",
-    "driver": "amdgpu"
+    "driver": "amdgpu",
+    "capabilities": {
+      "compute": true
+    }
   }
 }
