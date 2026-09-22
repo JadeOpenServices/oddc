@@ -6,5 +6,10 @@
     "id": "quirk/framework/fprintd-resume",
     "name": "Framework fprintd no-timeout and resume restart workaround"
   },
-  "data": {}
+  "data": {
+    "fprintd": {
+      "noTimeout": true,
+      "restartAfterSleep": true
+    }
+  }
 }

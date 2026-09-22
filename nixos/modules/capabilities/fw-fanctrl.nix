@@ -82,6 +82,29 @@ let
     pkgs.writeText
       "oddc-fan-runtime-config.json"
       runtimeJson;
+
+  backendRestartTrigger =
+    pkgs.writeText
+      "oddc-fan-backend-config.json"
+      backendJson;
+
+  waitForBackend =
+    pkgs.writeShellScript "fan-control-backend-ready" ''
+      for attempt in $(${pkgs.coreutils}/bin/seq 1 50); do
+        if ${pkgs.fw-fanctrl}/bin/fw-fanctrl \
+          --output-format JSON \
+          print current \
+          >/dev/null 2>&1
+        then
+          exit 0
+        fi
+
+        ${pkgs.coreutils}/bin/sleep 0.1
+      done
+
+      echo "fw-fanctrl control socket did not become ready" >&2
+      exit 1
+    '';
 in
 {
   config = lib.mkIf enabled {
@@ -129,9 +152,49 @@ in
       "d /run/gjallarOS 0755 root root - -"
     ];
 
-    systemd.services.gjallar-fan-controller = {
+    systemd.services.fan-control-backend = {
       description =
-        "GjallarOS ODDC fan policy controller";
+        "fw-fanctrl backend";
+
+      wantedBy = [
+        "multi-user.target"
+      ];
+
+      restartTriggers = [
+        backendRestartTrigger
+      ];
+
+      script = ''
+        exec ${pkgs.fw-fanctrl}/bin/fw-fanctrl \
+          run \
+          --config /etc/fw-fanctrl/config.json \
+          --silent ${lib.escapeShellArg fan.defaultStrategy}
+      '';
+
+      serviceConfig = {
+        Type = "simple";
+        ExecStartPost = waitForBackend;
+
+        Restart = "on-failure";
+        RestartSec = "2s";
+      };
+    };
+
+    systemd.services.fan-policy-controller = {
+      description =
+        "ODDC fan policy controller";
+
+      requires = [
+        "fan-control-backend.service"
+      ];
+
+      after = [
+        "fan-control-backend.service"
+      ];
+
+      partOf = [
+        "fan-control-backend.service"
+      ];
 
       wantedBy = [
         "multi-user.target"

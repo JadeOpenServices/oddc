@@ -39,20 +39,24 @@ let
     "enable"
   ] false resolved;
 
-  quirks = lib.attrByPath [ "quirks" ] { } resolved;
-
-  frameworkLinux72DcnFreeze = lib.any (
-    quirk: (quirk.id or null) == "quirk/framework/linux-7-2-dcn-freeze" && (quirk.enabled or false)
-  ) (builtins.attrValues quirks);
+  moduleFiles =
+    directory:
+    let
+      entries = builtins.readDir directory;
+    in
+    map
+      (name: directory + "/${name}")
+      (
+        lib.filter
+          (name: entries.${name} == "regular" && lib.hasSuffix ".nix" name)
+          (builtins.attrNames entries)
+      );
 in
 {
-  imports = [
-    ./public-interface.nix
-    ./capabilities/fw-fanctrl.nix
-    ./quirks/framework-7040-linux-7-2-dcn-freeze.nix
-    ./quirks/framework-usb-c-expansion-power.nix
-    ./quirks/framework-fprintd-resume.nix
-  ];
+  imports =
+    [ ./public-interface.nix ]
+    ++ moduleFiles ./capabilities
+    ++ moduleFiles ./quirks;
 
   config = lib.mkMerge [
     {
@@ -75,10 +79,6 @@ in
 
     (lib.mkIf powerProfilesEnabled {
       services.power-profiles-daemon.enable = lib.mkDefault true;
-    })
-
-    (lib.mkIf frameworkLinux72DcnFreeze {
-      oddc.hardware.kernel.quirks.framework7040Linux72DcnFreeze.enable = lib.mkDefault true;
     })
   ];
 }

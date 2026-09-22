@@ -11,7 +11,10 @@
           "ref": "graphics/nvidia/quadro-m620"
         },
         "integrated": {
-          "driver": "i915"
+          "driver": "i915",
+          "vendor": {
+            "name": "Intel"
+          }
         }
       },
       "input": {

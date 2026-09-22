@@ -10,6 +10,9 @@
     },
     "vendor": {
       "name": "NVIDIA"
+    },
+    "capabilities": {
+      "compute": true
     }
   },
   "kind": "GraphicsComponent",
