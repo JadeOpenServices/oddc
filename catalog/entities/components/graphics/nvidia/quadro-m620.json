@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "pci",
+    "deviceId": "10de:13b4",
+    "driver": "nvidia",
+    "model": {
+      "name": "Quadro M620"
+    },
+    "vendor": {
+      "name": "NVIDIA"
+    },
+    "capabilities": {
+      "compute": true
+    }
+  },
+  "kind": "GraphicsComponent",
+  "metadata": {
+    "id": "graphics/nvidia/quadro-m620",
+    "name": "NVIDIA Quadro M620"
+  },
+  "sources": {
+    "gjal84": {
+      "implementation": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report.go",
+      "tests": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report_test.go",
+      "type": "validated-implementation"
+    }
+  }
+}

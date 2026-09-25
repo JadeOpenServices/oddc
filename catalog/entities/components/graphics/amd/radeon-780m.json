@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "GraphicsComponent",
+  "metadata": {
+    "id": "graphics/amd/radeon-780m",
+    "name": "Radeon 780M"
+  },
+  "data": {
+    "vendor": {
+      "name": "AMD"
+    },
+    "model": {
+      "name": "Radeon 780M"
+    },
+    "bus": "pci",
+    "deviceId": "1002:15bf",
+    "driver": "amdgpu",
+    "capabilities": {
+      "compute": true
+    }
+  }
+}

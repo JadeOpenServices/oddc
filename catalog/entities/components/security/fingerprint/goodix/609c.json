@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "FingerprintComponent",
+  "metadata": {
+    "id": "fingerprint/goodix/609c",
+    "name": "Goodix 609c"
+  },
+  "data": {
+    "vendor": {
+      "name": "Goodix"
+    },
+    "bus": "usb",
+    "deviceId": "27c6:609c"
+  }
+}

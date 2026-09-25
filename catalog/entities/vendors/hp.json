@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "identity": {
+      "dmi": {
+        "systemVendor": "HP"
+      }
+    }
+  },
+  "kind": "Vendor",
+  "metadata": {
+    "id": "vendor/hp",
+    "name": "HP"
+  }
+}

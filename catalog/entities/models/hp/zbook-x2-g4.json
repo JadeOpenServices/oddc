@@ -1,0 +1,72 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "class": {
+      "ref": "class/laptop"
+    },
+    "hardware": {
+      "graphics": {
+        "discrete": {
+          "ref": "graphics/nvidia/quadro-m620"
+        },
+        "integrated": {
+          "driver": "i915",
+          "vendor": {
+            "name": "Intel"
+          }
+        }
+      },
+      "input": {
+        "pen": {
+          "primary": {
+            "ref": "pen/wacom/056a-016c"
+          }
+        },
+        "quickKeys": {
+          "primary": {
+            "ref": "quickkeys/hp/03f0-0a56"
+          }
+        },
+        "touchscreen": {
+          "primary": {
+            "ref": "touchscreen/03eb-8abb"
+          }
+        }
+      }
+    },
+    "identity": {
+      "dmi": {
+        "boardName": {
+          "824c": "824C"
+        },
+        "productName": {
+          "hp-zbook-x2-g4": "HP ZBook x2 G4"
+        },
+        "systemVendor": {
+          "hp": "HP"
+        }
+      }
+    },
+    "policy": {
+      "graphics": {
+        "discrete": {
+          "driverBranch": "legacy_580"
+        }
+      }
+    },
+    "support": {
+      "lifecycle": {
+        "status": "experimental"
+      }
+    },
+    "vendor": {
+      "ref": "vendor/hp"
+    }
+  },
+  "kind": "DeviceModel",
+  "metadata": {
+    "id": "model/hp/zbook-x2-g4",
+    "name": "HP ZBook x2 G4"
+  }
+}

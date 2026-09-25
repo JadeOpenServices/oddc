@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "DeviceClass",
+  "metadata": {
+    "id": "class/laptop",
+    "name": "Laptop"
+  },
+  "data": {
+    "formFactor": "laptop",
+    "capabilities": {
+      "battery": true
+    },
+    "policy": {
+      "power": {
+        "powerProfilesDaemon": {
+          "enable": true
+        },
+        "chargeThresholds": {
+          "startPercent": 75,
+          "endPercent": 95
+        },
+        "batteryProtection": {
+          "lowWarningPercent": 10,
+          "criticalWarningPercent": 5,
+          "shutdownPercent": 2
+        }
+      }
+    }
+  }
+}

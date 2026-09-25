@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Quirk",
+  "metadata": {
+    "id": "quirk/framework/usb-c-expansion-power",
+    "name": "Framework USB-C expansion controller runtime power workaround"
+  },
+  "data": {
+    "runtimePower": {
+      "control": "on",
+      "pci": {
+        "deviceId": "15b9",
+        "subsystemDeviceId": "0006",
+        "subsystemVendorId": "f111",
+        "vendorId": "1022"
+      },
+      "usb": {
+        "productId": "8156",
+        "vendorId": "0bda"
+      }
+    }
+  }
+}
