@@ -51,12 +51,32 @@
           "$ref": "#/$defs/scalar"
         },
         {
+          "$ref": "#/$defs/delete"
+        },
+        {
           "$ref": "#/$defs/object"
         }
       ]
     },
+    "delete": {
+      "type": "object",
+      "required": [
+        "$delete"
+      ],
+      "properties": {
+        "$delete": {
+          "const": true
+        }
+      },
+      "additionalProperties": false
+    },
     "object": {
       "type": "object",
+      "propertyNames": {
+        "not": {
+          "const": "$delete"
+        }
+      },
       "additionalProperties": {
         "$ref": "#/$defs/node"
       }

@@ -39,7 +39,21 @@ func ReadOverlay(path string) (Overlay, error) {
 	}
 	defer file.Close()
 
-	decoder := json.NewDecoder(file)
+	return decodeOverlay(file, path)
+}
+
+// DecodeOverlay decodes and structurally validates an ODDC overlay from an
+// already-open reader. It exists so privileged callers can read protected
+// machine state without weakening the canonical overlay parser.
+func DecodeOverlay(reader io.Reader) (Overlay, error) {
+	return decodeOverlay(reader, "overlay")
+}
+
+func decodeOverlay(
+	reader io.Reader,
+	label string,
+) (Overlay, error) {
+	decoder := json.NewDecoder(reader)
 	decoder.UseNumber()
 	decoder.DisallowUnknownFields()
 
@@ -47,7 +61,7 @@ func ReadOverlay(path string) (Overlay, error) {
 	if err := decoder.Decode(&overlay); err != nil {
 		return Overlay{}, fmt.Errorf(
 			"decode overlay %s: %w",
-			path,
+			label,
 			err,
 		)
 	}
@@ -57,7 +71,7 @@ func ReadOverlay(path string) (Overlay, error) {
 		if err == nil {
 			return Overlay{}, fmt.Errorf(
 				"%s has trailing JSON",
-				path,
+				label,
 			)
 		}
 		return Overlay{}, err
@@ -69,7 +83,7 @@ func ReadOverlay(path string) (Overlay, error) {
 	); err != nil {
 		return Overlay{}, fmt.Errorf(
 			"%s: %w",
-			path,
+			label,
 			err,
 		)
 	}
@@ -86,6 +100,18 @@ func validateOverrideObject(value any, path string) error {
 		)
 
 	case map[string]any:
+		if marker, exists := typed["$delete"]; exists {
+			deleted, ok := marker.(bool)
+			if len(typed) != 1 || !ok || !deleted {
+				return fmt.Errorf(
+					"%s deletion marker must be exactly {\"$delete\": true}",
+					path,
+				)
+			}
+
+			return nil
+		}
+
 		for key, child := range typed {
 			next := key
 			if path != "" {
@@ -102,6 +128,16 @@ func validateOverrideObject(value any, path string) error {
 	}
 
 	return nil
+}
+
+func deleteMarker(value any) bool {
+	object, ok := value.(map[string]any)
+	if !ok || len(object) != 1 {
+		return false
+	}
+
+	deleted, ok := object["$delete"].(bool)
+	return ok && deleted
 }
 
 func validateOverlay(
@@ -406,6 +442,25 @@ func mergeResolved(
 		path := key
 		if prefix != "" {
 			path = prefix + "." + key
+		}
+
+		if deleteMarker(value) {
+			clearProvenance(result, path)
+			delete(dst, key)
+
+			record := Provenance{
+				Source: source,
+				Value: map[string]any{
+					"$delete": true,
+				},
+			}
+
+			result.History[path] = append(
+				result.History[path],
+				record,
+			)
+
+			continue
 		}
 
 		incoming, isObject := value.(map[string]any)
