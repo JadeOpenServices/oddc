@@ -9,7 +9,8 @@
   "data": {
     "fprintd": {
       "noTimeout": true,
-      "restartAfterSleep": true
+      "restartAfterSleep": true,
+      "recoverUsbAfterSleep": true
     }
   }
 }
