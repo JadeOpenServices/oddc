@@ -1,0 +1,85 @@
+{
+  "$schema": "../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "access": {
+      "hidraw": true,
+      "mappable": true
+    },
+    "bus": "hid",
+    "controls": {
+      "buttonCount": 6,
+      "presetCount": 3
+    },
+    "deviceId": "03f0:0a56",
+    "driver": "hid-generic",
+    "protocol": {
+      "buttonByteOffset": 3,
+      "buttons": {
+        "button1": {
+          "button": 1,
+          "raw": 1
+        },
+        "button2": {
+          "button": 2,
+          "raw": 2
+        },
+        "button3": {
+          "button": 3,
+          "presetSwitch": true,
+          "raw": 4
+        },
+        "button4": {
+          "button": 4,
+          "raw": 8
+        },
+        "button5": {
+          "button": 5,
+          "raw": 16
+        },
+        "button6": {
+          "button": 6,
+          "raw": 32
+        }
+      },
+      "framing": {
+        "byte1": 0,
+        "byte2": 0,
+        "byte5": 1
+      },
+      "presetByteOffset": 4,
+      "presets": {
+        "preset1": {
+          "preset": 1,
+          "raw": 1
+        },
+        "preset2": {
+          "preset": 2,
+          "raw": 2
+        },
+        "preset3": {
+          "preset": 3,
+          "raw": 4
+        }
+      },
+      "releaseButtonRaw": 0,
+      "reportId": 2,
+      "reportLength": 6
+    },
+    "vendor": {
+      "name": "HP"
+    }
+  },
+  "kind": "QuickKeysComponent",
+  "metadata": {
+    "id": "quickkeys/hp/03f0-0a56",
+    "name": "HP ZBook Create x2 Quick Keys"
+  },
+  "sources": {
+    "gjal84": {
+      "implementation": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/quickkeys.go",
+      "tests": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/quickkeys_test.go",
+      "type": "validated-implementation"
+    }
+  }
+}

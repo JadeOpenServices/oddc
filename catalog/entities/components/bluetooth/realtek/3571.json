@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "BluetoothComponent",
+  "metadata": {
+    "id": "bluetooth/realtek/3571",
+    "name": "Realtek 3571 Bluetooth"
+  },
+  "data": {
+    "vendor": {
+      "name": "Realtek"
+    },
+    "bus": "usb",
+    "deviceId": "13d3:3571"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "TouchpadComponent",
+  "metadata": {
+    "id": "touchpad/pixart/0274",
+    "name": "PixArt 0274 Touchpad"
+  },
+  "data": {
+    "vendor": {
+      "name": "PixArt"
+    },
+    "bus": "i2c",
+    "deviceId": "093a:0274",
+    "driver": "hid-multitouch"
+  }
+}

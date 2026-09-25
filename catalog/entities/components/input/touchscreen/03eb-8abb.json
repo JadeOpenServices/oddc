@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "hid",
+    "classification": "touchscreen",
+    "deviceId": "03eb:8abb"
+  },
+  "kind": "TouchscreenComponent",
+  "metadata": {
+    "id": "touchscreen/03eb-8abb",
+    "name": "ZBook Touchscreen HID 03EB:8ABB"
+  },
+  "sources": {
+    "gjal84": {
+      "implementation": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report.go",
+      "tests": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report_test.go",
+      "type": "validated-implementation"
+    }
+  }
+}

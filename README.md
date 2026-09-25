@@ -1,49 +1,106 @@
 # ODDC
 
-ODDC is a portable hardware knowledge catalog with reusable NixOS integration.
+ODDC is a portable, normalized hardware knowledge base.
 
-## Public structure
+Its central rule is:
 
-    catalog/    portable hardware facts and named policy blocks
-    evidence/   sanitized append-only real-machine validation
-    schemas/    machine-readable public contracts
-    nixos/      reusable NixOS modules
-    lib/        directly importable Nix helpers
-    devices/    GjallarOS runtime compatibility adapter
-    docs/       architecture and override documentation
+> Every hardware fact, policy value, and implementation behavior has one
+> authoritative owner.
 
-## Portable device identity
+See [CONTRIBUTING.md](CONTRIBUTING.md) before changing catalog data.
 
-Catalog IDs are stable public identities and do not depend on directory layout.
+## Canonical storage
+
+Canonical entities live under `oddc/catalog/entities/`. The registry contains
+reusable classes, vendors, families, components, models, and quirks. Every
+entity has stable metadata and a `data` object; references inside `data` compose
+the hardware graph. Device models reference reusable entities instead of
+copying their facts.
 
 Examples:
 
-    framework-laptop-13-amd-ryzen-7040
-    hp-zbook-x2-g4
+    model/framework/laptop-13-amd-ryzen-7040
+    model/hp/zbook-x2-g4
 
-## NixOS use
+Device identity, capabilities, validated quirks, and hardware policy belong in
+canonical entity data. The resolved representation is generated and is never a
+second editable source of truth.
 
-A consuming project can import:
+## Resolution and ownership
 
-    oddc/nixos/modules/devices/framework-laptop-13-amd-ryzen-7040.nix
+Resolution runs from broadest to narrowest:
 
-The public override namespace is:
+1. referenced class/vendor/family/component entities
+2. device model data
+3. project override
+4. host override
 
-    oddc.hardware.*
+Later values override earlier values at the same stable path. Project and host
+overrides change policy without modifying canonical hardware knowledge; a host
+override has higher precedence than a project override. Overrideable
+collections use keyed objects so their paths remain stable and explainable.
 
-Example:
+Hardware reality belongs under stable hardware and capability paths such as:
 
-    oddc.hardware.thermal.fanControl.policy.thermalEnterC = 85;
+    hardware.graphics.integrated.driver
+    hardware.network.wifi.primary.driver
+    capabilities.chargeThresholds
 
-The GjallarOS runtime namespace remains available internally for compatibility.
+Configuration policy belongs under `policy`, for example:
 
-## Override order
+    policy.power.batteryProtection.shutdownPercent
+    policy.power.chargeThresholds.endPercent
+    policy.thermal.fanControl.policy.thermalEnterC
 
-    class
-    vendor
-    family
-    device
-    project
-    host
+Validated compatibility workarounds are referenced through a model's `quirks`
+object. The reusable quirk entity owns the parameters; operating-system
+adapters implement only the generic semantic behavior.
 
-Use `oddcctl explain` to inspect the effective value and its provenance.
+Use `oddcctl explain` to inspect the final owner and override history.
+
+## CLI
+
+Validate the registry and evidence:
+
+    oddcctl validate --root ./oddc
+
+Resolve a model:
+
+    oddcctl resolve \
+      --root ./oddc \
+      --device model/framework/laptop-13-amd-ryzen-7040
+
+Explain a value and its ownership:
+
+    oddcctl explain \
+      --root ./oddc \
+      --device model/framework/laptop-13-amd-ryzen-7040 \
+      --path hardware.network.wifi.primary.driver
+
+## NixOS
+
+ODDC exports one generic NixOS module. Device-specific Nix modules are avoided;
+quirk and capability adapters consume semantic resolved data rather than
+matching vendor, model, or quirk IDs.
+
+    {
+      imports = [ inputs.oddc.nixosModules.default ];
+      oddc.device = "model/framework/laptop-13-amd-ryzen-7040";
+    }
+
+The selected model is available read-only through `config.oddc.resolved`.
+Canonical model IDs are exposed through `config.oddc.availableModels`.
+Machine-local policy changes belong under `oddc.overrides`, for example:
+
+    oddc.overrides.policy.thermal.fanControl.policy.thermalEnterC = 85;
+
+Adding another ordinary device model must not require another public NixOS
+module.
+
+## Evidence
+
+Real-machine observations live under `oddc/evidence/` as sanitized,
+append-only validation records. Evidence records what was observed and tested;
+it validates canonical knowledge but does not become another hardware catalog.
+Serial numbers, MAC addresses, usernames, hostnames, and other identifying
+machine data must not be stored in public evidence.

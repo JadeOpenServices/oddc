@@ -8,36 +8,57 @@ import (
 	"github.com/bakanura/gjallarOS/pkg/oddc"
 )
 
-func value(args []string, name, fallback string) string {
+func value(
+	args []string,
+	name string,
+	fallback string,
+) string {
 	for i := 0; i+1 < len(args); i++ {
 		if args[i] == name {
 			return args[i+1]
 		}
 	}
+
 	return fallback
 }
 
-func values(args []string, name string) []string {
+func values(
+	args []string,
+	name string,
+) []string {
 	var result []string
 
 	for i := 0; i+1 < len(args); i++ {
 		if args[i] == name {
-			result = append(result, args[i+1])
+			result = append(
+				result,
+				args[i+1],
+			)
 		}
 	}
 
 	return result
 }
 
-func loadOverlays(paths []string) ([]oddc.Overlay, error) {
-	result := make([]oddc.Overlay, 0, len(paths))
+func loadOverlays(
+	paths []string,
+) ([]oddc.Overlay, error) {
+	result := make(
+		[]oddc.Overlay,
+		0,
+		len(paths),
+	)
 
 	for _, path := range paths {
 		overlay, err := oddc.ReadOverlay(path)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, overlay)
+
+		result = append(
+			result,
+			overlay,
+		)
 	}
 
 	return result, nil
@@ -50,9 +71,13 @@ func run(args []string) error {
 		)
 	}
 
-	root := value(args, "--root", "./oddc")
+	root := value(
+		args,
+		"--root",
+		"./oddc",
+	)
 
-	catalog, err := oddc.Load(root)
+	registry, err := oddc.LoadRegistry(root)
 	if err != nil {
 		return err
 	}
@@ -60,15 +85,22 @@ func run(args []string) error {
 	switch args[0] {
 	case "validate":
 		fmt.Printf(
-			"PASS: ODDC v2 catalog valid (%d documents)\n",
-			len(catalog.Documents),
+			"PASS: ODDC v2 entity registry valid (%d entities)\n",
+			len(registry.Entities),
 		)
+
 		return nil
 
 	case "resolve", "explain":
-		device := value(args, "--device", "")
-		if device == "" {
-			return fmt.Errorf("--device is required")
+		modelID := value(
+			args,
+			"--device",
+			"",
+		)
+		if modelID == "" {
+			return fmt.Errorf(
+				"--device is required",
+			)
 		}
 
 		project, err := loadOverlays(
@@ -85,8 +117,8 @@ func run(args []string) error {
 			return err
 		}
 
-		resolved, err := catalog.Resolve(
-			device,
+		resolved, err := registry.ResolveModel(
+			modelID,
 			project,
 			host,
 		)
@@ -108,31 +140,48 @@ func run(args []string) error {
 			return nil
 		}
 
-		path := value(args, "--path", "")
+		path := value(
+			args,
+			"--path",
+			"",
+		)
 		if path == "" {
-			return fmt.Errorf("--path is required")
+			return fmt.Errorf(
+				"--path is required",
+			)
 		}
 
 		resolvedValue, exists := oddc.Lookup(
-			resolved.Blocks,
+			resolved.Resolved,
 			path,
 		)
 		if !exists {
 			return fmt.Errorf(
-				"unknown block path %q",
+				"unknown resolved path %q",
 				path,
 			)
 		}
 
-		fmt.Printf("path: %s\n", path)
-		fmt.Printf("value: %v\n", resolvedValue)
+		fmt.Printf(
+			"path: %s\n",
+			path,
+		)
+		fmt.Printf(
+			"value: %v\n",
+			resolvedValue,
+		)
 
-		if current, exists := resolved.Provenance[path]; exists {
-			fmt.Printf("source: %s\n", current.Source)
+		if current, exists :=
+			resolved.Provenance[path]; exists {
+			fmt.Printf(
+				"source: %s\n",
+				current.Source,
+			)
 		}
 
 		if history := resolved.History[path]; len(history) > 1 {
 			fmt.Println("history:")
+
 			for _, item := range history {
 				fmt.Printf(
 					"  %s -> %v\n",
@@ -154,7 +203,11 @@ func run(args []string) error {
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
-		fmt.Fprintln(os.Stderr, "FAIL:", err)
+		fmt.Fprintln(
+			os.Stderr,
+			"FAIL:",
+			err,
+		)
 		os.Exit(1)
 	}
 }

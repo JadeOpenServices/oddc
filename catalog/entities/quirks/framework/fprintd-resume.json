@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Quirk",
+  "metadata": {
+    "id": "quirk/framework/fprintd-resume",
+    "name": "Framework fprintd no-timeout and resume restart workaround"
+  },
+  "data": {
+    "fprintd": {
+      "noTimeout": true,
+      "restartAfterSleep": true,
+      "recoverUsbAfterSleep": true
+    }
+  }
+}
