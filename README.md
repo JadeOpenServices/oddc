@@ -88,6 +88,11 @@ matching vendor, model, or quirk IDs.
       oddc.device = "model/framework/laptop-13-amd-ryzen-7040";
     }
 
+The installer selects a model only when the machine's DMI identity matches one;
+a machine without a match gets no model and so none of its capabilities, such as
+fan control. Units that drive hardware, like fan control, also skip virtual
+machines, which may inherit a host's model.
+
 The selected model is available read-only through `config.oddc.resolved`.
 Canonical model IDs are exposed through `config.oddc.availableModels`.
 Machine-local policy changes belong under `oddc.overrides`, for example:
