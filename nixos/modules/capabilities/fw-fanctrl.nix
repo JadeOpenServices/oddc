@@ -164,6 +164,9 @@ in
         backendRestartTrigger
       ];
 
+      # A VM built from this model has no embedded controller to drive.
+      unitConfig.ConditionVirtualization = "no";
+
       script = ''
         exec ${pkgs.fw-fanctrl}/bin/fw-fanctrl \
           run \
@@ -203,6 +206,8 @@ in
       restartTriggers = [
         restartTrigger
       ];
+
+      unitConfig.ConditionVirtualization = "no";
 
       environment.GJALLAR_FW_FANCTRL_BIN =
         "${pkgs.fw-fanctrl}/bin/fw-fanctrl";
