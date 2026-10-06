@@ -164,6 +164,11 @@ behavior through options such as `oddc.fanControl.controller.command`.
 GjallarOS vendors ODDC as a git
 subtree so its installer works offline.
 
+## Releases
+
+Signed tags `vYYYY.MM.N` on `main`, verifiable offline. See
+[docs/RELEASES.md](docs/RELEASES.md).
+
 ## Tracking
 
 Work items live in the ODDC project on plane.openjade.de. Commits reference
