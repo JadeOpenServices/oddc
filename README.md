@@ -7,7 +7,9 @@ Its central rule is:
 > Every hardware fact, policy value, and implementation behavior has one
 > authoritative owner.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) before changing catalog data.
+See [CONTRIBUTING.md](CONTRIBUTING.md) before changing catalog data and
+[docs/WORKFLOW.md](docs/WORKFLOW.md) for channels, contribution rules and
+the `oddc` command.
 
 ## Canonical storage
 
