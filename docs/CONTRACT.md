@@ -50,8 +50,14 @@ reused for something else. Renaming or removing an ID is a breaking change.
 Resolved values sit under stable named paths below `hardware`,
 `capabilities` and `policy`; `oddc explain` names the owner of each.
 
+## Releases
+
+A released revision is a signed tag `vYYYY.MM.N` on `main`. Verify it
+offline with `git verify-tag` against your own pinned copy of
+`keys/allowed_signers`; see [RELEASES.md](RELEASES.md).
+
 ## Not part of the contract
 
 - Text output of commands without `--json`, and `oddc list`.
-- Files outside `catalog/`, `evidence/` and `schemas/`.
+- Files outside `catalog/`, `evidence/`, `schemas/` and `keys/`.
 - NixOS module internals beyond its documented options.

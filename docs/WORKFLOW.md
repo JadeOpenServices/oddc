@@ -37,6 +37,8 @@ Items marked *planned* are agreed design that is not implemented yet.
   Untested or short-lived changes never reach `main`.
 - Consumers follow `main`: `github:JadeOpenServices/oddc`. Testers may
   follow `github:JadeOpenServices/oddc/staging`.
+- Releases are signed tags `vYYYY.MM.N` on `main`, verifiable offline
+  against a pinned key file; see [RELEASES.md](RELEASES.md).
 
 ## Contribution rules
 
