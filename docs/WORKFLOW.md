@@ -8,7 +8,7 @@ Items marked *planned* are agreed design that is not implemented yet.
 1. **Catalog.** This repository holds every model, component, quirk and
    evidence record. Nobody deploys it whole.
 2. **Selection.** Something picks one model for one machine: an installer
-   matching DMI identity, `oddc detect` (*planned*), or a person setting
+   matching DMI identity, `oddc detect`, or a person setting
    `oddc.device`. A machine without a match gets no model.
 3. **Resolution.** The NixOS module resolves that model at evaluation time
    (class → vendor → family → components → model → project → host
@@ -70,12 +70,17 @@ On a deployed system it defaults to `/etc/oddc` and the deployed model:
     oddc explain --path hardware.network.wifi.primary.driver
     oddc validate
 
-For users (*planned*):
+For users:
 
     oddc detect                  # which model matches this machine
     oddc setup                   # NixOS snippet for the matching model
     oddc doctor                  # deployed model still matches the hardware?
-    oddc update                  # update the oddc flake input, then rebuild
+    oddc update [--switch]       # update the oddc flake input, then rebuild
+
+`detect` and `setup` need the full catalog: the local workspace when
+present, else `main` (or `--channel staging`) fetched into the Nix store.
+`doctor` works offline on `/etc/oddc`. `update` defaults to the flake in
+`/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`.
 
 For contributors (*planned*):
 
