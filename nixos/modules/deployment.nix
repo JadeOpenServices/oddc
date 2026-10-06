@@ -6,7 +6,7 @@
 
 # Deploy the selected model, never the whole catalog. /etc/oddc holds the
 # model's reference closure in canonical layout, its evidence, the host
-# overlay, and the resolved view, so `oddcctl --root /etc/oddc` works offline.
+# overlay, and the resolved view, so `oddc` works offline.
 let
   registry = import ../../lib/registry.nix { inherit lib; };
 
@@ -38,6 +38,7 @@ in
       {
         "oddc/resolved.json".text = builtins.toJSON cfg.resolved;
       }
+      (lib.mkIf (cfg.revision != null) { "oddc/revision".text = "${cfg.revision}\n"; })
       (lib.mkIf (cfg.overrides != { }) {
         "oddc/host-overlay.json".text = builtins.toJSON hostOverlay;
       })

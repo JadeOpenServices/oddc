@@ -15,8 +15,9 @@ Items marked *planned* are agreed design that is not implemented yet.
    override) into `config.oddc.resolved`.
 4. **Deployment.** The system receives only the selected model under
    `/etc/oddc`: its reference closure in canonical layout, its evidence,
-   `host-overlay.json` when `oddc.overrides` is set, and `resolved.json`.
-   Other models never reach the system closure.
+   `host-overlay.json` when `oddc.overrides` is set, `resolved.json`, and
+   the ODDC `revision` it was built from. Other models never reach the
+   system closure.
 5. **Behavior.** Generic capability and quirk modules act on resolved
    semantic values, never on vendor or model IDs.
 
@@ -61,7 +62,6 @@ generated text is a starting point the contributor can edit.
 
 One command for users and contributors. It works on any NixOS system that
 imports the ODDC module, with or without anything built on top of ODDC.
-Today the command is called `oddcctl`; it becomes `oddc` (*planned*).
 
 On a deployed system it defaults to `/etc/oddc` and the deployed model:
 
@@ -99,4 +99,5 @@ Without push access it forks first. It always targets `staging`.
     }
 
 `nix flake update oddc` and a rebuild take a new catalog revision.
-`oddc.deploy.enable = false` deploys nothing under `/etc/oddc`.
+`oddc.deploy.enable = false` deploys nothing under `/etc/oddc`;
+`oddc.cli.enable = false` leaves out the `oddc` command.

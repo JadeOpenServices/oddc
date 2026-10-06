@@ -475,7 +475,7 @@ Overrideable collections should therefore use keyed objects rather than position
 
 Each resolved leaf should retain provenance so tooling can answer:
 
-    oddcctl explain \
+    oddc explain \
       --device model/framework/laptop-13-amd-ryzen-7040 \
       --path policy.thermal.fanControl.thermalEnterC
 
@@ -649,7 +649,7 @@ Before accepting an ODDC change, ask:
 5. Is a new Nix module actually necessary?
 6. Is this path stable enough to become public API?
 7. Can another operating system or NixOS project consume this without knowing GjallarOS?
-8. Can `oddcctl explain` identify why the final value exists?
+8. Can `oddc explain` identify why the final value exists?
 9. Would changing this value require editing more than one authoritative file?
 
 If question 9 is yes, the design probably violates the single-source-of-truth rule.
