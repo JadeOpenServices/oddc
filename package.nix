@@ -1,4 +1,8 @@
-{ lib, buildGoModule }:
+{
+  lib,
+  buildGoModule,
+  git,
+}:
 buildGoModule {
   pname = "oddc";
   version = "0.1.0";
@@ -16,6 +20,8 @@ buildGoModule {
   subPackages = [ "cmd/oddc" ];
   # The registry tests read the catalog from the source root.
   doCheck = true;
+  # validate --since compares revisions with git.
+  nativeCheckInputs = [ git ];
   meta = {
     description = "Validate, resolve and explain ODDC hardware entities";
     license = lib.licenses.asl20;

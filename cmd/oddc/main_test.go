@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"sort"
@@ -305,10 +306,10 @@ func mustIdentity(t *testing.T, registry *oddc.Registry, model string) oddc.Mach
 
 func TestValidateExitsNonZeroOnFailure(t *testing.T) {
 	for _, asJSON := range []bool{false, true} {
-		if err := runValidate(repository, asJSON); err != nil {
+		if err := runValidate(repository, "", asJSON); err != nil {
 			t.Errorf("json=%v: catalog refused: %v", asJSON, err)
 		}
-		if err := runValidate(t.TempDir(), asJSON); err == nil {
+		if err := runValidate(t.TempDir(), "", asJSON); err == nil {
 			t.Errorf("json=%v: empty root passed", asJSON)
 		}
 	}
@@ -348,5 +349,113 @@ func TestClassifyUnknownMachineFails(t *testing.T) {
 	err := runClassify(registry, []string{"classify", "--sys", sys})
 	if !errors.Is(err, oddc.ErrNoModelMatch) {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+// gitCatalog copies the catalog and evidence into a new git repository
+// with one commit, tagged base.
+func gitCatalog(t *testing.T) string {
+	t.Helper()
+
+	root := t.TempDir()
+	for _, dir := range []string{"catalog", "evidence"} {
+		err := filepath.WalkDir(filepath.Join(repository, dir), func(path string, entry os.DirEntry, err error) error {
+			if err != nil || entry.IsDir() {
+				return err
+			}
+
+			relative, err := filepath.Rel(repository, path)
+			if err != nil {
+				return err
+			}
+
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			write(t, filepath.Join(root, relative), data)
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"add", "."},
+		{"-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base"},
+		{"tag", "base"},
+	} {
+		if out, err := exec.Command("git", append([]string{"-C", root}, args...)...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	return root
+}
+
+func firstEvidence(t *testing.T, root string) string {
+	t.Helper()
+
+	var found string
+	filepath.WalkDir(filepath.Join(root, "evidence"), func(path string, entry os.DirEntry, err error) error {
+		if err == nil && found == "" && strings.HasSuffix(path, ".json") {
+			found = path
+		}
+		return err
+	})
+	if found == "" {
+		t.Fatal("catalog has no evidence")
+	}
+
+	return found
+}
+
+func TestValidateSinceAllowsAddedEvidence(t *testing.T) {
+	root := gitCatalog(t)
+	path := firstEvidence(t, root)
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var record map[string]any
+	if err := json.Unmarshal(data, &record); err != nil {
+		t.Fatal(err)
+	}
+	record["id"] = "added-record"
+	record["observedAt"] = "2099-01-01"
+	data, err = json.Marshal(record)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(filepath.Dir(path), "2099-01-01.json"), data)
+
+	if err := runValidate(root, "base", false); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestValidateSinceRefusesChangedEvidence(t *testing.T) {
+	for what, change := range map[string]func(path string) error{
+		"changed": func(path string) error {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			return os.WriteFile(path, append(data, '\n'), 0o644)
+		},
+		"removed": os.Remove,
+	} {
+		root := gitCatalog(t)
+		if err := change(firstEvidence(t, root)); err != nil {
+			t.Fatal(err)
+		}
+
+		err := runValidate(root, "base", false)
+		if err == nil || !strings.Contains(err.Error(), "append-only") {
+			t.Errorf("%s: err = %v", what, err)
+		}
 	}
 }

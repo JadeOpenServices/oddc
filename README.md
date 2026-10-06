@@ -153,7 +153,13 @@ Real-machine observations live under `evidence/` as sanitized,
 append-only validation records. Evidence records what was observed and tested;
 it validates canonical knowledge but does not become another hardware catalog.
 Serial numbers, MAC addresses, usernames, hostnames, and other identifying
-machine data must not be stored in public evidence.
+machine data must not be stored in public evidence. `oddc validate` refuses
+records that hold them: identifying keys anywhere in `environment`, values
+that look like a MAC or IP address, UUID, machine ID, e-mail address or home
+directory, an `observedAt` with a time of day, and `results` that are not
+short statuses such as `pass`. `oddc validate --since REV` also refuses
+evidence changed or removed since REV; pull requests are checked against
+their base branch.
 
 ## Consumers
 
