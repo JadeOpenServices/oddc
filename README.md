@@ -9,7 +9,8 @@ Its central rule is:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before changing catalog data and
 [docs/WORKFLOW.md](docs/WORKFLOW.md) for channels, contribution rules and
-the `oddc` command.
+the `oddc` command. [docs/CONTRACT.md](docs/CONTRACT.md) says what
+consumers outside Nix can rely on.
 
 ## Canonical storage
 
