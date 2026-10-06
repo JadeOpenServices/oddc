@@ -153,7 +153,7 @@ func withDefaults(
 func run(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"usage: oddc <detect|setup|fetch|doctor|update|validate|list|resolve|explain>",
+			"usage: oddc <detect|setup|fetch|doctor|update|validate|list|index|resolve|explain>",
 		)
 	}
 
@@ -213,6 +213,20 @@ func run(args []string) error {
 			)
 		}
 
+		return nil
+
+	case "index":
+		index, err := registry.Index(revision(root))
+		if err != nil {
+			return err
+		}
+
+		data, err := json.MarshalIndent(index, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(string(data))
 		return nil
 
 	case "resolve", "explain":
@@ -325,11 +339,17 @@ func run(args []string) error {
 	}
 }
 
-// gitRevision is the commit checked out at root, else fallback.
-func gitRevision(root, fallback string) string {
+// revision is the recorded revision of a fetched answer or deployment,
+// else the commit checked out at root, else "local".
+func revision(root string) string {
+	recorded := oddc.DirSource{Root: root}.Revision()
+	if recorded != "local" {
+		return recorded
+	}
+
 	out, err := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
 	if err != nil {
-		return fallback
+		return recorded
 	}
 
 	return strings.TrimSpace(string(out))
@@ -339,9 +359,7 @@ func gitRevision(root, fallback string) string {
 // full result either way.
 func runValidate(root string, asJSON bool) error {
 	result := oddc.Validate(root)
-	if result.Revision == "local" {
-		result.Revision = gitRevision(root, result.Revision)
-	}
+	result.Revision = revision(root)
 
 	if asJSON {
 		data, err := json.MarshalIndent(result, "", "  ")
