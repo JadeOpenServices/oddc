@@ -172,7 +172,7 @@ subtree so its installer works offline.
 
 ## Releases
 
-Signed tags `vYYYY.MM.N` on `main`, verifiable offline. See
+Every merge to `main` is a release; consumers pin it by commit hash. See
 [docs/RELEASES.md](docs/RELEASES.md).
 
 ## Tracking

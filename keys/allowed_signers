@@ -1,2 +1,0 @@
-# Keys allowed to sign ODDC release tags. See docs/RELEASES.md.
-# PRINCIPAL namespaces="git" sk-ssh-ed25519@openssh.com AAAA... COMMENT
