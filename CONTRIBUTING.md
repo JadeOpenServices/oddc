@@ -572,6 +572,14 @@ For an ordinary newly supported laptop, the ideal contribution is approximately:
     1 device model JSON
     1 evidence JSON
     0 Nix files
+    0 test files
+
+Tests run over the real catalog and take their expectations from it and from
+evidence: every model must resolve, keep one owner per value, match its own
+DMI identity, deploy alone and pass `oddc doctor` on its own hardware. A new
+model is tested by being in the catalog. Tests never repeat device facts and
+never use invented devices; tests of rejected input break a temporary copy of
+the real catalog.
 
 Additional component entities are added only for hardware not already represented.
 
@@ -592,7 +600,8 @@ CI should eventually reject these patterns:
 - editable generated fw-fanctrl configuration;
 - legacy runtime profile IDs inside portable catalog entities;
 - duplicated component metadata embedded in models instead of referenced;
-- committed resolved snapshots treated as canonical source.
+- committed resolved snapshots treated as canonical source;
+- device facts repeated in Go or Nix tests, or invented test devices.
 
 ---
 
