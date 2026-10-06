@@ -150,8 +150,19 @@ func withDefaults(
 func run(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"usage: oddc <validate|list|resolve|explain>",
+			"usage: oddc <detect|setup|doctor|update|validate|list|resolve|explain>",
 		)
+	}
+
+	switch args[0] {
+	case "detect":
+		return runDetect(args)
+	case "setup":
+		return runSetup(args)
+	case "doctor":
+		return runDoctor(args)
+	case "update":
+		return runUpdate(args)
 	}
 
 	args = withDefaults(args, systemRoot)

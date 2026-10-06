@@ -70,6 +70,18 @@ or, as a Go library:
 
 ## CLI
 
+On any machine, find and set up the matching model:
+
+    nix run github:JadeOpenServices/oddc -- detect
+    nix run github:JadeOpenServices/oddc -- setup
+
+On a deployed system, check and update it:
+
+    oddc doctor
+    oddc update --switch
+
+See [docs/WORKFLOW.md](docs/WORKFLOW.md) for every command.
+
 Validate the registry and evidence:
 
     oddc validate --root .

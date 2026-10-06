@@ -74,6 +74,12 @@
             # Without --device and --host, resolve uses the deployed model and overlay.
             ${oddc} resolve --root $root | grep -q '"thermalEnterC": 85'
             grep -q '"thermalEnterC":85' $root/resolved.json
+            mkdir -p sys/class/dmi/id
+            echo Framework > sys/class/dmi/id/sys_vendor
+            echo "Laptop 13 (AMD Ryzen 7040Series)" > sys/class/dmi/id/product_name
+            ${oddc} doctor --root $root --sys sys
+            echo Other > sys/class/dmi/id/sys_vendor
+            ! ${oddc} doctor --root $root --sys sys
             [ "$(cat $root/revision)" = ${self.rev or self.dirtyRev or "unknown"} ]
             ${
               if
