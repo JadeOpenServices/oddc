@@ -3,6 +3,7 @@ package oddc
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -35,56 +36,8 @@ func (r *Registry) MatchModel(identity MachineIdentity) (string, error) {
 			return "", err
 		}
 
-		if formFactor, ok := stringAt(
-			resolved.Resolved,
-			"class.formFactor",
-		); ok && strings.TrimSpace(identity.FormFactor) != "" &&
-			!equalIdentity(formFactor, identity.FormFactor) {
-			continue
-		}
-
-		checks := []struct {
-			path   string
-			actual string
-		}{
-			{"identity.dmi.systemVendor", identity.SysVendor},
-			{"identity.dmi.productName", identity.ProductName},
-			{"identity.dmi.productVersion", identity.ProductVersion},
-			{"identity.dmi.boardVendor", identity.BoardVendor},
-			{"identity.dmi.boardName", identity.BoardName},
-			{"identity.dmi.boardVersion", identity.BoardVersion},
-		}
-
-		score := 0
-		matched := true
-
-		for _, check := range checks {
-			expected := stringsAt(
-				resolved.Resolved,
-				check.path,
-			)
-
-			if len(expected) == 0 {
-				continue
-			}
-
-			found := false
-			for _, value := range expected {
-				if equalIdentity(value, check.actual) {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				matched = false
-				break
-			}
-
-			score++
-		}
-
-		if !matched || score == 0 {
+		score, matched := identityScore(resolved.Resolved, identity)
+		if !matched {
 			continue
 		}
 
@@ -112,6 +65,57 @@ func (r *Registry) MatchModel(identity MachineIdentity) (string, error) {
 			strings.Join(best, ", "),
 		)
 	}
+}
+
+// identityScore counts the DMI fields a model's data declares and the
+// machine reports. A model matches when it declares at least one field and
+// none contradicts the machine.
+func identityScore(data map[string]any, identity MachineIdentity) (int, bool) {
+	if formFactor, ok := stringAt(
+		data,
+		"class.formFactor",
+	); ok && strings.TrimSpace(identity.FormFactor) != "" &&
+		!equalIdentity(formFactor, identity.FormFactor) {
+		return 0, false
+	}
+
+	checks := []struct {
+		path   string
+		actual string
+	}{
+		{"identity.dmi.systemVendor", identity.SysVendor},
+		{"identity.dmi.productName", identity.ProductName},
+		{"identity.dmi.productVersion", identity.ProductVersion},
+		{"identity.dmi.boardVendor", identity.BoardVendor},
+		{"identity.dmi.boardName", identity.BoardName},
+		{"identity.dmi.boardVersion", identity.BoardVersion},
+	}
+
+	score := 0
+
+	for _, check := range checks {
+		expected := stringsAt(data, check.path)
+
+		if len(expected) == 0 {
+			continue
+		}
+
+		found := false
+		for _, value := range expected {
+			if equalIdentity(value, check.actual) {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return 0, false
+		}
+
+		score++
+	}
+
+	return score, score > 0
 }
 
 func (r *Registry) modelIDs() []string {
@@ -176,4 +180,63 @@ func equalIdentity(a, b string) bool {
 		strings.TrimSpace(a),
 		strings.TrimSpace(b),
 	)
+}
+
+// ModelIdentity returns the machine identity a model declares: the first
+// value of each DMI field and its class form factor. A machine reporting it
+// matches the model.
+func (r *Registry) ModelIdentity(id string) (MachineIdentity, error) {
+	resolved, err := r.ResolveEntity(id)
+	if err != nil {
+		return MachineIdentity{}, err
+	}
+
+	first := func(path string) string {
+		values := stringsAt(resolved.Resolved, path)
+		if len(values) == 0 {
+			return ""
+		}
+
+		return values[0]
+	}
+
+	formFactor, _ := stringAt(resolved.Resolved, "class.formFactor")
+
+	return MachineIdentity{
+		FormFactor:     formFactor,
+		SysVendor:      first("identity.dmi.systemVendor"),
+		ProductName:    first("identity.dmi.productName"),
+		ProductVersion: first("identity.dmi.productVersion"),
+		BoardVendor:    first("identity.dmi.boardVendor"),
+		BoardName:      first("identity.dmi.boardName"),
+		BoardVersion:   first("identity.dmi.boardVersion"),
+	}, nil
+}
+
+// SysfsFiles returns the sysfs files, relative to the sysfs root, through
+// which a machine reports this identity.
+func (identity MachineIdentity) SysfsFiles() map[string]string {
+	files := map[string]string{}
+
+	for name, value := range map[string]string{
+		"sys_vendor":      identity.SysVendor,
+		"product_name":    identity.ProductName,
+		"product_version": identity.ProductVersion,
+		"board_vendor":    identity.BoardVendor,
+		"board_name":      identity.BoardName,
+		"board_version":   identity.BoardVersion,
+	} {
+		if value != "" {
+			files[filepath.Join("class", "dmi", "id", name)] = value + "\n"
+		}
+	}
+
+	switch identity.FormFactor {
+	case "laptop":
+		files[filepath.Join("class", "power_supply", "BAT0", "type")] = "Battery\n"
+	case "desktop":
+		files[filepath.Join("class", "dmi", "id", "chassis_type")] = "3\n"
+	}
+
+	return files
 }

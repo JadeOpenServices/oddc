@@ -105,8 +105,25 @@ let
       echo "fw-fanctrl control socket did not become ready" >&2
       exit 1
     '';
+  controller = config.oddc.fanControl.controller;
 in
 {
+  # ODDC owns the hardware policy and the fw-fanctrl backend. The policy
+  # controller that applies thermalEnterC/hysteresis is the consumer's own
+  # program; it reads the runtime policy from /etc/oddc/fan-control.json.
+  options.oddc.fanControl.controller = {
+    command = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Command that applies the ODDC fan policy; null runs only the backend.";
+    };
+    environment = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = "Environment for the policy controller.";
+    };
+  };
+
   config = lib.mkIf enabled {
     assertions = [
       {
@@ -141,15 +158,11 @@ in
     environment.etc."fw-fanctrl/config.json".text =
       backendJson;
 
-    environment.etc."gjallarOS/fan-control.json".text =
+    environment.etc."oddc/fan-control.json".text =
       runtimeJson;
 
     environment.systemPackages = [
       pkgs.fw-fanctrl
-    ];
-
-    systemd.tmpfiles.rules = [
-      "d /run/gjallarOS 0755 root root - -"
     ];
 
     systemd.services.fan-control-backend = {
@@ -183,7 +196,7 @@ in
       };
     };
 
-    systemd.services.fan-policy-controller = {
+    systemd.services.fan-policy-controller = lib.mkIf (controller.command != null) {
       description =
         "ODDC fan policy controller";
 
@@ -209,14 +222,16 @@ in
 
       unitConfig.ConditionVirtualization = "no";
 
-      environment.GJALLAR_FW_FANCTRL_BIN =
-        "${pkgs.fw-fanctrl}/bin/fw-fanctrl";
+      environment = {
+        ODDC_FAN_CONFIG = "/etc/oddc/fan-control.json";
+        ODDC_FW_FANCTRL_BIN = "${pkgs.fw-fanctrl}/bin/fw-fanctrl";
+      }
+      // controller.environment;
 
       serviceConfig = {
         Type = "simple";
 
-        ExecStart =
-          "/run/current-system/sw/bin/gjallarctl fan controller";
+        ExecStart = controller.command;
 
         Restart = "on-failure";
         RestartSec = "2s";
