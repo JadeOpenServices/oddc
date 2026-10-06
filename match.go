@@ -3,6 +3,7 @@ package oddc
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -176,4 +177,63 @@ func equalIdentity(a, b string) bool {
 		strings.TrimSpace(a),
 		strings.TrimSpace(b),
 	)
+}
+
+// ModelIdentity returns the machine identity a model declares: the first
+// value of each DMI field and its class form factor. A machine reporting it
+// matches the model.
+func (r *Registry) ModelIdentity(id string) (MachineIdentity, error) {
+	resolved, err := r.ResolveEntity(id)
+	if err != nil {
+		return MachineIdentity{}, err
+	}
+
+	first := func(path string) string {
+		values := stringsAt(resolved.Resolved, path)
+		if len(values) == 0 {
+			return ""
+		}
+
+		return values[0]
+	}
+
+	formFactor, _ := stringAt(resolved.Resolved, "class.formFactor")
+
+	return MachineIdentity{
+		FormFactor:     formFactor,
+		SysVendor:      first("identity.dmi.systemVendor"),
+		ProductName:    first("identity.dmi.productName"),
+		ProductVersion: first("identity.dmi.productVersion"),
+		BoardVendor:    first("identity.dmi.boardVendor"),
+		BoardName:      first("identity.dmi.boardName"),
+		BoardVersion:   first("identity.dmi.boardVersion"),
+	}, nil
+}
+
+// SysfsFiles returns the sysfs files, relative to the sysfs root, through
+// which a machine reports this identity.
+func (identity MachineIdentity) SysfsFiles() map[string]string {
+	files := map[string]string{}
+
+	for name, value := range map[string]string{
+		"sys_vendor":      identity.SysVendor,
+		"product_name":    identity.ProductName,
+		"product_version": identity.ProductVersion,
+		"board_vendor":    identity.BoardVendor,
+		"board_name":      identity.BoardName,
+		"board_version":   identity.BoardVersion,
+	} {
+		if value != "" {
+			files[filepath.Join("class", "dmi", "id", name)] = value + "\n"
+		}
+	}
+
+	switch identity.FormFactor {
+	case "laptop":
+		files[filepath.Join("class", "power_supply", "BAT0", "type")] = "Battery\n"
+	case "desktop":
+		files[filepath.Join("class", "dmi", "id", "chassis_type")] = "3\n"
+	}
+
+	return files
 }
