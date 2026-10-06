@@ -1,0 +1,35 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "DeviceModel",
+  "metadata": {
+    "id": "model/<vendor>/<model>",
+    "name": "Vendor public product name"
+  },
+  "data": {
+    "class": {
+      "ref": "class/laptop"
+    },
+    "vendor": {
+      "ref": "vendor/<vendor>"
+    },
+    "identity": {
+      "dmi": {
+        "systemVendor": {
+          "<vendor>": "Exact DMI sys_vendor"
+        },
+        "productName": {
+          "<model>": "Exact DMI product_name"
+        },
+        "boardName": {
+          "<board>": "Exact DMI board_name"
+        }
+      }
+    },
+    "support": {
+      "lifecycle": {
+        "status": "experimental"
+      }
+    }
+  }
+}

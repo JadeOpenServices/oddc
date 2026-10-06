@@ -1,12 +1,12 @@
 # ODDC model contribution template
 
-Add a concrete hardware model under:
+Copy model.json.example to:
 
-oddc/catalog/entities/models/<vendor>/<model>.json
+catalog/entities/models/<vendor>/<model>.json
 
 Example:
 
-oddc/catalog/entities/models/framework/laptop-13-amd-ryzen-7040.json
+catalog/entities/models/framework/laptop-13-amd-ryzen-7040.json
 
 Use the hardware vendor's public product naming where practical so users can
 find the model easily in documentation and search engines.
@@ -17,14 +17,14 @@ The catalog describes what hardware is.
 
 Validation evidence belongs under:
 
-oddc/evidence/
+evidence/
 
 Reusable hardware facts belong in component entities when they are stable,
 substantial and independently useful.
 
 Reusable exceptional behavior belongs in quirk entities.
 
-Hardware-independent GjallarOS behavior does not belong in ODDC.
+Hardware-independent operating system behavior does not belong in ODDC.
 
 Do not create a per-device Nix module merely because a model exists.
 
