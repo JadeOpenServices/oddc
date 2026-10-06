@@ -134,21 +134,19 @@ Renaming a directory must not silently change hardware identity.
 
 The target catalog is an entity registry.
 
-Conceptually:
+An entity's ID is its address. The entity `wifi/realtek/rtl8852be` lives in
+`catalog/entities/wifi/realtek/rtl8852be.json`, and nowhere else:
 
-    catalog/
-    ├── vendors/
-    ├── families/
-    ├── models/
-    ├── components/
-    │   ├── processors/
-    │   ├── graphics/
-    │   ├── network/
-    │   ├── storage/
-    │   ├── input/
-    │   ├── firmware/
-    │   └── other/
-    └── quirks/
+    catalog/entities/
+    ├── class/laptop.json
+    ├── vendor/framework.json
+    ├── family/framework/laptop-13.json
+    ├── model/framework/laptop-13-amd-ryzen-7040.json
+    ├── wifi/realtek/rtl8852be.json
+    └── quirk/framework/fprintd-resume.json
+
+Validation refuses an entity stored anywhere else. So a client that knows an
+ID fetches exactly that entity, without reading the rest of the catalog.
 
 A model should contain references rather than copies.
 
@@ -422,10 +420,11 @@ Evidence is not a second catalog.
 Example:
 
     evidence/
-    └── framework/
-        └── laptop-13-amd-ryzen-7040/
-            ├── 2026-09-15.json
-            └── 2027-02-04.json
+    └── model/framework/laptop-13-amd-ryzen-7040/
+        ├── 2026-09-15.json
+        └── 2027-02-04.json
+
+Evidence lives below the ID of the model it is about.
 
 Evidence should contain:
 

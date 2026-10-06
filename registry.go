@@ -70,6 +70,16 @@ func LoadRegistry(root string) (*Registry, error) {
 				return fmt.Errorf("%s: %w", path, err)
 			}
 
+			// An entity's ID is its address: catalog/entities/<id>.json.
+			if want := EntityPath(entityRoot, entity.Metadata.ID); path != want {
+				return fmt.Errorf(
+					"%s holds entity %q, which belongs in %s",
+					path,
+					entity.Metadata.ID,
+					want,
+				)
+			}
+
 			if previous, exists := registry.paths[entity.Metadata.ID]; exists {
 				return fmt.Errorf(
 					"duplicate entity id %q in %s and %s",
@@ -114,6 +124,11 @@ func LoadRegistry(root string) (*Registry, error) {
 	}
 
 	return registry, nil
+}
+
+// EntityPath returns where the entity with this ID lives below root.
+func EntityPath(root, id string) string {
+	return filepath.Join(root, filepath.FromSlash(id)+".json")
 }
 
 func decodeEntity(path string) (Entity, error) {

@@ -102,6 +102,16 @@ func (r *Registry) validateEvidence() error {
 				)
 			}
 
+			// Evidence lives below its model: evidence/<deviceId>/.
+			if filepath.Dir(path) != filepath.Join(root, filepath.FromSlash(evidence.DeviceID)) {
+				return fmt.Errorf(
+					"%s is about %q and belongs in %s",
+					path,
+					evidence.DeviceID,
+					filepath.Join(root, filepath.FromSlash(evidence.DeviceID)),
+				)
+			}
+
 			if model.Kind != "DeviceModel" {
 				return fmt.Errorf(
 					"%s references %q of kind %q, want DeviceModel",
