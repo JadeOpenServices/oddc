@@ -2,11 +2,11 @@
 
 Copy model.json.example to:
 
-catalog/entities/models/<vendor>/<model>.json
+catalog/entities/model/<vendor>/<model>.json
 
 Example:
 
-catalog/entities/models/framework/laptop-13-amd-ryzen-7040.json
+catalog/entities/model/framework/laptop-13-amd-ryzen-7040.json
 
 Use the hardware vendor's public product naming where practical so users can
 find the model easily in documentation and search engines.
