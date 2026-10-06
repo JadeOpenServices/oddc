@@ -1,7 +1,13 @@
-{ lib }:
+# root holds an ODDC catalog: this repository, or an answer `oddc fetch`
+# wrote. Either way entities live at catalog/entities/<id>.json and
+# evidence at evidence/<model id>/.
+{
+  lib,
+  root ? ../.,
+}:
 
 let
-  root = ../catalog/entities;
+  entityRoot = root + "/catalog/entities";
 
   walk =
     dir:
@@ -24,9 +30,11 @@ let
 
   files = map (path: {
     inherit path;
-    relative = lib.removePrefix "${toString root}/" (toString path);
+    relative = builtins.unsafeDiscardStringContext (
+      lib.removePrefix "${toString entityRoot}/" (toString path)
+    );
     document = builtins.fromJSON (builtins.readFile path);
-  }) (walk root);
+  }) (walk entityRoot);
 
   entities = builtins.listToAttrs (
     map (file: {
@@ -71,24 +79,31 @@ let
     in
     step [ ] [ id ];
 
-  evidenceRoot = ../evidence;
+  evidenceRoot = root + "/evidence";
 
-  # Evidence records about one model: list of { path, relative }.
+  # Evidence records about one model, at evidence/<id>/: list of
+  # { path, relative }.
   evidenceFor =
     id:
-    if !builtins.pathExists evidenceRoot then
+    let
+      dir = evidenceRoot + "/${id}";
+    in
+    if !builtins.pathExists dir then
       [ ]
     else
-      lib.concatMap (
-        path:
-        let
-          document = builtins.fromJSON (builtins.readFile path);
-        in
-        lib.optional (document.deviceId or null == id) {
-          inherit path;
-          relative = lib.removePrefix "${toString evidenceRoot}/" (toString path);
-        }
-      ) (walk evidenceRoot);
+      map (path: {
+        inherit path;
+        relative = builtins.unsafeDiscardStringContext (
+          lib.removePrefix "${toString evidenceRoot}/" (toString path)
+        );
+      }) (walk dir);
+
+  # The revision an answer records, else null.
+  revision =
+    let
+      file = root + "/revision";
+    in
+    if builtins.pathExists file then lib.trim (builtins.readFile file) else null;
 
   resolveValue =
     active: value:
@@ -148,5 +163,6 @@ in
     evidenceFor
     modelIds
     resolveEntity
+    revision
     ;
 }

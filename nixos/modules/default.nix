@@ -5,7 +5,10 @@
 }:
 
 let
-  registry = import ../../lib/registry.nix { inherit lib; };
+  registry = import ../../lib/registry.nix {
+    inherit lib;
+    root = config.oddc.catalog;
+  };
 
   cfg = config.oddc;
 

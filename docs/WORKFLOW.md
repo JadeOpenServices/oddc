@@ -109,5 +109,16 @@ Without push access it forks first. It always targets `staging`.
     }
 
 `nix flake update oddc` and a rebuild take a new catalog revision.
+
+To keep only one machine's data, point the module at the answer
+`oddc fetch` wrote; the flake input then supplies module code only:
+
+    oddc fetch --out generated/oddc
+
+    # configuration.nix
+    oddc.catalog = ./generated/oddc;
+
+With an answer only its model is available, and `/etc/oddc/revision`
+records the revision it was fetched from.
 `oddc.deploy.enable = false` deploys nothing under `/etc/oddc`;
 `oddc.cli.enable = false` leaves out the `oddc` command.

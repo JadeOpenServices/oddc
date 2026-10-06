@@ -19,6 +19,19 @@ in
       '';
     };
 
+    catalog = mkOption {
+      type = types.path;
+      default = ../..;
+      defaultText = lib.literalExpression "the ODDC source tree";
+      example = lib.literalExpression "./generated/oddc";
+      description = ''
+        Catalog the model is read from: the whole ODDC source tree, or an
+        answer `oddc fetch` wrote for this machine (its model's reference
+        closure, evidence and revision). With an answer, only that model
+        is available and its recorded revision is deployed.
+      '';
+    };
+
     overrides = mkOption {
       type = types.attrs;
       default = { };
@@ -40,11 +53,17 @@ in
 
     revision = mkOption {
       type = types.nullOr types.str;
-      default = null;
+      default =
+        let
+          file = config.oddc.catalog + "/revision";
+        in
+        if builtins.pathExists file then lib.trim (builtins.readFile file) else null;
+      defaultText = lib.literalExpression "the catalog's recorded revision, if any";
       example = "e94f6bc";
       description = ''
         ODDC revision this system was built from, recorded in
-        /etc/oddc/revision. The flake module sets it from the flake input.
+        /etc/oddc/revision. An answer records its own; otherwise the flake
+        module sets it from the flake input.
       '';
     };
 

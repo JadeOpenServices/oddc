@@ -15,11 +15,13 @@
     in
     {
       lib = import ./lib;
-      # Through the flake, a deployment records the ODDC revision it was
-      # built from.
-      nixosModules = builtins.mapAttrs (_: module: {
+      # Through the flake, a deployment from the flake's own catalog records
+      # the ODDC revision it was built from; an answer records its own.
+      nixosModules = builtins.mapAttrs (_: module: { config, ... }: {
         imports = [ module ];
-        oddc.revision = nixpkgs.lib.mkDefault (self.rev or self.dirtyRev or null);
+        oddc.revision = nixpkgs.lib.mkIf (!builtins.pathExists (config.oddc.catalog + "/revision")) (
+          nixpkgs.lib.mkDefault (self.rev or self.dirtyRev or null)
+        );
       }) (import ./nixos/registry.nix);
 
       packages = forAllSystems (pkgs: rec {
@@ -47,6 +49,19 @@
                 nixpkgs
                 pkgs
                 registry
+                id
+                ;
+            };
+          }) registry.modelIds
+        )
+        // nixpkgs.lib.listToAttrs (
+          map (id: {
+            name = "answer-" + builtins.replaceStrings [ "/" ] [ "-" ] id;
+            value = import ./checks/answer.nix {
+              inherit
+                self
+                nixpkgs
+                pkgs
                 id
                 ;
             };
