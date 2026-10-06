@@ -37,6 +37,8 @@ Items marked *planned* are agreed design that is not implemented yet.
   Untested or short-lived changes never reach `main`.
 - Consumers follow `main`: `github:JadeOpenServices/oddc`. Testers may
   follow `github:JadeOpenServices/oddc/staging`.
+- Every merge to `main` is a release; consumers pin it by commit hash.
+  See [RELEASES.md](RELEASES.md).
 
 ## Contribution rules
 
@@ -70,9 +72,22 @@ On a deployed system it defaults to `/etc/oddc` and the deployed model:
     oddc explain --path hardware.network.wifi.primary.driver
     oddc validate
 
+`oddc validate --json` prints the result as JSON (`valid`, `errors`,
+entity and evidence counts, `apiVersion`, `schemaVersion`, `revision`)
+and, like plain `validate`, exits non-zero when the catalog is invalid.
+To check any revision in CI, use the validator from that same revision:
+
+    git -C oddc checkout REV
+    nix run github:JadeOpenServices/oddc/REV -- validate --root oddc --json
+
+Evidence is append-only. `--since REV` also fails when an evidence file
+was changed or removed since the commit where HEAD branched from REV;
+CI runs it on every pull request against its base branch.
+
 For users:
 
     oddc detect                  # which model matches this machine
+    oddc classify                # the same, as JSON with why each model did or did not match
     oddc setup                   # NixOS snippet for the matching model
     oddc fetch --out DIR         # only this machine's model, for installers
     oddc doctor                  # deployed model still matches the hardware?
@@ -84,7 +99,10 @@ they download only the model files, then only the matched model's
 reference closure and evidence; nothing else of the catalog leaves
 GitHub. `fetch` writes that answer to `--out` in canonical layout with the
 `revision` it came from; `--device ID` fetches a named model instead.
-`doctor` works offline on `/etc/oddc`. `update` defaults to the flake in
+`classify` reads the local catalog (`--root`, `/etc/oddc` on a deployed
+system) and this machine's DMI and PCI/USB/HID IDs from `/sys`
+(`--sys DIR`), or facts from `--facts FILE`; it exits non-zero unless
+exactly one model matches. `doctor` works offline on `/etc/oddc`. `update` defaults to the flake in
 `/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`.
 
 For contributors (*planned*):

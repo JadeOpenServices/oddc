@@ -8,11 +8,15 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
 
 const EntityAPIVersion = "oddc.openjade.de/v2"
+
+// entityID is the form of every stable ID, as in schemas/entity.schema.json.
+var entityID = regexp.MustCompile(`^[a-z0-9]+(?:[/-][a-z0-9]+)*$`)
 
 type EntityMetadata struct {
 	ID   string `json:"id"`
@@ -179,6 +183,13 @@ func validateEntity(entity Entity) error {
 
 	if strings.TrimSpace(entity.Metadata.ID) == "" {
 		return fmt.Errorf("metadata.id is required")
+	}
+
+	if !entityID.MatchString(entity.Metadata.ID) {
+		return fmt.Errorf(
+			"metadata.id %q is not lowercase kebab-case segments separated by /",
+			entity.Metadata.ID,
+		)
 	}
 
 	if strings.TrimSpace(entity.Metadata.Name) == "" {

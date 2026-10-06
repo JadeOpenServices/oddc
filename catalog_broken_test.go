@@ -87,6 +87,10 @@ func expectRefused(t *testing.T, root, what string) {
 	if _, err := LoadRegistry(root); err == nil {
 		t.Errorf("registry accepted %s", what)
 	}
+
+	if result := Validate(root); result.Valid || len(result.Errors) == 0 {
+		t.Errorf("validation passed %s: %+v", what, result)
+	}
 }
 
 func TestBrokenCatalogMissingReference(t *testing.T) {
@@ -228,5 +232,27 @@ func TestBrokenCatalogEvidenceForNonModel(t *testing.T) {
 		}
 
 		expectRefused(t, root, path+" pointing at "+component+" of "+model)
+	}
+}
+
+// IDs are API: an ID outside the stable form is refused even when the
+// file sits at its address.
+func TestBrokenCatalogMalformedID(t *testing.T) {
+	registry := catalog(t)
+
+	for _, id := range models(t, registry) {
+		root := copyCatalog(t)
+		path := entityPath(t, registry, root, id)
+		bad := id + "--old"
+
+		editEntity(t, path, func(document map[string]any) {
+			document["metadata"].(map[string]any)["id"] = bad
+		})
+		target := EntityPath(filepath.Join(root, "catalog", "entities"), bad)
+		if err := os.Rename(path, target); err != nil {
+			t.Fatal(err)
+		}
+
+		expectRefused(t, root, "ID "+bad)
 	}
 }
