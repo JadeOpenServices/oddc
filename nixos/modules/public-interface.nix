@@ -1,4 +1,9 @@
-{ lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   inherit (lib) mkOption types;
@@ -31,6 +36,33 @@ in
         canonical catalog layout, its evidence, the host overlay, and
         resolved.json. Other models never reach the system closure.
       '';
+    };
+
+    revision = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "e94f6bc";
+      description = ''
+        ODDC revision this system was built from, recorded in
+        /etc/oddc/revision. The flake module sets it from the flake input.
+      '';
+    };
+
+    cli.enable = mkOption {
+      type = types.bool;
+      default = config.oddc.deploy.enable;
+      defaultText = lib.literalExpression "config.oddc.deploy.enable";
+      description = ''
+        Install the `oddc` command. On a deployed system it defaults to
+        /etc/oddc and the deployed model.
+      '';
+    };
+
+    cli.package = mkOption {
+      type = types.package;
+      default = pkgs.callPackage ../../package.nix { };
+      defaultText = lib.literalExpression "oddc";
+      description = "Package providing the `oddc` command.";
     };
 
     availableModels = mkOption {

@@ -14,17 +14,22 @@
     in
     {
       lib = import ./lib;
-      nixosModules = import ./nixos/registry.nix;
+      # Through the flake, a deployment records the ODDC revision it was
+      # built from.
+      nixosModules = builtins.mapAttrs (_: module: {
+        imports = [ module ];
+        oddc.revision = nixpkgs.lib.mkDefault (self.rev or self.dirtyRev or null);
+      }) (import ./nixos/registry.nix);
 
       packages = forAllSystems (pkgs: rec {
-        oddcctl = pkgs.callPackage ./package.nix { };
-        default = oddcctl;
+        oddc = pkgs.callPackage ./package.nix { };
+        default = oddc;
       });
 
       checks = forAllSystems (pkgs: {
-        oddcctl = self.packages.${pkgs.stdenv.hostPlatform.system}.oddcctl;
+        oddc = self.packages.${pkgs.stdenv.hostPlatform.system}.oddc;
         catalog = pkgs.runCommand "oddc-catalog-valid" { } ''
-          ${pkgs.lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.oddcctl} validate --root ${./.}
+          ${pkgs.lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.oddc} validate --root ${./.}
           touch $out
         '';
         # A deployed system carries only the selected model's closure.
@@ -47,22 +52,39 @@
               ];
             };
             etc = pkgs.linkFarm "oddc-etc" (
-              nixpkgs.lib.mapAttrsToList (name: entry: {
-                inherit name;
-                path = entry.source;
-              }) (nixpkgs.lib.filterAttrs (name: _: nixpkgs.lib.hasPrefix "oddc/" name) evaluated.config.environment.etc)
+              nixpkgs.lib.mapAttrsToList
+                (name: entry: {
+                  inherit name;
+                  path = entry.source;
+                })
+                (
+                  nixpkgs.lib.filterAttrs (
+                    name: _: nixpkgs.lib.hasPrefix "oddc/" name
+                  ) evaluated.config.environment.etc
+                )
             );
-            oddcctl = pkgs.lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.oddcctl;
+            oddc = pkgs.lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.oddc;
           in
           pkgs.runCommand "oddc-deployment" { } ''
             root=${etc}/oddc
-            ${oddcctl} validate --root $root
-            ${oddcctl} list --root $root --kind DeviceModel > models
+            ${oddc} validate --root $root
+            ${oddc} list --root $root --kind DeviceModel > models
             [ "$(cut -f1 models | tr -d " ")" = model/framework/laptop-13-amd-ryzen-7040 ] || { cat models; exit 1; }
             ! grep -rq zbook -- ${etc}/oddc/
-            ${oddcctl} resolve --root $root --device model/framework/laptop-13-amd-ryzen-7040 \
-              --host $root/host-overlay.json | grep -q '"thermalEnterC": 85'
+            # Without --device and --host, resolve uses the deployed model and overlay.
+            ${oddc} resolve --root $root | grep -q '"thermalEnterC": 85'
             grep -q '"thermalEnterC":85' $root/resolved.json
+            [ "$(cat $root/revision)" = ${self.rev or self.dirtyRev or "unknown"} ]
+            ${
+              if
+                nixpkgs.lib.elem self.packages.${pkgs.stdenv.hostPlatform.system}.oddc.name (
+                  map (p: p.name or "") evaluated.config.environment.systemPackages
+                )
+              then
+                "true"
+              else
+                "false"
+            }
             touch $out
           '';
       });

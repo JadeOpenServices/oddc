@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/JadeOpenServices/oddc"
@@ -65,12 +66,95 @@ func loadOverlays(
 	return result, nil
 }
 
+// systemRoot is where the NixOS module deploys the selected model.
+const systemRoot = "/etc/oddc"
+
+func has(
+	args []string,
+	name string,
+) bool {
+	for _, arg := range args {
+		if arg == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+func exists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+// deployedModel returns the model a deployed root was built for, or "".
+func deployedModel(root string) string {
+	data, err := os.ReadFile(
+		filepath.Join(root, "resolved.json"),
+	)
+	if err != nil {
+		return ""
+	}
+
+	var resolved struct {
+		Model struct {
+			ID string `json:"id"`
+		} `json:"model"`
+	}
+	if json.Unmarshal(data, &resolved) != nil {
+		return ""
+	}
+
+	return resolved.Model.ID
+}
+
+// withDefaults completes args for a deployed system: the root defaults to
+// the system root when it holds a deployment, else the working directory;
+// resolve and explain default to the deployed model and its host overlay.
+func withDefaults(
+	args []string,
+	system string,
+) []string {
+	result := append([]string{}, args...)
+
+	if !has(result, "--root") {
+		root := "."
+		if deployedModel(system) != "" {
+			root = system
+		}
+
+		result = append(result, "--root", root)
+	}
+
+	if args[0] != "resolve" && args[0] != "explain" {
+		return result
+	}
+
+	root := value(result, "--root", ".")
+	model := deployedModel(root)
+
+	if !has(result, "--device") && model != "" {
+		result = append(result, "--device", model)
+	}
+
+	overlay := filepath.Join(root, "host-overlay.json")
+	if !has(result, "--host") &&
+		value(result, "--device", "") == model &&
+		exists(overlay) {
+		result = append(result, "--host", overlay)
+	}
+
+	return result
+}
+
 func run(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"usage: oddcctl <validate|list|resolve|explain>",
+			"usage: oddc <validate|list|resolve|explain>",
 		)
 	}
+
+	args = withDefaults(args, systemRoot)
 
 	root := value(
 		args,

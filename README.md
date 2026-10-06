@@ -58,7 +58,7 @@ Validated compatibility workarounds are referenced through a model's `quirks`
 object. The reusable quirk entity owns the parameters; operating-system
 adapters implement only the generic semantic behavior.
 
-Use `oddcctl explain` to inspect the final owner and override history.
+Use `oddc explain` to inspect the final owner and override history.
 
 ## Install
 
@@ -72,21 +72,21 @@ or, as a Go library:
 
 Validate the registry and evidence:
 
-    oddcctl validate --root .
+    oddc validate --root .
 
 List entities, optionally by kind:
 
-    oddcctl list --root . --kind DeviceModel
+    oddc list --root . --kind DeviceModel
 
 Resolve a model:
 
-    oddcctl resolve \
+    oddc resolve \
       --root . \
       --device model/framework/laptop-13-amd-ryzen-7040
 
 Explain a value and its ownership:
 
-    oddcctl explain \
+    oddc explain \
       --root . \
       --device model/framework/laptop-13-amd-ryzen-7040 \
       --path hardware.network.wifi.primary.driver
@@ -123,13 +123,14 @@ module.
 The full catalog stays in the repository and in installers that select a
 model. A deployed system receives only the selected model under `/etc/oddc`:
 the model's reference closure in canonical layout, its evidence, the host
-overlay (`host-overlay.json`, when `oddc.overrides` is set) and
-`resolved.json`. Other models never reach the system closure. Inspect it with:
+overlay (`host-overlay.json`, when `oddc.overrides` is set), `resolved.json`
+and, through the flake module, the ODDC `revision`. Other models never reach
+the system closure. The `oddc` command is installed with it
+(`oddc.cli.enable`) and defaults to `/etc/oddc` and the deployed model:
 
-    oddcctl list --root /etc/oddc
-    oddcctl resolve --root /etc/oddc \
-      --device model/framework/laptop-13-amd-ryzen-7040 \
-      --host /etc/oddc/host-overlay.json
+    oddc list
+    oddc resolve
+    oddc explain --path policy.thermal.fanControl.policy.thermalEnterC
 
 Set `oddc.deploy.enable = false` to deploy nothing.
 
