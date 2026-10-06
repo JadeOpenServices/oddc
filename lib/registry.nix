@@ -1,7 +1,13 @@
-{ lib }:
+# root holds an ODDC catalog: this repository, or an answer `oddc fetch`
+# wrote. Either way entities live at catalog/entities/<id>.json and
+# evidence at evidence/<model id>/.
+{
+  lib,
+  root ? ../.,
+}:
 
 let
-  root = ../catalog/entities;
+  entityRoot = root + "/catalog/entities";
 
   walk =
     dir:
@@ -22,14 +28,82 @@ let
         [ ]
     ) (builtins.attrNames entries);
 
-  documents = map (path: builtins.fromJSON (builtins.readFile path)) (walk root);
+  files = map (path: {
+    inherit path;
+    relative = builtins.unsafeDiscardStringContext (
+      lib.removePrefix "${toString entityRoot}/" (toString path)
+    );
+    document = builtins.fromJSON (builtins.readFile path);
+  }) (walk entityRoot);
 
   entities = builtins.listToAttrs (
-    map (document: {
-      name = document.metadata.id;
-      value = document;
-    }) documents
+    map (file: {
+      name = file.document.metadata.id;
+      value = file.document;
+    }) files
   );
+
+  # Entity ID -> { path, relative } of its canonical file.
+  entityFiles = builtins.listToAttrs (
+    map (file: {
+      name = file.document.metadata.id;
+      value = { inherit (file) path relative; };
+    }) files
+  );
+
+  refsOf =
+    value:
+    if builtins.isAttrs value then
+      (if value ? ref then [ value.ref ] else [ ])
+      ++ lib.concatMap refsOf (builtins.attrValues (builtins.removeAttrs value [ "ref" ]))
+    else
+      [ ];
+
+  # Every entity ID one entity depends on, itself included.
+  closure =
+    id:
+    let
+      step =
+        seen: pending:
+        if pending == [ ] then
+          seen
+        else
+          let
+            next = builtins.head pending;
+            rest = builtins.tail pending;
+          in
+          if builtins.elem next seen then
+            step seen rest
+          else
+            step (seen ++ [ next ]) (rest ++ refsOf (builtins.getAttr next entities).data);
+    in
+    step [ ] [ id ];
+
+  evidenceRoot = root + "/evidence";
+
+  # Evidence records about one model, at evidence/<id>/: list of
+  # { path, relative }.
+  evidenceFor =
+    id:
+    let
+      dir = evidenceRoot + "/${id}";
+    in
+    if !builtins.pathExists dir then
+      [ ]
+    else
+      map (path: {
+        inherit path;
+        relative = builtins.unsafeDiscardStringContext (
+          lib.removePrefix "${toString evidenceRoot}/" (toString path)
+        );
+      }) (walk dir);
+
+  # The revision an answer records, else null.
+  revision =
+    let
+      file = root + "/revision";
+    in
+    if builtins.pathExists file then lib.trim (builtins.readFile file) else null;
 
   resolveValue =
     active: value:
@@ -83,8 +157,12 @@ let
 in
 {
   inherit
+    closure
     entities
+    entityFiles
+    evidenceFor
     modelIds
     resolveEntity
+    revision
     ;
 }

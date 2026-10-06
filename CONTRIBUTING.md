@@ -134,21 +134,19 @@ Renaming a directory must not silently change hardware identity.
 
 The target catalog is an entity registry.
 
-Conceptually:
+An entity's ID is its address. The entity `wifi/realtek/rtl8852be` lives in
+`catalog/entities/wifi/realtek/rtl8852be.json`, and nowhere else:
 
-    oddc/catalog/
-    ├── vendors/
-    ├── families/
-    ├── models/
-    ├── components/
-    │   ├── processors/
-    │   ├── graphics/
-    │   ├── network/
-    │   ├── storage/
-    │   ├── input/
-    │   ├── firmware/
-    │   └── other/
-    └── quirks/
+    catalog/entities/
+    ├── class/laptop.json
+    ├── vendor/framework.json
+    ├── family/framework/laptop-13.json
+    ├── model/framework/laptop-13-amd-ryzen-7040.json
+    ├── wifi/realtek/rtl8852be.json
+    └── quirk/framework/fprintd-resume.json
+
+Validation refuses an entity stored anywhere else. So a client that knows an
+ID fetches exactly that entity, without reading the rest of the catalog.
 
 A model should contain references rather than copies.
 
@@ -422,10 +420,11 @@ Evidence is not a second catalog.
 Example:
 
     evidence/
-    └── framework/
-        └── laptop-13-amd-ryzen-7040/
-            ├── 2026-09-15.json
-            └── 2027-02-04.json
+    └── model/framework/laptop-13-amd-ryzen-7040/
+        ├── 2026-09-15.json
+        └── 2027-02-04.json
+
+Evidence lives below the ID of the model it is about.
 
 Evidence should contain:
 
@@ -475,7 +474,7 @@ Overrideable collections should therefore use keyed objects rather than position
 
 Each resolved leaf should retain provenance so tooling can answer:
 
-    oddcctl explain \
+    oddc explain \
       --device model/framework/laptop-13-amd-ryzen-7040 \
       --path policy.thermal.fanControl.thermalEnterC
 
@@ -572,6 +571,14 @@ For an ordinary newly supported laptop, the ideal contribution is approximately:
     1 device model JSON
     1 evidence JSON
     0 Nix files
+    0 test files
+
+Tests run over the real catalog and take their expectations from it and from
+evidence: every model must resolve, keep one owner per value, match its own
+DMI identity, deploy alone and pass `oddc doctor` on its own hardware. A new
+model is tested by being in the catalog. Tests never repeat device facts and
+never use invented devices; tests of rejected input break a temporary copy of
+the real catalog.
 
 Additional component entities are added only for hardware not already represented.
 
@@ -592,7 +599,8 @@ CI should eventually reject these patterns:
 - editable generated fw-fanctrl configuration;
 - legacy runtime profile IDs inside portable catalog entities;
 - duplicated component metadata embedded in models instead of referenced;
-- committed resolved snapshots treated as canonical source.
+- committed resolved snapshots treated as canonical source;
+- device facts repeated in Go or Nix tests, or invented test devices.
 
 ---
 
@@ -649,7 +657,7 @@ Before accepting an ODDC change, ask:
 5. Is a new Nix module actually necessary?
 6. Is this path stable enough to become public API?
 7. Can another operating system or NixOS project consume this without knowing GjallarOS?
-8. Can `oddcctl explain` identify why the final value exists?
+8. Can `oddc explain` identify why the final value exists?
 9. Would changing this value require editing more than one authoritative file?
 
 If question 9 is yes, the design probably violates the single-source-of-truth rule.

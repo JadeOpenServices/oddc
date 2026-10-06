@@ -1,0 +1,57 @@
+# A system built from the answer `oddc fetch` writes for one model deploys
+# what a system built from the whole catalog deploys, and knows no other
+# model. Only the recorded revision differs: the answer's own.
+{
+  self,
+  nixpkgs,
+  pkgs,
+  id,
+}:
+
+let
+  inherit (nixpkgs) lib;
+
+  oddc = lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.oddc;
+
+  answer = pkgs.runCommand "oddc-answer" { } ''
+    ${oddc} fetch --root ${self} --device ${lib.escapeShellArg id} --out $out
+  '';
+
+  evaluate =
+    catalog:
+    lib.nixosSystem {
+      inherit (pkgs.stdenv.hostPlatform) system;
+      modules = [
+        self.nixosModules.default
+        {
+          oddc.device = id;
+          system.stateVersion = "26.05";
+          boot.loader.grub.enable = false;
+          fileSystems."/" = {
+            device = "/dev/null";
+            fsType = "ext4";
+          };
+        }
+        (lib.optionalAttrs (catalog != null) { oddc.catalog = catalog; })
+      ];
+    };
+
+  etc =
+    evaluated:
+    pkgs.linkFarm "oddc-etc" (
+      lib.mapAttrsToList (name: entry: {
+        inherit name;
+        path = entry.source;
+      }) (lib.filterAttrs (name: _: lib.hasPrefix "oddc/" name) evaluated.config.environment.etc)
+    );
+
+  full = evaluate null;
+  fetched = evaluate answer;
+in
+assert fetched.config.oddc.availableModels == [ id ];
+assert fetched.config.oddc.resolved == full.config.oddc.resolved;
+pkgs.runCommand "oddc-answer-deployment" { } ''
+  diff -r --exclude=revision ${etc full}/oddc ${etc fetched}/oddc
+  [ "$(cat ${etc fetched}/oddc/revision)" = "$(cat ${answer}/revision)" ]
+  touch $out
+''

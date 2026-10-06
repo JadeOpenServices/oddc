@@ -1,6 +1,7 @@
 package oddc
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -70,6 +71,16 @@ func LoadRegistry(root string) (*Registry, error) {
 				return fmt.Errorf("%s: %w", path, err)
 			}
 
+			// An entity's ID is its address: catalog/entities/<id>.json.
+			if want := EntityPath(entityRoot, entity.Metadata.ID); path != want {
+				return fmt.Errorf(
+					"%s holds entity %q, which belongs in %s",
+					path,
+					entity.Metadata.ID,
+					want,
+				)
+			}
+
 			if previous, exists := registry.paths[entity.Metadata.ID]; exists {
 				return fmt.Errorf(
 					"duplicate entity id %q in %s and %s",
@@ -116,27 +127,36 @@ func LoadRegistry(root string) (*Registry, error) {
 	return registry, nil
 }
 
+// EntityPath returns where the entity with this ID lives below root.
+func EntityPath(root, id string) string {
+	return filepath.Join(root, filepath.FromSlash(id)+".json")
+}
+
 func decodeEntity(path string) (Entity, error) {
-	file, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return Entity{}, err
 	}
-	defer file.Close()
 
-	decoder := json.NewDecoder(file)
+	return decodeEntityData(path, data)
+}
+
+// decodeEntityData decodes one entity document; name labels errors.
+func decodeEntityData(name string, data []byte) (Entity, error) {
+	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.UseNumber()
 	decoder.DisallowUnknownFields()
 
 	var entity Entity
 
 	if err := decoder.Decode(&entity); err != nil {
-		return Entity{}, fmt.Errorf("decode %s: %w", path, err)
+		return Entity{}, fmt.Errorf("decode %s: %w", name, err)
 	}
 
 	var extra any
 	if err := decoder.Decode(&extra); err != io.EOF {
 		if err == nil {
-			return Entity{}, fmt.Errorf("%s has trailing JSON", path)
+			return Entity{}, fmt.Errorf("%s has trailing JSON", name)
 		}
 		return Entity{}, err
 	}

@@ -1,4 +1,9 @@
-{ lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   inherit (lib) mkOption types;
@@ -14,6 +19,19 @@ in
       '';
     };
 
+    catalog = mkOption {
+      type = types.path;
+      default = ../..;
+      defaultText = lib.literalExpression "the ODDC source tree";
+      example = lib.literalExpression "./generated/oddc";
+      description = ''
+        Catalog the model is read from: the whole ODDC source tree, or an
+        answer `oddc fetch` wrote for this machine (its model's reference
+        closure, evidence and revision). With an answer, only that model
+        is available and its recorded revision is deployed.
+      '';
+    };
+
     overrides = mkOption {
       type = types.attrs;
       default = { };
@@ -21,6 +39,49 @@ in
         Explicit local overrides applied after resolving canonical ODDC data.
         Canonical catalog entities are never modified by these values.
       '';
+    };
+
+    deploy.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Install the selected model under /etc/oddc: its reference closure in
+        canonical catalog layout, its evidence, the host overlay, and
+        resolved.json. Other models never reach the system closure.
+      '';
+    };
+
+    revision = mkOption {
+      type = types.nullOr types.str;
+      default =
+        let
+          file = config.oddc.catalog + "/revision";
+        in
+        if builtins.pathExists file then lib.trim (builtins.readFile file) else null;
+      defaultText = lib.literalExpression "the catalog's recorded revision, if any";
+      example = "e94f6bc";
+      description = ''
+        ODDC revision this system was built from, recorded in
+        /etc/oddc/revision. An answer records its own; otherwise the flake
+        module sets it from the flake input.
+      '';
+    };
+
+    cli.enable = mkOption {
+      type = types.bool;
+      default = config.oddc.deploy.enable;
+      defaultText = lib.literalExpression "config.oddc.deploy.enable";
+      description = ''
+        Install the `oddc` command. On a deployed system it defaults to
+        /etc/oddc and the deployed model.
+      '';
+    };
+
+    cli.package = mkOption {
+      type = types.package;
+      default = pkgs.callPackage ../../package.nix { };
+      defaultText = lib.literalExpression "oddc";
+      description = "Package providing the `oddc` command.";
     };
 
     availableModels = mkOption {

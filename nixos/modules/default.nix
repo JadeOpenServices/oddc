@@ -5,7 +5,10 @@
 }:
 
 let
-  registry = import ../../lib/registry.nix { inherit lib; };
+  registry = import ../../lib/registry.nix {
+    inherit lib;
+    root = config.oddc.catalog;
+  };
 
   cfg = config.oddc;
 
@@ -44,19 +47,19 @@ let
     let
       entries = builtins.readDir directory;
     in
-    map
-      (name: directory + "/${name}")
-      (
-        lib.filter
-          (name: entries.${name} == "regular" && lib.hasSuffix ".nix" name)
-          (builtins.attrNames entries)
-      );
+    map (name: directory + "/${name}") (
+      lib.filter (name: entries.${name} == "regular" && lib.hasSuffix ".nix" name) (
+        builtins.attrNames entries
+      )
+    );
 in
 {
-  imports =
-    [ ./public-interface.nix ]
-    ++ moduleFiles ./capabilities
-    ++ moduleFiles ./quirks;
+  imports = [
+    ./public-interface.nix
+    ./deployment.nix
+  ]
+  ++ moduleFiles ./capabilities
+  ++ moduleFiles ./quirks;
 
   config = lib.mkMerge [
     {
@@ -71,6 +74,10 @@ in
           message = "oddc.device must reference a model/* entity.";
         }
       ];
+    })
+
+    (lib.mkIf cfg.cli.enable {
+      environment.systemPackages = [ cfg.cli.package ];
     })
 
     (lib.mkIf (kernelParameters != [ ]) {
