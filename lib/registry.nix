@@ -22,14 +22,73 @@ let
         [ ]
     ) (builtins.attrNames entries);
 
-  documents = map (path: builtins.fromJSON (builtins.readFile path)) (walk root);
+  files = map (path: {
+    inherit path;
+    relative = lib.removePrefix "${toString root}/" (toString path);
+    document = builtins.fromJSON (builtins.readFile path);
+  }) (walk root);
 
   entities = builtins.listToAttrs (
-    map (document: {
-      name = document.metadata.id;
-      value = document;
-    }) documents
+    map (file: {
+      name = file.document.metadata.id;
+      value = file.document;
+    }) files
   );
+
+  # Entity ID -> { path, relative } of its canonical file.
+  entityFiles = builtins.listToAttrs (
+    map (file: {
+      name = file.document.metadata.id;
+      value = { inherit (file) path relative; };
+    }) files
+  );
+
+  refsOf =
+    value:
+    if builtins.isAttrs value then
+      (if value ? ref then [ value.ref ] else [ ])
+      ++ lib.concatMap refsOf (builtins.attrValues (builtins.removeAttrs value [ "ref" ]))
+    else
+      [ ];
+
+  # Every entity ID one entity depends on, itself included.
+  closure =
+    id:
+    let
+      step =
+        seen: pending:
+        if pending == [ ] then
+          seen
+        else
+          let
+            next = builtins.head pending;
+            rest = builtins.tail pending;
+          in
+          if builtins.elem next seen then
+            step seen rest
+          else
+            step (seen ++ [ next ]) (rest ++ refsOf (builtins.getAttr next entities).data);
+    in
+    step [ ] [ id ];
+
+  evidenceRoot = ../evidence;
+
+  # Evidence records about one model: list of { path, relative }.
+  evidenceFor =
+    id:
+    if !builtins.pathExists evidenceRoot then
+      [ ]
+    else
+      lib.concatMap (
+        path:
+        let
+          document = builtins.fromJSON (builtins.readFile path);
+        in
+        lib.optional (document.deviceId or null == id) {
+          inherit path;
+          relative = lib.removePrefix "${toString evidenceRoot}/" (toString path);
+        }
+      ) (walk evidenceRoot);
 
   resolveValue =
     active: value:
@@ -83,7 +142,10 @@ let
 in
 {
   inherit
+    closure
     entities
+    entityFiles
+    evidenceFor
     modelIds
     resolveEntity
     ;

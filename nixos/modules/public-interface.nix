@@ -23,6 +23,16 @@ in
       '';
     };
 
+    deploy.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Install the selected model under /etc/oddc: its reference closure in
+        canonical catalog layout, its evidence, the host overlay, and
+        resolved.json. Other models never reach the system closure.
+      '';
+    };
+
     availableModels = mkOption {
       type = types.listOf types.str;
       readOnly = true;

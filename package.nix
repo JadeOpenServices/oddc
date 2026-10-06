@@ -16,10 +16,6 @@ buildGoModule {
   subPackages = [ "cmd/oddcctl" ];
   # The registry tests read the catalog from the source root.
   doCheck = true;
-  postInstall = ''
-    mkdir -p $out/share/oddc
-    cp -r catalog evidence schemas $out/share/oddc/
-  '';
   meta = {
     description = "Validate, resolve and explain ODDC hardware entities";
     license = lib.licenses.asl20;

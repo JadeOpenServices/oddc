@@ -54,7 +54,10 @@ let
 in
 {
   imports =
-    [ ./public-interface.nix ]
+    [
+      ./public-interface.nix
+      ./deployment.nix
+    ]
     ++ moduleFiles ./capabilities
     ++ moduleFiles ./quirks;
 
