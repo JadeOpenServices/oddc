@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bakanura/gjallarOS/pkg/oddc"
+	"github.com/JadeOpenServices/oddc"
 )
 
 func value(
@@ -74,7 +74,7 @@ func run(args []string) error {
 	root := value(
 		args,
 		"--root",
-		"./oddc",
+		".",
 	)
 
 	registry, err := oddc.LoadRegistry(root)

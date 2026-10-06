@@ -11,7 +11,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) before changing catalog data.
 
 ## Canonical storage
 
-Canonical entities live under `oddc/catalog/entities/`. The registry contains
+Canonical entities live under `catalog/entities/`. The registry contains
 reusable classes, vendors, families, components, models, and quirks. Every
 entity has stable metadata and a `data` object; references inside `data` compose
 the hardware graph. Device models reference reusable entities instead of
@@ -58,22 +58,30 @@ adapters implement only the generic semantic behavior.
 
 Use `oddcctl explain` to inspect the final owner and override history.
 
+## Install
+
+    nix run github:JadeOpenServices/oddc -- validate --root .
+
+or, as a Go library:
+
+    go get github.com/JadeOpenServices/oddc
+
 ## CLI
 
 Validate the registry and evidence:
 
-    oddcctl validate --root ./oddc
+    oddcctl validate --root .
 
 Resolve a model:
 
     oddcctl resolve \
-      --root ./oddc \
+      --root . \
       --device model/framework/laptop-13-amd-ryzen-7040
 
 Explain a value and its ownership:
 
     oddcctl explain \
-      --root ./oddc \
+      --root . \
       --device model/framework/laptop-13-amd-ryzen-7040 \
       --path hardware.network.wifi.primary.driver
 
@@ -83,12 +91,16 @@ ODDC exports one generic NixOS module. Device-specific Nix modules are avoided;
 quirk and capability adapters consume semantic resolved data rather than
 matching vendor, model, or quirk IDs.
 
+    # flake.nix
+    inputs.oddc.url = "github:JadeOpenServices/oddc";
+
+    # configuration
     {
       imports = [ inputs.oddc.nixosModules.default ];
       oddc.device = "model/framework/laptop-13-amd-ryzen-7040";
     }
 
-The installer selects a model only when the machine's DMI identity matches one;
+A consumer selects a model only when the machine's DMI identity matches one;
 a machine without a match gets no model and so none of its capabilities, such as
 fan control. Units that drive hardware, like fan control, also skip virtual
 machines, which may inherit a host's model.
@@ -104,8 +116,26 @@ module.
 
 ## Evidence
 
-Real-machine observations live under `oddc/evidence/` as sanitized,
+Real-machine observations live under `evidence/` as sanitized,
 append-only validation records. Evidence records what was observed and tested;
 it validates canonical knowledge but does not become another hardware catalog.
 Serial numbers, MAC addresses, usernames, hostnames, and other identifying
 machine data must not be stored in public evidence.
+
+## Consumers
+
+ODDC knows nothing about the systems that consume it. A consumer imports the
+NixOS module or the Go package, selects a model, and supplies its own
+behavior through options such as `oddc.fanControl.controller.command`.
+
+GjallarOS vendors ODDC as a git
+subtree so its installer works offline.
+
+## Tracking
+
+Work items live in the ODDC project on plane.openjade.de. Commits reference
+them as `ODDC-N`.
+
+## License
+
+Apache-2.0, see [LICENSE](LICENSE).

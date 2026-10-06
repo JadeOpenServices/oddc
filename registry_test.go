@@ -11,7 +11,7 @@ func repositoryODDCRoot(t *testing.T) string {
 	t.Helper()
 
 	root, err := filepath.Abs(
-		filepath.Join("..", "..", "oddc"),
+		".",
 	)
 	if err != nil {
 		t.Fatal(err)

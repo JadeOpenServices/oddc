@@ -136,7 +136,7 @@ The target catalog is an entity registry.
 
 Conceptually:
 
-    oddc/catalog/
+    catalog/
     ├── vendors/
     ├── families/
     ├── models/
