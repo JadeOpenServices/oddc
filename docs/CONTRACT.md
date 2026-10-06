@@ -9,7 +9,7 @@ service that mirrors this repository.
   formats. A change an existing reader cannot read gets a new
   `apiVersion`.
 - `schemaVersion` (`2.0.0`) versions evidence records and the JSON results
-  of `oddc validate --json` and `oddc index`.
+  of `oddc validate --json`, `oddc index` and `oddc classify`.
 
 Both appear in every JSON result. A consumer refuses versions it does not
 know instead of guessing.
@@ -31,11 +31,21 @@ reused for something else. Renaming or removing an ID is a breaking change.
   generated from the catalog and never committed.
 - `oddc validate --root DIR --json`: whether a revision is valid, with
   its errors. Exits non-zero when it is not.
+- `oddc classify --root DIR [--sys DIR | --facts FILE]`: which model a
+  machine's facts match and why. `result` is `matched` (with `model`),
+  `ambiguous` (with the tied models) or `none`; it exits non-zero unless
+  exactly one model matches. `candidates` lists every model at least one
+  DMI field agrees with: each declared field with its expected and actual
+  values, and each component with its bus, device ID and `present`
+  (`null` when the facts do not cover that bus). Only DMI fields choose
+  the model; components explain it. Facts are
+  `{"identity": {...}, "devices": {"pci": ["vvvv:pppp"], "usb": [...], "hid": [...]}}`
+  with the identity fields of `MachineIdentity`.
 - The files themselves, described by `schemas/entity.schema.json`,
   `schemas/evidence.schema.json` and `schemas/overlay.schema.json`.
 - In Go, package `github.com/JadeOpenServices/oddc`: `LoadRegistry`,
   `Validate`, `Registry.Index`, `Registry.ResolveModel`,
-  `Registry.MatchModel` and `Fetch`.
+  `Registry.MatchModel`, `Registry.Classify`, `ReadFacts` and `Fetch`.
 
 Resolved values sit under stable named paths below `hardware`,
 `capabilities` and `policy`; `oddc explain` names the owner of each.
