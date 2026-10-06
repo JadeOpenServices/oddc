@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/JadeOpenServices/oddc"
 )
@@ -67,7 +68,7 @@ func loadOverlays(
 func run(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"usage: oddcctl <validate|resolve|explain>",
+			"usage: oddcctl <validate|list|resolve|explain>",
 		)
 	}
 
@@ -88,6 +89,33 @@ func run(args []string) error {
 			"PASS: ODDC v2 entity registry valid (%d entities)\n",
 			len(registry.Entities),
 		)
+
+		return nil
+
+	case "list":
+		kind := value(
+			args,
+			"--kind",
+			"",
+		)
+
+		ids := make([]string, 0, len(registry.Entities))
+		for id, entity := range registry.Entities {
+			if kind == "" || entity.Kind == kind {
+				ids = append(ids, id)
+			}
+		}
+		sort.Strings(ids)
+
+		for _, id := range ids {
+			entity := registry.Entities[id]
+			fmt.Printf(
+				"%s\t%s\t%s\n",
+				id,
+				entity.Kind,
+				entity.Metadata.Name,
+			)
+		}
 
 		return nil
 

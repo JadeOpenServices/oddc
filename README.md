@@ -72,6 +72,10 @@ Validate the registry and evidence:
 
     oddcctl validate --root .
 
+List entities, optionally by kind:
+
+    oddcctl list --root . --kind DeviceModel
+
 Resolve a model:
 
     oddcctl resolve \
