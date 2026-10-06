@@ -8,7 +8,10 @@
 # model's reference closure in canonical layout, its evidence, the host
 # overlay, and the resolved view, so `oddc` works offline.
 let
-  registry = import ../../lib/registry.nix { inherit lib; };
+  registry = import ../../lib/registry.nix {
+    inherit lib;
+    root = config.oddc.catalog;
+  };
 
   cfg = config.oddc;
 
