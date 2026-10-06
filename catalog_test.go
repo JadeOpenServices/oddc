@@ -406,3 +406,39 @@ func TestCatalogValidates(t *testing.T) {
 		t.Errorf("evidence = %d, want %d", result.Evidence, len(evidenceFiles(t)))
 	}
 }
+
+// The index names every entity at the file that holds it, and every
+// evidence record under its model.
+func TestCatalogIndex(t *testing.T) {
+	registry := catalog(t)
+
+	index, err := registry.Index("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(index.Entities) != len(registry.Entities) {
+		t.Fatalf("index has %d entities, want %d", len(index.Entities), len(registry.Entities))
+	}
+
+	var evidence []string
+	for id, entry := range index.Entities {
+		entity, err := decodeEntity(filepath.FromSlash(entry.Path))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if entity.Metadata.ID != id || entity.Kind != entry.Kind {
+			t.Errorf("%s: index points at %s holding %s", id, entry.Path, entity.Metadata.ID)
+		}
+		for _, file := range entry.Evidence {
+			evidence = append(evidence, filepath.FromSlash(file))
+		}
+	}
+
+	sort.Strings(evidence)
+	want := evidenceFiles(t)
+	sort.Strings(want)
+	if strings.Join(evidence, ",") != strings.Join(want, ",") {
+		t.Errorf("index evidence %v, want %v", evidence, want)
+	}
+}
