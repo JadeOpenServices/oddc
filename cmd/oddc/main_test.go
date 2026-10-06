@@ -301,3 +301,14 @@ func mustIdentity(t *testing.T, registry *oddc.Registry, model string) oddc.Mach
 
 	return identity
 }
+
+func TestValidateExitsNonZeroOnFailure(t *testing.T) {
+	for _, asJSON := range []bool{false, true} {
+		if err := runValidate(repository, asJSON); err != nil {
+			t.Errorf("json=%v: catalog refused: %v", asJSON, err)
+		}
+		if err := runValidate(t.TempDir(), asJSON); err == nil {
+			t.Errorf("json=%v: empty root passed", asJSON)
+		}
+	}
+}

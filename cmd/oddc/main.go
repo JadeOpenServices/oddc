@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/JadeOpenServices/oddc"
 )
@@ -175,20 +178,16 @@ func run(args []string) error {
 		".",
 	)
 
+	if args[0] == "validate" {
+		return runValidate(root, has(args, "--json"))
+	}
+
 	registry, err := oddc.LoadRegistry(root)
 	if err != nil {
 		return err
 	}
 
 	switch args[0] {
-	case "validate":
-		fmt.Printf(
-			"PASS: ODDC v2 entity registry valid (%d entities)\n",
-			len(registry.Entities),
-		)
-
-		return nil
-
 	case "list":
 		kind := value(
 			args,
@@ -324,6 +323,47 @@ func run(args []string) error {
 			args[0],
 		)
 	}
+}
+
+// gitRevision is the commit checked out at root, else fallback.
+func gitRevision(root, fallback string) string {
+	out, err := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
+	if err != nil {
+		return fallback
+	}
+
+	return strings.TrimSpace(string(out))
+}
+
+// runValidate fails when the catalog is invalid; with --json it prints the
+// full result either way.
+func runValidate(root string, asJSON bool) error {
+	result := oddc.Validate(root)
+	if result.Revision == "local" {
+		result.Revision = gitRevision(root, result.Revision)
+	}
+
+	if asJSON {
+		data, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(data))
+	}
+
+	if !result.Valid {
+		return errors.New(strings.Join(result.Errors, "; "))
+	}
+
+	if !asJSON {
+		fmt.Printf(
+			"PASS: ODDC v2 entity registry valid (%d entities, %d evidence)\n",
+			result.Entities,
+			result.Evidence,
+		)
+	}
+
+	return nil
 }
 
 func main() {

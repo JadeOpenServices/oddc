@@ -70,6 +70,14 @@ On a deployed system it defaults to `/etc/oddc` and the deployed model:
     oddc explain --path hardware.network.wifi.primary.driver
     oddc validate
 
+`oddc validate --json` prints the result as JSON (`valid`, `errors`,
+entity and evidence counts, `apiVersion`, `schemaVersion`, `revision`)
+and, like plain `validate`, exits non-zero when the catalog is invalid.
+To check any revision in CI, use the validator from that same revision:
+
+    git -C oddc checkout REV
+    nix run github:JadeOpenServices/oddc/REV -- validate --root oddc --json
+
 For users:
 
     oddc detect                  # which model matches this machine
