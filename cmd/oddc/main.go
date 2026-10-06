@@ -150,7 +150,7 @@ func withDefaults(
 func run(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"usage: oddc <detect|setup|doctor|update|validate|list|resolve|explain>",
+			"usage: oddc <detect|setup|fetch|doctor|update|validate|list|resolve|explain>",
 		)
 	}
 
@@ -159,6 +159,8 @@ func run(args []string) error {
 		return runDetect(args)
 	case "setup":
 		return runSetup(args)
+	case "fetch":
+		return runFetch(args)
 	case "doctor":
 		return runDoctor(args)
 	case "update":

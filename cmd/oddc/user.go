@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/JadeOpenServices/oddc"
 )
@@ -24,37 +26,25 @@ func workspaceDir() string {
 	return filepath.Join(home, ".local", "share", "oddc")
 }
 
-// catalogRoot finds a full catalog: an explicit --root, the local
-// workspace, else the upstream channel fetched into the Nix store.
-func catalogRoot(args []string) (string, error) {
+// source finds the catalog: an explicit --root, the local workspace,
+// else GitHub at --rev or the --channel branch. Reading from GitHub
+// downloads only the files a command needs.
+func source(args []string) (oddc.Source, error) {
 	if root := value(args, "--root", ""); root != "" {
-		return root, nil
+		return oddc.DirSource{Root: root}, nil
 	}
 
 	if dir := workspaceDir(); exists(filepath.Join(dir, "catalog")) {
-		return dir, nil
+		return oddc.DirSource{Root: dir}, nil
 	}
 
-	ref := upstream
-	if channel := value(args, "--channel", "main"); channel != "main" {
-		ref += "/" + channel
-	}
-
-	output, err := exec.Command(
-		"nix", "flake", "prefetch", "--json", ref,
-	).Output()
-	if err != nil {
-		return "", fmt.Errorf("fetch catalog %s: %w", ref, err)
-	}
-
-	var prefetched struct {
-		StorePath string `json:"storePath"`
-	}
-	if err := json.Unmarshal(output, &prefetched); err != nil {
-		return "", err
-	}
-
-	return prefetched.StorePath, nil
+	return oddc.NewGitHubSource(
+		&http.Client{Timeout: time.Minute},
+		oddc.GitHubAPI,
+		oddc.GitHubRaw,
+		oddc.Repository,
+		value(args, "--rev", value(args, "--channel", "main")),
+	)
 }
 
 func describe(identity oddc.MachineIdentity) string {
@@ -67,33 +57,76 @@ func describe(identity oddc.MachineIdentity) string {
 	)
 }
 
-// detect matches this machine against a full catalog.
+func noMatch(identity oddc.MachineIdentity) error {
+	return fmt.Errorf(
+		"no ODDC model matches this machine (%s); "+
+			"add it with `oddc scaffold` and `oddc contribute`",
+		describe(identity),
+	)
+}
+
+// detect fetches this machine's model and loads it.
 func detect(args []string) (*oddc.Registry, string, error) {
-	root, err := catalogRoot(args)
+	src, err := source(args)
 	if err != nil {
 		return nil, "", err
 	}
 
-	registry, err := oddc.LoadRegistry(root)
+	dir, err := os.MkdirTemp("", "oddc-detect-")
 	if err != nil {
 		return nil, "", err
 	}
+	defer os.RemoveAll(dir)
 
 	identity := oddc.ReadIdentity(value(args, "--sys", "/sys"))
+	answer := filepath.Join(dir, "answer")
 
-	model, err := registry.MatchModel(identity)
+	model, err := oddc.Fetch(src, identity, answer)
 	if errors.Is(err, oddc.ErrNoModelMatch) {
-		return nil, "", fmt.Errorf(
-			"no ODDC model matches this machine (%s); "+
-				"add it with `oddc scaffold` and `oddc contribute`",
-			describe(identity),
-		)
+		return nil, "", noMatch(identity)
 	}
+	if err != nil {
+		return nil, "", err
+	}
+
+	registry, err := oddc.LoadRegistry(answer)
 	if err != nil {
 		return nil, "", err
 	}
 
 	return registry, model, nil
+}
+
+// runFetch writes only this machine's model, or the --device model, to
+// --out: its reference closure, its evidence and the ODDC revision.
+func runFetch(args []string) error {
+	out := value(args, "--out", "")
+	if out == "" {
+		return errors.New("--out is required")
+	}
+
+	src, err := source(args)
+	if err != nil {
+		return err
+	}
+
+	model := value(args, "--device", "")
+	if model != "" {
+		err = oddc.FetchModel(src, model, out)
+	} else {
+		identity := oddc.ReadIdentity(value(args, "--sys", "/sys"))
+
+		model, err = oddc.Fetch(src, identity, out)
+		if errors.Is(err, oddc.ErrNoModelMatch) {
+			return noMatch(identity)
+		}
+	}
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\t%s\n", model, src.Revision())
+	return nil
 }
 
 func runDetect(args []string) error {

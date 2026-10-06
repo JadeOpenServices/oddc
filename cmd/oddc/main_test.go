@@ -245,3 +245,59 @@ func TestDoctorWithoutDeploymentFails(t *testing.T) {
 		t.Fatal("doctor passed without a deployment")
 	}
 }
+
+func TestFetchEveryModel(t *testing.T) {
+	registry, models := catalog(t)
+
+	for _, model := range models {
+		for _, args := range [][]string{
+			{"--sys", sysfs(t, registry, model)},
+			{"--device", model},
+		} {
+			out := filepath.Join(t.TempDir(), "oddc")
+
+			if err := run(append([]string{"fetch", "--root", repository, "--out", out}, args...)); err != nil {
+				t.Fatalf("%s %v: %v", model, args, err)
+			}
+
+			answer, err := oddc.LoadRegistry(out)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := answer.MatchModel(mustIdentity(t, registry, model))
+			if err != nil || got != model {
+				t.Errorf("%s %v: answer matches %q, %v", model, args, got, err)
+			}
+			for id, entity := range answer.Entities {
+				if entity.Kind == "DeviceModel" && id != model {
+					t.Errorf("%s %v: answer carries %s", model, args, id)
+				}
+			}
+		}
+	}
+}
+
+func TestFetchUnknownMachineSuggestsScaffold(t *testing.T) {
+	registry, _ := catalog(t)
+	out := filepath.Join(t.TempDir(), "oddc")
+
+	err := run([]string{"fetch", "--root", repository, "--out", out, "--sys", sysfs(t, registry, "")})
+	if err == nil || !strings.Contains(err.Error(), "oddc scaffold") {
+		t.Fatalf("err = %v", err)
+	}
+	if _, err := os.Lstat(out); err == nil {
+		t.Errorf("unmatched fetch left %s", out)
+	}
+}
+
+func mustIdentity(t *testing.T, registry *oddc.Registry, model string) oddc.MachineIdentity {
+	t.Helper()
+
+	identity, err := registry.ModelIdentity(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return identity
+}
