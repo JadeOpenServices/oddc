@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Evidence struct {
@@ -90,6 +91,14 @@ func (r *Registry) validateEvidence() error {
 				return fmt.Errorf(
 					"%s has incomplete evidence metadata",
 					path,
+				)
+			}
+
+			if problems := evidenceProblems(evidence); len(problems) > 0 {
+				return fmt.Errorf(
+					"%s may identify a machine or person: %s",
+					path,
+					strings.Join(problems, "; "),
 				)
 			}
 

@@ -179,7 +179,7 @@ func run(args []string) error {
 	)
 
 	if args[0] == "validate" {
-		return runValidate(root, has(args, "--json"))
+		return runValidate(root, value(args, "--since", ""), has(args, "--json"))
 	}
 
 	registry, err := oddc.LoadRegistry(root)
@@ -358,11 +358,62 @@ func revision(root string) string {
 	return strings.TrimSpace(string(out))
 }
 
-// runValidate fails when the catalog is invalid; with --json it prints the
-// full result either way.
-func runValidate(root string, asJSON bool) error {
+// evidenceChanges lists evidence files that were changed or removed since
+// the commit where root's HEAD branched from since. Evidence is append-only:
+// only added files are allowed.
+func evidenceChanges(root, since string) ([]string, error) {
+	base, err := exec.Command("git", "-C", root, "merge-base", since, "HEAD").Output()
+	if err != nil {
+		return nil, fmt.Errorf("--since %s: no common commit with HEAD: %w", since, err)
+	}
+
+	out, err := exec.Command(
+		"git", "-C", root, "diff", "--name-status", "--no-renames",
+		strings.TrimSpace(string(base)), "--", "evidence",
+	).Output()
+	if err != nil {
+		return nil, fmt.Errorf("--since %s: %w", since, err)
+	}
+
+	var changes []string
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		status, file, ok := strings.Cut(line, "\t")
+		if !ok || status == "A" {
+			continue
+		}
+
+		verb := "changed"
+		if status == "D" {
+			verb = "removed"
+		}
+		changes = append(changes, fmt.Sprintf(
+			"%s %s since %s; evidence is append-only",
+			file,
+			verb,
+			since,
+		))
+	}
+
+	return changes, nil
+}
+
+// runValidate fails when the catalog is invalid or, with since, when
+// evidence was changed or removed since that revision; with --json it
+// prints the full result either way.
+func runValidate(root, since string, asJSON bool) error {
 	result := oddc.Validate(root)
 	result.Revision = revision(root)
+
+	if since != "" {
+		changes, err := evidenceChanges(root, since)
+		if err != nil {
+			changes = []string{err.Error()}
+		}
+		if len(changes) > 0 {
+			result.Valid = false
+			result.Errors = append(result.Errors, changes...)
+		}
+	}
 
 	if asJSON {
 		data, err := json.MarshalIndent(result, "", "  ")

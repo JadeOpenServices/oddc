@@ -80,6 +80,10 @@ To check any revision in CI, use the validator from that same revision:
     git -C oddc checkout REV
     nix run github:JadeOpenServices/oddc/REV -- validate --root oddc --json
 
+Evidence is append-only. `--since REV` also fails when an evidence file
+was changed or removed since the commit where HEAD branched from REV;
+CI runs it on every pull request against its base branch.
+
 For users:
 
     oddc detect                  # which model matches this machine

@@ -30,7 +30,9 @@ reused for something else. Renaming or removing an ID is a breaking change.
   the IDs it references and, for models, its evidence files. The index is
   generated from the catalog and never committed.
 - `oddc validate --root DIR --json`: whether a revision is valid, with
-  its errors. Exits non-zero when it is not.
+  its errors. Exits non-zero when it is not. `--since REV` also fails
+  when evidence was changed or removed since REV; evidence is append-only.
+  Valid evidence holds nothing that identifies a machine or a person.
 - `oddc classify --root DIR [--sys DIR | --facts FILE]`: which model a
   machine's facts match and why. `result` is `matched` (with `model`),
   `ambiguous` (with the tied models) or `none`; it exits non-zero unless

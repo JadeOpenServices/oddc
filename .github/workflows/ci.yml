@@ -7,5 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: cachix/install-nix-action@v31
       - run: nix flake check -L
+      # Evidence is append-only: a pull request may only add records.
+      - if: github.event_name == 'pull_request'
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: nix run . -- validate --root . --since "$BASE" --json
