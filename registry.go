@@ -1,6 +1,7 @@
 package oddc
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -132,26 +133,30 @@ func EntityPath(root, id string) string {
 }
 
 func decodeEntity(path string) (Entity, error) {
-	file, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return Entity{}, err
 	}
-	defer file.Close()
 
-	decoder := json.NewDecoder(file)
+	return decodeEntityData(path, data)
+}
+
+// decodeEntityData decodes one entity document; name labels errors.
+func decodeEntityData(name string, data []byte) (Entity, error) {
+	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.UseNumber()
 	decoder.DisallowUnknownFields()
 
 	var entity Entity
 
 	if err := decoder.Decode(&entity); err != nil {
-		return Entity{}, fmt.Errorf("decode %s: %w", path, err)
+		return Entity{}, fmt.Errorf("decode %s: %w", name, err)
 	}
 
 	var extra any
 	if err := decoder.Decode(&extra); err != io.EOF {
 		if err == nil {
-			return Entity{}, fmt.Errorf("%s has trailing JSON", path)
+			return Entity{}, fmt.Errorf("%s has trailing JSON", name)
 		}
 		return Entity{}, err
 	}

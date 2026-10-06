@@ -36,56 +36,8 @@ func (r *Registry) MatchModel(identity MachineIdentity) (string, error) {
 			return "", err
 		}
 
-		if formFactor, ok := stringAt(
-			resolved.Resolved,
-			"class.formFactor",
-		); ok && strings.TrimSpace(identity.FormFactor) != "" &&
-			!equalIdentity(formFactor, identity.FormFactor) {
-			continue
-		}
-
-		checks := []struct {
-			path   string
-			actual string
-		}{
-			{"identity.dmi.systemVendor", identity.SysVendor},
-			{"identity.dmi.productName", identity.ProductName},
-			{"identity.dmi.productVersion", identity.ProductVersion},
-			{"identity.dmi.boardVendor", identity.BoardVendor},
-			{"identity.dmi.boardName", identity.BoardName},
-			{"identity.dmi.boardVersion", identity.BoardVersion},
-		}
-
-		score := 0
-		matched := true
-
-		for _, check := range checks {
-			expected := stringsAt(
-				resolved.Resolved,
-				check.path,
-			)
-
-			if len(expected) == 0 {
-				continue
-			}
-
-			found := false
-			for _, value := range expected {
-				if equalIdentity(value, check.actual) {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				matched = false
-				break
-			}
-
-			score++
-		}
-
-		if !matched || score == 0 {
+		score, matched := identityScore(resolved.Resolved, identity)
+		if !matched {
 			continue
 		}
 
@@ -113,6 +65,57 @@ func (r *Registry) MatchModel(identity MachineIdentity) (string, error) {
 			strings.Join(best, ", "),
 		)
 	}
+}
+
+// identityScore counts the DMI fields a model's data declares and the
+// machine reports. A model matches when it declares at least one field and
+// none contradicts the machine.
+func identityScore(data map[string]any, identity MachineIdentity) (int, bool) {
+	if formFactor, ok := stringAt(
+		data,
+		"class.formFactor",
+	); ok && strings.TrimSpace(identity.FormFactor) != "" &&
+		!equalIdentity(formFactor, identity.FormFactor) {
+		return 0, false
+	}
+
+	checks := []struct {
+		path   string
+		actual string
+	}{
+		{"identity.dmi.systemVendor", identity.SysVendor},
+		{"identity.dmi.productName", identity.ProductName},
+		{"identity.dmi.productVersion", identity.ProductVersion},
+		{"identity.dmi.boardVendor", identity.BoardVendor},
+		{"identity.dmi.boardName", identity.BoardName},
+		{"identity.dmi.boardVersion", identity.BoardVersion},
+	}
+
+	score := 0
+
+	for _, check := range checks {
+		expected := stringsAt(data, check.path)
+
+		if len(expected) == 0 {
+			continue
+		}
+
+		found := false
+		for _, value := range expected {
+			if equalIdentity(value, check.actual) {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return 0, false
+		}
+
+		score++
+	}
+
+	return score, score > 0
 }
 
 func (r *Registry) modelIDs() []string {

@@ -74,11 +74,16 @@ For users:
 
     oddc detect                  # which model matches this machine
     oddc setup                   # NixOS snippet for the matching model
+    oddc fetch --out DIR         # only this machine's model, for installers
     oddc doctor                  # deployed model still matches the hardware?
     oddc update [--switch]       # update the oddc flake input, then rebuild
 
-`detect` and `setup` need the full catalog: the local workspace when
-present, else `main` (or `--channel staging`) fetched into the Nix store.
+`detect`, `setup` and `fetch` read the local workspace when present,
+else GitHub at `main` (`--channel staging`, or `--rev COMMIT`). From GitHub
+they download only the model files, then only the matched model's
+reference closure and evidence; nothing else of the catalog leaves
+GitHub. `fetch` writes that answer to `--out` in canonical layout with the
+`revision` it came from; `--device ID` fetches a named model instead.
 `doctor` works offline on `/etc/oddc`. `update` defaults to the flake in
 `/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`.
 
