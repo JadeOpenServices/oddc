@@ -153,7 +153,7 @@ func withDefaults(
 func run(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"usage: oddc <detect|setup|fetch|doctor|update|validate|list|index|resolve|explain>",
+			"usage: oddc <detect|setup|fetch|doctor|update|validate|list|index|classify|resolve|explain>",
 		)
 	}
 
@@ -228,6 +228,9 @@ func run(args []string) error {
 
 		fmt.Println(string(data))
 		return nil
+
+	case "classify":
+		return runClassify(registry, args)
 
 	case "resolve", "explain":
 		modelID := value(
@@ -382,6 +385,49 @@ func runValidate(root string, asJSON bool) error {
 	}
 
 	return nil
+}
+
+// runClassify prints which model the facts match and why, from --facts
+// FILE or else the sysfs below --sys. It fails unless exactly one model
+// matches.
+func runClassify(registry *oddc.Registry, args []string) error {
+	facts := oddc.ReadFacts(value(args, "--sys", "/sys"))
+
+	if path := value(args, "--facts", ""); path != "" {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		facts = oddc.Facts{}
+		if err := json.Unmarshal(data, &facts); err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
+	}
+
+	classification, err := registry.Classify(facts)
+	if err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(classification, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(data))
+
+	switch classification.Result {
+	case oddc.ResultMatched:
+		return nil
+	case oddc.ResultAmbiguous:
+		return fmt.Errorf(
+			"%w: %s",
+			oddc.ErrAmbiguousModelMatch,
+			strings.Join(classification.Ambiguous, ", "),
+		)
+	default:
+		return oddc.ErrNoModelMatch
+	}
 }
 
 func main() {

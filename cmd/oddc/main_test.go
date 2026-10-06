@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -310,5 +311,42 @@ func TestValidateExitsNonZeroOnFailure(t *testing.T) {
 		if err := runValidate(t.TempDir(), asJSON); err == nil {
 			t.Errorf("json=%v: empty root passed", asJSON)
 		}
+	}
+}
+
+func TestClassifyEveryModel(t *testing.T) {
+	registry, models := catalog(t)
+
+	for _, model := range models {
+		facts, err := registry.ModelFacts(model)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		data, err := json.Marshal(facts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join(t.TempDir(), "facts.json")
+		write(t, path, data)
+
+		if err := runClassify(registry, []string{"classify", "--facts", path}); err != nil {
+			t.Errorf("%s: %v", model, err)
+		}
+
+		sys := sysfs(t, registry, model)
+		if err := runClassify(registry, []string{"classify", "--sys", sys}); err != nil {
+			t.Errorf("%s from sysfs: %v", model, err)
+		}
+	}
+}
+
+func TestClassifyUnknownMachineFails(t *testing.T) {
+	registry, _ := catalog(t)
+	sys := sysfs(t, registry, "")
+
+	err := runClassify(registry, []string{"classify", "--sys", sys})
+	if !errors.Is(err, oddc.ErrNoModelMatch) {
+		t.Fatalf("err = %v", err)
 	}
 }
