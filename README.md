@@ -118,6 +118,19 @@ Machine-local policy changes belong under `oddc.overrides`, for example:
 Adding another ordinary device model must not require another public NixOS
 module.
 
+The full catalog stays in the repository and in installers that select a
+model. A deployed system receives only the selected model under `/etc/oddc`:
+the model's reference closure in canonical layout, its evidence, the host
+overlay (`host-overlay.json`, when `oddc.overrides` is set) and
+`resolved.json`. Other models never reach the system closure. Inspect it with:
+
+    oddcctl list --root /etc/oddc
+    oddcctl resolve --root /etc/oddc \
+      --device model/framework/laptop-13-amd-ryzen-7040 \
+      --host /etc/oddc/host-overlay.json
+
+Set `oddc.deploy.enable = false` to deploy nothing.
+
 ## Evidence
 
 Real-machine observations live under `evidence/` as sanitized,
