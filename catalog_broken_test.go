@@ -87,6 +87,10 @@ func expectRefused(t *testing.T, root, what string) {
 	if _, err := LoadRegistry(root); err == nil {
 		t.Errorf("registry accepted %s", what)
 	}
+
+	if result := Validate(root); result.Valid || len(result.Errors) == 0 {
+		t.Errorf("validation passed %s: %+v", what, result)
+	}
 }
 
 func TestBrokenCatalogMissingReference(t *testing.T) {

@@ -391,3 +391,18 @@ func TestCatalogEvidenceIdentityPass(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCatalogValidates(t *testing.T) {
+	registry := catalog(t)
+
+	result := Validate(".")
+	if !result.Valid || len(result.Errors) != 0 {
+		t.Fatalf("catalog invalid: %+v", result)
+	}
+	if result.Entities != len(registry.Entities) {
+		t.Errorf("entities = %d, want %d", result.Entities, len(registry.Entities))
+	}
+	if result.Evidence != len(evidenceFiles(t)) {
+		t.Errorf("evidence = %d, want %d", result.Evidence, len(evidenceFiles(t)))
+	}
+}
