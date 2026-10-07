@@ -580,6 +580,11 @@ model is tested by being in the catalog. Tests never repeat device facts and
 never use invented devices; tests of rejected input break a temporary copy of
 the real catalog.
 
+Go tests live under `tests/`, one folder per package they test, and reach the
+catalog through `tests/fixture`. A new `oddc` command goes in the
+`internal/` folder for its use (`system`, `catalog` or `contribute`) and is
+listed in `cmd/oddc`; keep each Go file to one concern, under about 200 lines.
+
 Additional component entities are added only for hardware not already represented.
 
 Additional Nix is exceptional.

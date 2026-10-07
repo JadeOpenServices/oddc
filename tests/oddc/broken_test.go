@@ -1,12 +1,13 @@
-package oddc
+package oddc_test
 
 import (
 	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
+
+	. "github.com/JadeOpenServices/oddc/pkg/oddc"
 )
 
 // These tests break a copy of the real catalog in one place and expect the
@@ -44,15 +45,10 @@ func copyCatalog(t *testing.T) string {
 }
 
 // entityPath finds the copied file of an entity.
-func entityPath(t *testing.T, registry *Registry, root, id string) string {
+func entityPath(t *testing.T, root, id string) string {
 	t.Helper()
 
-	relative, err := filepath.Rel(registry.Root, registry.paths[id])
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return filepath.Join(root, relative)
+	return EntityPath(filepath.Join(root, "catalog", "entities"), id)
 }
 
 // editEntity rewrites the copied file of an entity.
@@ -87,6 +83,10 @@ func expectRefused(t *testing.T, root, what string) {
 	if _, err := LoadRegistry(root); err == nil {
 		t.Errorf("registry accepted %s", what)
 	}
+
+	if result := Validate(root); result.Valid || len(result.Errors) == 0 {
+		t.Errorf("validation passed %s: %+v", what, result)
+	}
 }
 
 func TestBrokenCatalogMissingReference(t *testing.T) {
@@ -95,7 +95,7 @@ func TestBrokenCatalogMissingReference(t *testing.T) {
 	for _, id := range models(t, registry) {
 		for _, ref := range collectRefs(registry.Entities[id].Data) {
 			root := copyCatalog(t)
-			if err := os.Remove(entityPath(t, registry, root, ref)); err != nil {
+			if err := os.Remove(entityPath(t, root, ref)); err != nil {
 				t.Fatal(err)
 			}
 
@@ -111,7 +111,7 @@ func TestBrokenCatalogReferenceCycle(t *testing.T) {
 		for _, ref := range collectRefs(registry.Entities[id].Data) {
 			root := copyCatalog(t)
 
-			editEntity(t, entityPath(t, registry, root, ref), func(document map[string]any) {
+			editEntity(t, entityPath(t, root, ref), func(document map[string]any) {
 				data := document["data"].(map[string]any)
 				data["cycle"] = map[string]any{"ref": id}
 			})
@@ -127,7 +127,7 @@ func TestBrokenCatalogPositionalData(t *testing.T) {
 	for _, id := range models(t, registry) {
 		root := copyCatalog(t)
 
-		editEntity(t, entityPath(t, registry, root, id), func(document map[string]any) {
+		editEntity(t, entityPath(t, root, id), func(document map[string]any) {
 			data := document["data"].(map[string]any)
 			for key, value := range data {
 				data[key] = []any{value}
@@ -146,9 +146,9 @@ func TestBrokenCatalogMisplacedEntity(t *testing.T) {
 	for _, id := range models(t, registry) {
 		for _, ref := range collectRefs(registry.Entities[id].Data) {
 			root := copyCatalog(t)
-			path := entityPath(t, registry, root, id)
+			path := entityPath(t, root, id)
 
-			moved := filepath.Join(filepath.Dir(entityPath(t, registry, root, ref)), filepath.Base(path))
+			moved := filepath.Join(filepath.Dir(entityPath(t, root, ref)), filepath.Base(path))
 			if err := os.Rename(path, moved); err != nil {
 				t.Fatal(err)
 			}
@@ -158,75 +158,24 @@ func TestBrokenCatalogMisplacedEntity(t *testing.T) {
 	}
 }
 
-// evidenceFiles returns every real evidence record.
-func evidenceFiles(t *testing.T) []string {
-	t.Helper()
-
-	var files []string
-	err := filepath.WalkDir("evidence", func(path string, entry fs.DirEntry, err error) error {
-		if err == nil && !entry.IsDir() && filepath.Ext(path) == ".json" {
-			files = append(files, path)
-		}
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(files) == 0 {
-		t.Fatal("catalog has no evidence")
-	}
-
-	return files
-}
-
-// Evidence lives below the model it is about.
-func TestBrokenCatalogMisplacedEvidence(t *testing.T) {
+// IDs are API: an ID outside the stable form is refused even when the
+// file sits at its address.
+func TestBrokenCatalogMalformedID(t *testing.T) {
 	registry := catalog(t)
 
-	for _, path := range evidenceFiles(t) {
-		for _, other := range models(t, registry) {
-			if strings.HasPrefix(path, filepath.Join("evidence", filepath.FromSlash(other))+string(filepath.Separator)) {
-				continue
-			}
-
-			root := copyCatalog(t)
-			target := filepath.Join(root, "evidence", filepath.FromSlash(other), filepath.Base(path))
-			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-				t.Fatal(err)
-			}
-			if err := os.Rename(filepath.Join(root, path), target); err != nil {
-				t.Fatal(err)
-			}
-
-			expectRefused(t, root, path+" stored below "+other)
-		}
-	}
-}
-
-// Evidence must name a model, not any other entity, even when stored
-// below that entity.
-func TestBrokenCatalogEvidenceForNonModel(t *testing.T) {
-	registry := catalog(t)
-
-	for _, path := range evidenceFiles(t) {
+	for _, id := range models(t, registry) {
 		root := copyCatalog(t)
+		path := entityPath(t, root, id)
+		bad := id + "--old"
 
-		var model, component string
-		editEntity(t, filepath.Join(root, path), func(document map[string]any) {
-			model = document["deviceId"].(string)
-			component = collectRefs(registry.Entities[model].Data)[0]
-			document["deviceId"] = component
+		editEntity(t, path, func(document map[string]any) {
+			document["metadata"].(map[string]any)["id"] = bad
 		})
-
-		target := filepath.Join(root, "evidence", filepath.FromSlash(component), filepath.Base(path))
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.Rename(filepath.Join(root, path), target); err != nil {
+		target := EntityPath(filepath.Join(root, "catalog", "entities"), bad)
+		if err := os.Rename(path, target); err != nil {
 			t.Fatal(err)
 		}
 
-		expectRefused(t, root, path+" pointing at "+component+" of "+model)
+		expectRefused(t, root, "ID "+bad)
 	}
 }

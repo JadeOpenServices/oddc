@@ -1,133 +1,58 @@
 package oddc
 
 import (
-	"errors"
-	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 )
 
-var (
-	ErrNoModelMatch        = errors.New("no ODDC model matched")
-	ErrAmbiguousModelMatch = errors.New("ambiguous ODDC model match")
-)
-
-type MachineIdentity struct {
-	FormFactor     string
-	SysVendor      string
-	ProductName    string
-	ProductVersion string
-	BoardVendor    string
-	BoardName      string
-	BoardVersion   string
-}
-
-func (r *Registry) MatchModel(identity MachineIdentity) (string, error) {
-	ids := append([]string(nil), r.modelIDs()...)
-	sort.Strings(ids)
-
-	bestScore := -1
-	var best []string
-
-	for _, id := range ids {
-		resolved, err := r.ResolveEntity(id)
-		if err != nil {
-			return "", err
-		}
-
-		score, matched := identityScore(resolved.Resolved, identity)
-		if !matched {
-			continue
-		}
-
-		switch {
-		case score > bestScore:
-			bestScore = score
-			best = []string{id}
-
-		case score == bestScore:
-			best = append(best, id)
-		}
-	}
-
-	switch len(best) {
-	case 0:
-		return "", ErrNoModelMatch
-
-	case 1:
-		return best[0], nil
-
-	default:
-		return "", fmt.Errorf(
-			"%w: %s",
-			ErrAmbiguousModelMatch,
-			strings.Join(best, ", "),
+// ReadIdentity reads a machine's identity from sysfs below sysRoot,
+// normally "/sys". Missing values stay empty.
+func ReadIdentity(sysRoot string) MachineIdentity {
+	dmi := func(name string) string {
+		data, err := os.ReadFile(
+			filepath.Join(sysRoot, "class", "dmi", "id", name),
 		)
+		if err != nil {
+			return ""
+		}
+
+		return strings.TrimSpace(string(data))
+	}
+
+	return MachineIdentity{
+		FormFactor:     formFactor(sysRoot, dmi("chassis_type")),
+		SysVendor:      dmi("sys_vendor"),
+		ProductName:    dmi("product_name"),
+		ProductVersion: dmi("product_version"),
+		BoardVendor:    dmi("board_vendor"),
+		BoardName:      dmi("board_name"),
+		BoardVersion:   dmi("board_version"),
 	}
 }
 
-// identityScore counts the DMI fields a model's data declares and the
-// machine reports. A model matches when it declares at least one field and
-// none contradicts the machine.
-func identityScore(data map[string]any, identity MachineIdentity) (int, bool) {
-	if formFactor, ok := stringAt(
-		data,
-		"class.formFactor",
-	); ok && strings.TrimSpace(identity.FormFactor) != "" &&
-		!equalIdentity(formFactor, identity.FormFactor) {
-		return 0, false
+// formFactor prefers a battery as evidence of a laptop, then the SMBIOS
+// chassis type.
+func formFactor(sysRoot, chassisType string) string {
+	batteries, _ := filepath.Glob(
+		filepath.Join(sysRoot, "class", "power_supply", "BAT*"),
+	)
+	if len(batteries) > 0 {
+		return "laptop"
 	}
 
-	checks := []struct {
-		path   string
-		actual string
-	}{
-		{"identity.dmi.systemVendor", identity.SysVendor},
-		{"identity.dmi.productName", identity.ProductName},
-		{"identity.dmi.productVersion", identity.ProductVersion},
-		{"identity.dmi.boardVendor", identity.BoardVendor},
-		{"identity.dmi.boardName", identity.BoardName},
-		{"identity.dmi.boardVersion", identity.BoardVersion},
+	switch chassisType {
+	case "8", "9", "10", "11", "14", "30", "31", "32":
+		return "laptop"
+
+	case "3", "4", "5", "6", "7", "13", "15", "16", "17", "18", "19",
+		"20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
+		"33", "34", "35", "36":
+		return "desktop"
 	}
 
-	score := 0
-
-	for _, check := range checks {
-		expected := stringsAt(data, check.path)
-
-		if len(expected) == 0 {
-			continue
-		}
-
-		found := false
-		for _, value := range expected {
-			if equalIdentity(value, check.actual) {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			return 0, false
-		}
-
-		score++
-	}
-
-	return score, score > 0
-}
-
-func (r *Registry) modelIDs() []string {
-	result := make([]string, 0)
-
-	for id, entity := range r.Entities {
-		if entity.Kind == "DeviceModel" {
-			result = append(result, id)
-		}
-	}
-
-	return result
+	return ""
 }
 
 func stringsAt(root map[string]any, path string) []string {

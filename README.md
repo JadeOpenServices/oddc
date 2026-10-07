@@ -9,7 +9,8 @@ Its central rule is:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before changing catalog data and
 [docs/WORKFLOW.md](docs/WORKFLOW.md) for channels, contribution rules and
-the `oddc` command.
+the `oddc` command. [docs/CONTRACT.md](docs/CONTRACT.md) says what
+consumers outside Nix can rely on.
 
 ## Canonical storage
 
@@ -60,13 +61,29 @@ adapters implement only the generic semantic behavior.
 
 Use `oddc explain` to inspect the final owner and override history.
 
+## Layout
+
+    catalog/     entities: classes, vendors, families, components, models, quirks
+    evidence/    append-only records of what was observed on real machines
+    schemas/     JSON schemas for entities and evidence
+    templates/   starting points for new entities
+    nixos/       the NixOS module and its capability and quirk modules
+    lib/         Nix functions that load and resolve the catalog
+    checks/      flake checks
+    pkg/oddc/    the Go library: load, validate, resolve, classify, fetch
+    cmd/oddc/    the `oddc` command, which only dispatches to internal/
+    internal/    the commands by use: system, catalog, contribute, and the
+                 cli helpers they share
+    tests/       Go tests by package, on a shared fixture of this catalog
+    docs/        workflow, consumer contract, releases
+
 ## Install
 
     nix run github:JadeOpenServices/oddc -- validate --root .
 
 or, as a Go library:
 
-    go get github.com/JadeOpenServices/oddc
+    go get github.com/JadeOpenServices/oddc/pkg/oddc
 
 ## CLI
 
@@ -79,6 +96,10 @@ On a deployed system, check and update it:
 
     oddc doctor
     oddc update --switch
+
+Contributors can follow `staging` to get merged models before a release:
+
+    oddc update --stage staging --switch
 
 See [docs/WORKFLOW.md](docs/WORKFLOW.md) for every command.
 
@@ -152,7 +173,13 @@ Real-machine observations live under `evidence/` as sanitized,
 append-only validation records. Evidence records what was observed and tested;
 it validates canonical knowledge but does not become another hardware catalog.
 Serial numbers, MAC addresses, usernames, hostnames, and other identifying
-machine data must not be stored in public evidence.
+machine data must not be stored in public evidence. `oddc validate` refuses
+records that hold them: identifying keys anywhere in `environment`, values
+that look like a MAC or IP address, UUID, machine ID, e-mail address or home
+directory, an `observedAt` with a time of day, and `results` that are not
+short statuses such as `pass`. `oddc validate --since REV` also refuses
+evidence changed or removed since REV; pull requests are checked against
+their base branch.
 
 ## Consumers
 
@@ -163,10 +190,16 @@ behavior through options such as `oddc.fanControl.controller.command`.
 GjallarOS vendors ODDC as a git
 subtree so its installer works offline.
 
+## Releases
+
+Every merge to `main` is a release; consumers pin it by commit hash. See
+[docs/RELEASES.md](docs/RELEASES.md).
+
 ## Tracking
 
-Work items live in the ODDC project on plane.openjade.de. Commits reference
-them as `ODDC-N`.
+Work items live in the ODDC project on plane.openjade.de. See
+[docs/WORKFLOW.md](docs/WORKFLOW.md#maintainers) for how items, branches
+and commits fit together.
 
 ## License
 

@@ -1,329 +1,52 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
-	"sort"
+	"strings"
 
-	"github.com/JadeOpenServices/oddc"
+	"github.com/JadeOpenServices/oddc/internal/catalog"
+	"github.com/JadeOpenServices/oddc/internal/contribute"
+	"github.com/JadeOpenServices/oddc/internal/system"
 )
 
-func value(
-	args []string,
-	name string,
-	fallback string,
-) string {
-	for i := 0; i+1 < len(args); i++ {
-		if args[i] == name {
-			return args[i+1]
-		}
-	}
-
-	return fallback
-}
-
-func values(
-	args []string,
-	name string,
-) []string {
-	var result []string
-
-	for i := 0; i+1 < len(args); i++ {
-		if args[i] == name {
-			result = append(
-				result,
-				args[i+1],
-			)
-		}
-	}
-
-	return result
-}
-
-func loadOverlays(
-	paths []string,
-) ([]oddc.Overlay, error) {
-	result := make(
-		[]oddc.Overlay,
-		0,
-		len(paths),
-	)
-
-	for _, path := range paths {
-		overlay, err := oddc.ReadOverlay(path)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(
-			result,
-			overlay,
-		)
-	}
-
-	return result, nil
-}
-
-// systemRoot is where the NixOS module deploys the selected model.
-const systemRoot = "/etc/oddc"
-
-func has(
-	args []string,
-	name string,
-) bool {
-	for _, arg := range args {
-		if arg == name {
-			return true
-		}
-	}
-
-	return false
-}
-
-func exists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
-// deployedModel returns the model a deployed root was built for, or "".
-func deployedModel(root string) string {
-	data, err := os.ReadFile(
-		filepath.Join(root, "resolved.json"),
-	)
-	if err != nil {
-		return ""
-	}
-
-	var resolved struct {
-		Model struct {
-			ID string `json:"id"`
-		} `json:"model"`
-	}
-	if json.Unmarshal(data, &resolved) != nil {
-		return ""
-	}
-
-	return resolved.Model.ID
-}
-
-// withDefaults completes args for a deployed system: the root defaults to
-// the system root when it holds a deployment, else the working directory;
-// resolve and explain default to the deployed model and its host overlay.
-func withDefaults(
-	args []string,
-	system string,
-) []string {
-	result := append([]string{}, args...)
-
-	if !has(result, "--root") {
-		root := "."
-		if deployedModel(system) != "" {
-			root = system
-		}
-
-		result = append(result, "--root", root)
-	}
-
-	if args[0] != "resolve" && args[0] != "explain" {
-		return result
-	}
-
-	root := value(result, "--root", ".")
-	model := deployedModel(root)
-
-	if !has(result, "--device") && model != "" {
-		result = append(result, "--device", model)
-	}
-
-	overlay := filepath.Join(root, "host-overlay.json")
-	if !has(result, "--host") &&
-		value(result, "--device", "") == model &&
-		exists(overlay) {
-		result = append(result, "--host", overlay)
-	}
-
-	return result
+// commands by name, in the order usage lists them: this machine, the
+// catalog, then contributing to it.
+var commands = []struct {
+	name string
+	run  func(args []string) error
+}{
+	{"detect", system.RunDetect},
+	{"setup", system.RunSetup},
+	{"fetch", system.RunFetch},
+	{"doctor", system.RunDoctor},
+	{"update", system.RunUpdate},
+	{"validate", catalog.Run},
+	{"list", catalog.Run},
+	{"index", catalog.Run},
+	{"classify", catalog.Run},
+	{"resolve", catalog.Run},
+	{"explain", catalog.Run},
+	{"workspace", contribute.RunWorkspace},
+	{"scaffold", contribute.RunScaffold},
+	{"evidence", contribute.RunEvidence},
+	{"contribute", contribute.RunContribute},
 }
 
 func run(args []string) error {
+	names := make([]string, 0, len(commands))
+	for _, command := range commands {
+		if len(args) > 0 && args[0] == command.name {
+			return command.run(args)
+		}
+		names = append(names, command.name)
+	}
+
 	if len(args) == 0 {
-		return fmt.Errorf(
-			"usage: oddc <detect|setup|fetch|doctor|update|validate|list|resolve|explain>",
-		)
+		return fmt.Errorf("usage: oddc <%s>", strings.Join(names, "|"))
 	}
 
-	switch args[0] {
-	case "detect":
-		return runDetect(args)
-	case "setup":
-		return runSetup(args)
-	case "fetch":
-		return runFetch(args)
-	case "doctor":
-		return runDoctor(args)
-	case "update":
-		return runUpdate(args)
-	}
-
-	args = withDefaults(args, systemRoot)
-
-	root := value(
-		args,
-		"--root",
-		".",
-	)
-
-	registry, err := oddc.LoadRegistry(root)
-	if err != nil {
-		return err
-	}
-
-	switch args[0] {
-	case "validate":
-		fmt.Printf(
-			"PASS: ODDC v2 entity registry valid (%d entities)\n",
-			len(registry.Entities),
-		)
-
-		return nil
-
-	case "list":
-		kind := value(
-			args,
-			"--kind",
-			"",
-		)
-
-		ids := make([]string, 0, len(registry.Entities))
-		for id, entity := range registry.Entities {
-			if kind == "" || entity.Kind == kind {
-				ids = append(ids, id)
-			}
-		}
-		sort.Strings(ids)
-
-		for _, id := range ids {
-			entity := registry.Entities[id]
-			fmt.Printf(
-				"%s\t%s\t%s\n",
-				id,
-				entity.Kind,
-				entity.Metadata.Name,
-			)
-		}
-
-		return nil
-
-	case "resolve", "explain":
-		modelID := value(
-			args,
-			"--device",
-			"",
-		)
-		if modelID == "" {
-			return fmt.Errorf(
-				"--device is required",
-			)
-		}
-
-		project, err := loadOverlays(
-			values(args, "--project"),
-		)
-		if err != nil {
-			return err
-		}
-
-		host, err := loadOverlays(
-			values(args, "--host"),
-		)
-		if err != nil {
-			return err
-		}
-
-		resolved, err := registry.ResolveModel(
-			modelID,
-			project,
-			host,
-		)
-		if err != nil {
-			return err
-		}
-
-		if args[0] == "resolve" {
-			data, err := json.MarshalIndent(
-				resolved,
-				"",
-				"  ",
-			)
-			if err != nil {
-				return err
-			}
-
-			fmt.Println(string(data))
-			return nil
-		}
-
-		path := value(
-			args,
-			"--path",
-			"",
-		)
-		if path == "" {
-			return fmt.Errorf(
-				"--path is required",
-			)
-		}
-
-		resolvedValue, exists := oddc.Lookup(
-			resolved.Resolved,
-			path,
-		)
-		if !exists {
-			return fmt.Errorf(
-				"unknown resolved path %q",
-				path,
-			)
-		}
-
-		fmt.Printf(
-			"path: %s\n",
-			path,
-		)
-		fmt.Printf(
-			"value: %v\n",
-			resolvedValue,
-		)
-
-		if current, exists :=
-			resolved.Provenance[path]; exists {
-			fmt.Printf(
-				"source: %s\n",
-				current.Source,
-			)
-		}
-
-		if history := resolved.History[path]; len(history) > 1 {
-			fmt.Println("history:")
-
-			for _, item := range history {
-				fmt.Printf(
-					"  %s -> %v\n",
-					item.Source,
-					item.Value,
-				)
-			}
-		}
-
-		return nil
-
-	default:
-		return fmt.Errorf(
-			"unknown command %q",
-			args[0],
-		)
-	}
+	return fmt.Errorf("unknown command %q", args[0])
 }
 
 func main() {
