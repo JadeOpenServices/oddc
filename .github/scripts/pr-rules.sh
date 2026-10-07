@@ -22,7 +22,7 @@ if [ "${1:-}" = models ]; then
   exit 0
 fi
 
-: "${REPO:?}" "${PR:?}" "${AUTHOR:?}" "${ASSOCIATION:?}" "${BASE:?}" "${HEAD_REPO:?}" "${HEAD_REF:?}"
+: "${REPO:?}" "${PR:?}" "${AUTHOR:?}" "${ASSOCIATION:?}" "${BASE:?}" "${HEAD_REPO:?}" "${HEAD_REF:?}" "${HEAD_SHA:?}"
 rules="https://github.com/$REPO/blob/staging/docs/WORKFLOW.md#contribution-rules"
 
 # Promotion is the only change main takes.
@@ -35,8 +35,9 @@ if [ "$BASE" != staging ]; then
   gh pr comment "$PR" --repo "$REPO" --body "Every pull request targets \`staging\`, so this one now does too. See $rules"
 fi
 
+member=false
 case "$ASSOCIATION" in
-  OWNER | MEMBER | COLLABORATOR) ;;
+  OWNER | MEMBER | COLLABORATOR) member=true ;;
   *)
     # One open pull request per contributor; the oldest one stays.
     older=$(gh pr list --repo "$REPO" --author "$AUTHOR" --state open --json number \
@@ -57,4 +58,28 @@ $(printf '%s\n' "$changed" | sed 's/^/- /')
 
 A pull request changes at most one, with the components, quirks and evidence it needs. Split it, one device each. See $rules"
   exit 1
+fi
+
+# Only maintainers and collaborators verify: anyone else's evidence may
+# not claim a passing status. Each file is read as data, never run.
+if [ "$member" = false ]; then
+  passing=$(gh api --paginate "repos/$REPO/pulls/$PR/files" \
+    --jq '.[] | select(.status != "removed") | .filename' |
+    { grep -E '^evidence/.*\.json$' || true; } |
+    while read -r file; do
+      status=$(gh api -H "Accept: application/vnd.github.raw" \
+        "repos/$REPO/contents/$file?ref=$HEAD_SHA" --jq '.status' 2>/dev/null || true)
+      case "$status" in
+        detected | documented) ;;
+        *) printf '%s (%s)\n' "$file" "${status:-unreadable}" ;;
+      esac
+    done)
+  if [ -n "$passing" ]; then
+    gh pr comment "$PR" --repo "$REPO" --body "Only maintainers and collaborators verify models, so evidence from this pull request may only be \`documented\` or \`detected\`:
+
+$(printf '%s\n' "$passing" | sed 's/^/- /')
+
+Record it with \`--status detected\`; a maintainer verifies the model. See $rules"
+    exit 1
+  fi
 fi

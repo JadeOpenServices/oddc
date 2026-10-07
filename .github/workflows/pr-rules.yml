@@ -23,4 +23,5 @@ jobs:
           BASE: ${{ github.event.pull_request.base.ref }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: .github/scripts/pr-rules.sh
