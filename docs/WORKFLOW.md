@@ -84,6 +84,15 @@ Evidence is append-only. `--since REV` also fails when an evidence file
 was changed or removed since the commit where HEAD branched from REV;
 CI runs it on every pull request against its base branch.
 
+To review a revision before taking it, list what changed and of what kind:
+
+    oddc changes --from REV [--to REV] [--json]
+
+Each changed path is classified as `data` (catalog/), `evidence`,
+`schema`, `nix`, `go`, `docs` or `other`, with its git status; a changed
+or removed evidence file is flagged, since evidence is append-only. `--to`
+defaults to HEAD, and `--json` gives both revisions as full commits.
+
 For users:
 
     oddc detect                  # which model matches this machine
