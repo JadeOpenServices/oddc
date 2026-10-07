@@ -50,9 +50,14 @@ Anyone may open a pull request. Only maintainers merge.
 - **New contributors wait.** Until a contributor's first pull request is
   merged, they cannot open another. A good first pull request is how
   maintainers find new collaborators.
+- **Only maintainers and collaborators verify.** Anyone may add
+  `documented` or `detected` evidence; `runtime-verified` and
+  `hardware-validated` evidence comes only from maintainers and repository
+  collaborators ([VERIFY.md](VERIFY.md)).
 - A bot enforces these rules on every pull request and explains any
   rejection in a comment: `.github/workflows/pr-rules.yml`. A pull request
-  with a second device fails its check; a second open one is closed.
+  with a second device or passing evidence from anyone else fails its
+  check; a second open one is closed.
 - Code (Nix modules, Go) gets stricter review than catalog data: it runs as
   root on every matching machine.
 
