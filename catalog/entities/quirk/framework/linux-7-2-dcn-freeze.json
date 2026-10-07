@@ -13,6 +13,6 @@
         "maximumBefore": "7.3"
       }
     },
-    "fallbackPackage": "linuxPackages_7_1"
+    "fallbackPackage": "linuxPackages_6_18"
   }
 }
