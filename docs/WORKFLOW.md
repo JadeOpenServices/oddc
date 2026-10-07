@@ -43,7 +43,9 @@ How ODDC reaches a machine, how people use it, and how changes get in.
   changes is `verified`: `oddc status --since origin/staging`.
 - `staging` only takes reviewed changes that pass CI.
 - A maintainer promotes `staging` to `main` once its changes are tested.
-  Untested or short-lived changes never reach `main`.
+  Untested or short-lived changes never reach `main`: CI fails a promotion
+  unless every model is `verified` on its current closure,
+  `oddc status --verified`.
 - Consumers follow `main`: `github:JadeOpenServices/oddc`. Testers may
   follow `github:JadeOpenServices/oddc/staging`.
 - Every merge to `main` is a release; consumers pin it by commit hash.
@@ -142,7 +144,7 @@ on that closure; new evidence must be recorded. `status` names the
 evidence, the ODDC revision, BIOS and kernel it was tested with, and its
 results. `--since REV` reports instead each model whose closure differs
 from the one at REV, new models included, and fails unless all are
-`verified`. `doctor` reports the same, and compares this machine's BIOS with
+`verified`; `--verified` fails unless every model it reports is. `doctor` reports the same, and compares this machine's BIOS with
 the tested one as information only; it never fails on it. `update` defaults to the flake in
 `/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`. It keeps
 the oddc input on the stage it follows and prints the revision before and
@@ -252,7 +254,8 @@ written into titles or text.
 4. When every child is done, merge the feature into `staging` with
    `--no-ff` and set it Done.
 
-Promoting `staging` to `main` is `git merge --no-ff staging` on `main`.
+Promoting `staging` to `main` is `git merge --no-ff staging` on `main`,
+once `oddc status --verified` passes on `staging`.
 
 Each commit ends with a trailer naming its item, and merge messages
 follow git's defaults with the merged item's trailer:

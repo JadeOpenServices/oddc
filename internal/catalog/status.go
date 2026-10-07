@@ -17,7 +17,8 @@ import (
 // RunStatus prints how far --device, else every model, is verified: the
 // evidence its status rests on, what that evidence tested and its results.
 // With --since REV it reports the models whose closure differs from the
-// one at REV of the repository, and fails unless each is verified.
+// one at REV of the repository. With --since or --verified it fails unless
+// every model it reports is verified.
 func RunStatus(registry *oddc.Registry, args []string) error {
 	models := cli.Values(args, "--device")
 	since := cli.Value(args, "--since", "")
@@ -53,6 +54,8 @@ func RunStatus(registry *oddc.Registry, args []string) error {
 	var failure error
 	if since != "" && len(unproven) > 0 {
 		failure = fmt.Errorf("changed since %s, but not verified: %s", since, strings.Join(unproven, ", "))
+	} else if cli.Has(args, "--verified") && len(unproven) > 0 {
+		failure = fmt.Errorf("not verified: %s", strings.Join(unproven, ", "))
 	}
 
 	if cli.Has(args, "--json") {
