@@ -73,6 +73,15 @@
       "description": "Digest of the deployed model's resolved catalog data the record was made on.",
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "inactiveQuirks": {
+      "description": "The model's kernel-ranged quirks the deployment did not apply, by key.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9]*$"
+      }
     }
   },
   "additionalProperties": false

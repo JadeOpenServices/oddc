@@ -27,6 +27,9 @@ type Evidence struct {
 	Drivers map[string][]string `json:"drivers,omitempty"`
 	// Closure is the deployed model's closure the record was made on.
 	Closure string `json:"closure,omitempty"`
+	// InactiveQuirks are the model's kernel-ranged quirks the deployment
+	// did not apply, as its inactive-quirks.json names them.
+	InactiveQuirks []string `json:"inactiveQuirks,omitempty"`
 }
 
 // driverName is a kernel driver name such as "rtw89_8852be".

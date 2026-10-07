@@ -163,6 +163,8 @@ func (r *Registry) Requirements(model string) (map[string]string, error) {
 // Runtime-verified evidence was made on a deployment of the model, has
 // identity "pass" and every driver the catalog names for a component
 // bound to it. Hardware-validated evidence also has every requirement.
+// A kernel-ranged quirk the deployment did not apply, as the record's
+// InactiveQuirks names it, must be "not-affected" instead of "pass".
 // Other statuses prove nothing and need nothing.
 func (r *Registry) Unmet(model string, record Evidence) ([]string, error) {
 	if !slices.Contains(passingStatuses, record.Status) {
@@ -183,6 +185,15 @@ func (r *Registry) Unmet(model string, record Evidence) ([]string, error) {
 	if record.Status == "hardware-validated" {
 		if required, err = r.Requirements(model); err != nil {
 			return nil, err
+		}
+	}
+	for _, key := range record.InactiveQuirks {
+		if componentAt(resolved.Resolved, "quirks."+key+".affected.kernel") == nil {
+			unmet = append(unmet, fmt.Sprintf("quirk %s: not kernel-ranged, so always applied", key))
+			continue
+		}
+		if _, ok := required["quirks."+key]; ok {
+			required["quirks."+key] = "not-affected"
 		}
 	}
 	for name, want := range required {
@@ -206,7 +217,7 @@ func (r *Registry) Unmet(model string, record Evidence) ([]string, error) {
 	return unmet, nil
 }
 
-// componentAt is the object at a dotted path of the resolved model.
+// componentAt is the object at a dotted path of the resolved model, or nil.
 func componentAt(data map[string]any, path string) map[string]any {
 	for _, key := range strings.Split(path, ".") {
 		data, _ = data[key].(map[string]any)

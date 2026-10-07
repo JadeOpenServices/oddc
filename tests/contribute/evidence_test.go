@@ -181,3 +181,60 @@ func TestEvidenceRecordPassingNeedsProof(t *testing.T) {
 		t.Fatal(result.Errors)
 	}
 }
+
+// A kernel-ranged quirk the deployment did not apply is recorded as such
+// and must be proven not-affected.
+func TestEvidenceRecordInactiveQuirks(t *testing.T) {
+	registry, model, _, workspace, sys, deployment := recordable(t)
+	resolved, err := registry.ResolveEntity(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ranged := ""
+	for key, quirk := range resolved.Resolved["quirks"].(map[string]any) {
+		if _, ok := quirk.(map[string]any)["affected"]; ok {
+			ranged = key
+		}
+	}
+	if ranged == "" {
+		t.Fatalf("%s has no kernel-ranged quirk", model)
+	}
+	fixture.Write(t, filepath.Join(deployment, "inactive-quirks.json"), []byte(`["`+ranged+`"]`))
+
+	required, err := registry.Requirements(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := []string{
+		"evidence", "record", "--root", workspace, "--sys", sys, "--deployment", deployment,
+		"--status", "hardware-validated", "--date", today(),
+	}
+	for name, want := range required {
+		if name != "identity" {
+			record = append(record, "--result", name+"="+want)
+		}
+	}
+
+	err = contribute.RunEvidence(record)
+	if want := "result quirks." + ranged + ": pass, want not-affected"; err == nil || !strings.Contains(err.Error(), want) {
+		t.Fatalf("inactive %s recorded as pass: %v, want %q", ranged, err, want)
+	}
+
+	if err := contribute.RunEvidence(append(record, "--result", "quirks."+ranged+"=not-affected")); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(filepath.Join(workspace, "evidence", filepath.FromSlash(model), today()+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var written oddc.Evidence
+	if err := json.Unmarshal(data, &written); err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(written.InactiveQuirks) != fmt.Sprint([]string{ranged}) {
+		t.Errorf("inactive quirks %v, want [%s]", written.InactiveQuirks, ranged)
+	}
+	if result := oddc.Validate(workspace); !result.Valid {
+		t.Fatal(result.Errors)
+	}
+}

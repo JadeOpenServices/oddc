@@ -28,7 +28,11 @@ One result per part of the resolved model, named by its path:
 - every capability, as `capabilities.usb4`: it works. A capability the
   catalog sets to `false` must be `not-exposed`: the machine really lacks it.
 - every quirk, as `quirks.fprintdResume`: the problem it works around does
-  not occur with it.
+  not occur with it. A quirk limited to a kernel range is applied only when
+  the system's kernel is in that range; when it is not, the deployment
+  lists it in `/etc/oddc/inactive-quirks.json`, the record copies it to
+  `inactiveQuirks`, and its result must be `not-affected`: the kernel in
+  use does not have the problem.
 - every policy section, as `policy.thermal`: the system behaves as it says.
 
 Every one of them is `pass` unless named otherwise above. You do not have

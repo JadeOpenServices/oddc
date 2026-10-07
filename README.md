@@ -156,8 +156,9 @@ module.
 The full catalog stays in the repository and in installers that select a
 model. A deployed system receives only the selected model under `/etc/oddc`:
 the model's reference closure in canonical layout, its evidence, the host
-overlay (`host-overlay.json`, when `oddc.overrides` is set), `resolved.json`
-and, through the flake module, the ODDC `revision`. Other models never reach
+overlay (`host-overlay.json`, when `oddc.overrides` is set), `resolved.json`,
+`inactive-quirks.json` (the kernel-ranged quirks the system's kernel does
+not need) and, through the flake module, the ODDC `revision`. Other models never reach
 the system closure. The `oddc` command is installed with it
 (`oddc.cli.enable`) and defaults to `/etc/oddc` and the deployed model:
 
