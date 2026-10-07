@@ -61,13 +61,29 @@ adapters implement only the generic semantic behavior.
 
 Use `oddc explain` to inspect the final owner and override history.
 
+## Layout
+
+    catalog/     entities: classes, vendors, families, components, models, quirks
+    evidence/    append-only records of what was observed on real machines
+    schemas/     JSON schemas for entities and evidence
+    templates/   starting points for new entities
+    nixos/       the NixOS module and its capability and quirk modules
+    lib/         Nix functions that load and resolve the catalog
+    checks/      flake checks
+    pkg/oddc/    the Go library: load, validate, resolve, classify, fetch
+    cmd/oddc/    the `oddc` command, which only dispatches to internal/
+    internal/    the commands by use: system, catalog, contribute, and the
+                 cli helpers they share
+    tests/       Go tests by package, on a shared fixture of this catalog
+    docs/        workflow, consumer contract, releases
+
 ## Install
 
     nix run github:JadeOpenServices/oddc -- validate --root .
 
 or, as a Go library:
 
-    go get github.com/JadeOpenServices/oddc
+    go get github.com/JadeOpenServices/oddc/pkg/oddc
 
 ## CLI
 
@@ -80,6 +96,10 @@ On a deployed system, check and update it:
 
     oddc doctor
     oddc update --switch
+
+Contributors can follow `staging` to get merged models before a release:
+
+    oddc update --stage staging --switch
 
 See [docs/WORKFLOW.md](docs/WORKFLOW.md) for every command.
 
@@ -177,8 +197,9 @@ Every merge to `main` is a release; consumers pin it by commit hash. See
 
 ## Tracking
 
-Work items live in the ODDC project on plane.openjade.de. Commits reference
-them as `ODDC-N`.
+Work items live in the ODDC project on plane.openjade.de. See
+[docs/WORKFLOW.md](docs/WORKFLOW.md#maintainers) for how items, branches
+and commits fit together.
 
 ## License
 

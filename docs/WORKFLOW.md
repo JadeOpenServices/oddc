@@ -91,7 +91,8 @@ For users:
     oddc setup                   # NixOS snippet for the matching model
     oddc fetch --out DIR         # only this machine's model, for installers
     oddc doctor                  # deployed model still matches the hardware?
-    oddc update [--switch]       # update the oddc flake input, then rebuild
+    oddc update [--switch]       # take the newest ODDC of the stage the system follows
+    oddc update --stage staging  # follow staging instead; --stage main returns to releases
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main` (`--channel staging`, or `--rev COMMIT`). From GitHub
@@ -103,17 +104,43 @@ GitHub. `fetch` writes that answer to `--out` in canonical layout with the
 system) and this machine's DMI and PCI/USB/HID IDs from `/sys`
 (`--sys DIR`), or facts from `--facts FILE`; it exits non-zero unless
 exactly one model matches. `doctor` works offline on `/etc/oddc`. `update` defaults to the flake in
-`/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`.
+`/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`. It keeps
+the oddc input on the stage it follows and prints the revision before and
+after. `--stage main` follows releases; `--stage staging` follows what was
+merged since, such as a contributor's own model before its release. It
+switches by rewriting the one `github:JadeOpenServices/oddc` URL in
+`flake.nix`, so an input from elsewhere is only updated.
 
-For contributors (*planned*):
+For contributors:
 
     oddc workspace               # clone or update a local catalog checkout on staging
-    oddc scaffold                # draft model and component entities from this machine
-    oddc evidence record         # sanitized evidence record for this machine
-    oddc contribute              # validate, branch, commit, open a pull request
+    oddc scaffold                # draft a model entity for this machine
+    oddc evidence record         # add an evidence record for this machine
+    oddc contribute              # check the changes and open a pull request
 
-`oddc contribute` uses the contributor's own GitHub account through `gh`.
-Without push access it forks first. It always targets `staging`.
+The workspace is `$XDG_DATA_HOME/oddc`, by default `~/.local/share/oddc` (`--root DIR`);
+`workspace --from URL` clones another source. Updating drops local files
+that staging now holds unchanged, such as a merged contribution.
+
+`scaffold` refuses a machine that already matches. Its draft holds the
+DMI vendor, product and board name, the vendor and class entities, and
+every catalog component present, placed where other models place it
+(`--id ID` names it). It lists present devices it left out. It reads
+`/sys` (`--sys DIR`) or `--facts FILE`, as `classify` does.
+
+`evidence record` writes a new file below `evidence/` for the matching
+model or `--device ID`; it never changes one. A match adds
+`identity: pass`; `--result NAME=STATUS` adds more. `--status` defaults
+to `detected`. The environment holds only the OS name and version and
+the kernel version (`--os`, `--kernel`), and `--date` defaults to today in
+UTC.
+
+`contribute` sends only files below `catalog/` and `evidence/`, and only
+when the catalog validates and evidence was only added. It builds one
+commit on the newest staging without touching the workspace, authored by
+the GitHub account's noreply address with UTC dates. It uses the
+contributor's own account through `gh`, forks first without push access,
+and always targets `staging` (`--title`, `--body`).
 
 ## Using ODDC on NixOS
 
@@ -140,3 +167,41 @@ With an answer only its model is available, and `/etc/oddc/revision`
 records the revision it was fetched from.
 `oddc.deploy.enable = false` deploys nothing under `/etc/oddc`;
 `oddc.cli.enable = false` leaves out the `oddc` command.
+
+## Maintainers
+
+Every change is a work item in the ODDC project on plane.openjade.de and
+lives on its own branch, so the history and the board tell the same
+story.
+
+- **Feature**: a top-level item with the Milestone label, holding one
+  larger goal. Only one feature is open at a time.
+- **Task**: a child of the feature, covering one piece of work.
+- **Fix**: a child of the item it fixes, with the Fix label. A fix to
+  something already merged is its own item.
+
+Order is the sort order on the board: lowest first. Weight is never
+written into titles or text.
+
+| Item    | Branch                           | From        | Merges into |
+|---------|----------------------------------|-------------|-------------|
+| Feature | `feature/oddc-<n>-<slug>`        | `staging`   | `staging`   |
+| Task    | `task/oddc-<n>-<slug>`           | the feature | the feature |
+| Fix     | `fix/oddc-<fixed>-fixNN-<slug>`  | the feature | the feature |
+
+1. Create the task or fix item and set it In Progress.
+2. Branch from the open feature and make small commits, one logical change
+   each.
+3. Merge with `git merge --no-ff` into the feature, delete the branch and
+   set the item Done.
+4. When every child is done, merge the feature into `staging` with
+   `--no-ff` and set it Done.
+
+Promoting `staging` to `main` is `git merge --no-ff staging` on `main`.
+
+Each commit ends with a trailer naming its item, and merge messages
+follow git's defaults with the merged item's trailer:
+
+    area: what changed
+
+    Refs: ODDC-<n>
