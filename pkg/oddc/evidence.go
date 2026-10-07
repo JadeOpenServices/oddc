@@ -25,10 +25,15 @@ type Evidence struct {
 	// Drivers are the kernel drivers bound to the model's components
 	// that were present, by component ID.
 	Drivers map[string][]string `json:"drivers,omitempty"`
+	// Closure is the deployed model's closure the record was made on.
+	Closure string `json:"closure,omitempty"`
 }
 
 // driverName is a kernel driver name such as "rtw89_8852be".
 var driverName = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$`)
+
+// closureDigest is a Closure.
+var closureDigest = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 
 // ComponentDrivers names the drivers bound, as ReadDrivers lists them, to
 // each component of a model that is present.
@@ -155,6 +160,10 @@ func (r *Registry) validateEvidence() error {
 					evidence.DeviceID,
 					model.Kind,
 				)
+			}
+
+			if evidence.Closure != "" && !closureDigest.MatchString(evidence.Closure) {
+				return fmt.Errorf("%s: closure %q is not a sha256 digest", path, evidence.Closure)
 			}
 
 			resolved, err := r.ResolveEntity(evidence.DeviceID)

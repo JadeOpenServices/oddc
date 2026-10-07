@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // Package catalog holds the commands that read a catalog: validate, list,
-// index, classify, resolve, explain and changes.
+// index, classify, resolve, explain, status and changes.
 package catalog
 
 import (
@@ -77,6 +77,9 @@ func Run(args []string) error {
 
 	case "classify":
 		return RunClassify(registry, args)
+
+	case "status":
+		return RunStatus(registry, args)
 
 	case "resolve", "explain":
 		modelID := cli.Value(

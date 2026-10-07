@@ -44,10 +44,24 @@ func osName() string {
 	return strings.TrimSpace(fields["NAME"] + " " + fields["VERSION_ID"])
 }
 
-// deployedRevision is the ODDC revision the NixOS module deployed, or "".
-func deployedRevision() string {
-	data, _ := os.ReadFile(filepath.Join(cli.SystemRoot, "revision"))
-	return strings.TrimSpace(string(data))
+// deployment is what the NixOS module deployed at root for device: its
+// ODDC revision and the closure digest. Both are "" when root holds no
+// deployment of device.
+func deployment(root, device string) (revision, closure string, err error) {
+	if cli.DeployedModel(root) != device {
+		return "", "", nil
+	}
+
+	registry, err := oddc.LoadRegistry(root)
+	if err != nil {
+		return "", "", fmt.Errorf("deployment %s: %w", root, err)
+	}
+	if closure, err = registry.Closure(device); err != nil {
+		return "", "", err
+	}
+
+	data, _ := os.ReadFile(filepath.Join(root, "revision"))
+	return strings.TrimSpace(string(data)), closure, nil
 }
 
 func kernelRelease() string {
@@ -59,7 +73,7 @@ func kernelRelease() string {
 // --device, in the workspace. Records are only ever added.
 func RunEvidence(args []string) error {
 	if len(args) < 2 || args[1] != "record" {
-		return errors.New("usage: oddc evidence record [--device ID] [--result NAME=STATUS]... [--status STATUS] [--bios VERSION] [--revision COMMIT]")
+		return errors.New("usage: oddc evidence record [--device ID] [--result NAME=STATUS]... [--status STATUS] [--bios VERSION] [--deployment DIR]")
 	}
 
 	root, registry, err := loadWorkspace(args)
@@ -109,13 +123,17 @@ func RunEvidence(args []string) error {
 	if kernel := cli.Value(args, "--kernel", kernelRelease()); kernel != "" {
 		environment["kernel"] = kernel
 	}
-	// What was tested: the BIOS, the ODDC revision deployed on this
-	// machine, and the drivers bound to the model's components.
+	// What was tested: the BIOS, the ODDC revision and closure deployed
+	// on this machine, and the drivers bound to the model's components.
 	sys := cli.Value(args, "--sys", "/sys")
 	if bios := cli.Value(args, "--bios", oddc.ReadBIOS(sys)); bios != "" {
 		environment["bios"] = bios
 	}
-	if revision := cli.Value(args, "--revision", deployedRevision()); revision != "" {
+	revision, closure, err := deployment(cli.Value(args, "--deployment", cli.SystemRoot), device)
+	if err != nil {
+		return err
+	}
+	if revision != "" {
 		environment["oddc"] = revision
 	}
 	drivers := map[string][]string{}
@@ -143,6 +161,7 @@ func RunEvidence(args []string) error {
 		Environment:   environment,
 		Results:       results,
 		Drivers:       drivers,
+		Closure:       closure,
 	}
 	if err := writeChecked(root, file, record); err != nil {
 		return err

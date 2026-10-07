@@ -68,6 +68,11 @@
           "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
         }
       }
+    },
+    "closure": {
+      "description": "Digest of the deployed model's resolved catalog data the record was made on.",
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
     }
   },
   "additionalProperties": false
