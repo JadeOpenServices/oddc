@@ -157,7 +157,9 @@ to `detected`. The record names what was tested. The environment holds
 only the OS name and version, the kernel version, the BIOS version and the
 ODDC revision deployed in `/etc/oddc` (`--os`, `--kernel`, `--bios`,
 `--deployment DIR`). When the deployed model is the recorded one,
-`closure` holds its closure digest, which `status` compares. `drivers` lists the kernel driver bound to each of the
+`closure` holds its closure digest, which `status` compares.
+`runtime-verified` and `hardware-validated` are written only when the
+record proves them; [VERIFY.md](VERIFY.md) says what each needs. `drivers` lists the kernel driver bound to each of the
 model's components that is present, read from `/sys`. `--date` defaults
 to today in UTC.
 

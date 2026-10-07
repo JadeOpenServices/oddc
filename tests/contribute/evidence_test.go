@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/JadeOpenServices/oddc/internal/cli"
@@ -78,9 +79,13 @@ func TestEvidenceRecordRefusesIdentifyingResult(t *testing.T) {
 // closure, and the drivers bound to the model's components. It runs on the
 // model the catalog has evidence for, with the BIOS of the Framework Laptop
 // 13 that recorded it and the catalog's own commit as the revision.
-func TestEvidenceRecordWhatWasTested(t *testing.T) {
+// recordable deploys the model of the first real evidence on a machine
+// whose /sys holds its components, and returns a workspace to record in.
+func recordable(t *testing.T) (registry *oddc.Registry, model, revision, workspace, sys, deployment string) {
+	t.Helper()
+
 	origin, workspace := catalogUpstream(t)
-	registry, _ := fixture.Catalog(t)
+	registry, _ = fixture.Catalog(t)
 
 	data, err := os.ReadFile(fixture.FirstEvidence(t, fixture.Repository))
 	if err != nil {
@@ -90,14 +95,20 @@ func TestEvidenceRecordWhatWasTested(t *testing.T) {
 	if err := json.Unmarshal(data, &existing); err != nil {
 		t.Fatal(err)
 	}
-	model := existing.DeviceID
+	model = existing.DeviceID
 
-	sys := fixture.Sysfs(t, registry, model)
+	sys = fixture.Sysfs(t, registry, model)
 	fixture.Components(t, sys, registry, model)
 	fixture.Write(t, filepath.Join(sys, "class", "dmi", "id", "bios_version"), []byte("03.20\n"))
-	revision := gitOut(t, origin, "rev-parse", "HEAD")
-	deployment := fixture.Deployment(t, registry, model, false)
+	revision = gitOut(t, origin, "rev-parse", "HEAD")
+	deployment = fixture.Deployment(t, registry, model, false)
 	fixture.Write(t, filepath.Join(deployment, "revision"), []byte(revision+"\n"))
+
+	return registry, model, revision, workspace, sys, deployment
+}
+
+func TestEvidenceRecordWhatWasTested(t *testing.T) {
+	registry, model, revision, workspace, sys, deployment := recordable(t)
 	closure, err := registry.Closure(model)
 	if err != nil {
 		t.Fatal(err)
@@ -110,7 +121,7 @@ func TestEvidenceRecordWhatWasTested(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	data, err = os.ReadFile(filepath.Join(workspace, "evidence", filepath.FromSlash(model), today()+".json"))
+	data, err := os.ReadFile(filepath.Join(workspace, "evidence", filepath.FromSlash(model), today()+".json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,6 +144,39 @@ func TestEvidenceRecordWhatWasTested(t *testing.T) {
 		t.Errorf("drivers %v, want %v", record.Drivers, want)
 	}
 
+	if result := oddc.Validate(workspace); !result.Valid {
+		t.Fatal(result.Errors)
+	}
+}
+
+// Passing evidence is written only when it proves the model.
+func TestEvidenceRecordPassingNeedsProof(t *testing.T) {
+	registry, model, _, workspace, sys, deployment := recordable(t)
+	record := []string{
+		"evidence", "record", "--root", workspace, "--sys", sys, "--deployment", deployment,
+		"--status", "hardware-validated", "--date", today(),
+	}
+
+	err := contribute.RunEvidence(append(record, "--result", "hardware.network.wifi.primary=pass"))
+	if err == nil || !strings.Contains(err.Error(), "does not prove") {
+		t.Fatalf("unproven evidence: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(workspace, "evidence", filepath.FromSlash(model), today()+".json")); !os.IsNotExist(err) {
+		t.Fatalf("unproven evidence was written: %v", err)
+	}
+
+	required, err := registry.Requirements(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, want := range required {
+		if name != "identity" {
+			record = append(record, "--result", name+"="+want)
+		}
+	}
+	if err := contribute.RunEvidence(record); err != nil {
+		t.Fatal(err)
+	}
 	if result := oddc.Validate(workspace); !result.Valid {
 		t.Fatal(result.Errors)
 	}
