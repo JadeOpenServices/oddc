@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package fixture lays out what the tests run over, all from the
 // repository's own catalog and evidence: deployments, machines that report
 // a model's identity, and git checkouts of the catalog.

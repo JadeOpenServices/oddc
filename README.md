@@ -203,4 +203,9 @@ and commits fit together.
 
 ## License
 
-Apache-2.0, see [LICENSE](LICENSE).
+ODDC is free software under the GNU General Public License, version 3 or
+any later version (`GPL-3.0-or-later`); see [LICENSE](LICENSE). Anyone may
+use, change and share it; changed versions that are shared must stay under
+the same license with their source, and the license grants the
+contributors' patents with it. Releases before this change were
+Apache-2.0.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # A system built from the answer `oddc fetch` writes for one model deploys
 # what a system built from the whole catalog deploys, and knows no other
 # model. Only the recorded revision differs: the answer's own.

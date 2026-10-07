@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package catalog
 
 import "github.com/JadeOpenServices/oddc/pkg/oddc"

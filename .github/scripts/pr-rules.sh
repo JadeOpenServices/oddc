@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Enforces the contribution rules of docs/WORKFLOW.md on one pull request.
 # It reads the pull request through the GitHub API and never runs its code.
 #
