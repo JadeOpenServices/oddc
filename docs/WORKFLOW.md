@@ -161,3 +161,41 @@ With an answer only its model is available, and `/etc/oddc/revision`
 records the revision it was fetched from.
 `oddc.deploy.enable = false` deploys nothing under `/etc/oddc`;
 `oddc.cli.enable = false` leaves out the `oddc` command.
+
+## Maintainers
+
+Every change is a work item in the ODDC project on plane.openjade.de and
+lives on its own branch, so the history and the board tell the same
+story.
+
+- **Feature**: a top-level item with the Milestone label, holding one
+  larger goal. Only one feature is open at a time.
+- **Task**: a child of the feature, covering one piece of work.
+- **Fix**: a child of the item it fixes, with the Fix label. A fix to
+  something already merged is its own item.
+
+Order is the sort order on the board: lowest first. Weight is never
+written into titles or text.
+
+| Item    | Branch                           | From        | Merges into |
+|---------|----------------------------------|-------------|-------------|
+| Feature | `feature/oddc-<n>-<slug>`        | `staging`   | `staging`   |
+| Task    | `task/oddc-<n>-<slug>`           | the feature | the feature |
+| Fix     | `fix/oddc-<fixed>-fixNN-<slug>`  | the feature | the feature |
+
+1. Create the task or fix item and set it In Progress.
+2. Branch from the open feature and make small commits, one logical change
+   each.
+3. Merge with `git merge --no-ff` into the feature, delete the branch and
+   set the item Done.
+4. When every child is done, merge the feature into `staging` with
+   `--no-ff` and set it Done.
+
+Promoting `staging` to `main` is `git merge --no-ff staging` on `main`.
+
+Each commit ends with a trailer naming its item, and merge messages
+follow git's defaults with the merged item's trailer:
+
+    area: what changed
+
+    Refs: ODDC-<n>

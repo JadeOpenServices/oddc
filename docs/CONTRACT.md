@@ -45,7 +45,7 @@ reused for something else. Renaming or removing an ID is a breaking change.
   with the identity fields of `MachineIdentity`.
 - The files themselves, described by `schemas/entity.schema.json`,
   `schemas/evidence.schema.json` and `schemas/overlay.schema.json`.
-- In Go, package `github.com/JadeOpenServices/oddc`: `LoadRegistry`,
+- In Go, package `github.com/JadeOpenServices/oddc/pkg/oddc`: `LoadRegistry`,
   `Validate`, `Registry.Index`, `Registry.ResolveModel`,
   `Registry.MatchModel`, `Registry.Classify`, `ReadFacts` and `Fetch`.
 

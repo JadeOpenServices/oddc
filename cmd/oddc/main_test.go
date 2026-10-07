@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/JadeOpenServices/oddc"
+	"github.com/JadeOpenServices/oddc/pkg/oddc"
 )
 
 // The catalog these tests run over: the repository itself.
