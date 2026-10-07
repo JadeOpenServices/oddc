@@ -32,6 +32,17 @@ func ReadIdentity(sysRoot string) MachineIdentity {
 	}
 }
 
+// ReadBIOS reads the BIOS version below sysRoot, or "". It does not
+// identify the machine; evidence records it as what was tested.
+func ReadBIOS(sysRoot string) string {
+	data, err := os.ReadFile(filepath.Join(sysRoot, "class", "dmi", "id", "bios_version"))
+	if err != nil {
+		return ""
+	}
+
+	return strings.TrimSpace(string(data))
+}
+
 // formFactor prefers a battery as evidence of a laptop, then the SMBIOS
 // chassis type.
 func formFactor(sysRoot, chassisType string) string {

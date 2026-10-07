@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -78,5 +79,32 @@ func TestBrokenCatalogEvidenceForNonModel(t *testing.T) {
 		}
 
 		expectRefused(t, root, path+" pointing at "+component+" of "+model)
+	}
+}
+
+// Evidence names drivers only for components of its model.
+func TestBrokenCatalogEvidenceDriverForOtherComponent(t *testing.T) {
+	registry := catalog(t)
+
+	for _, path := range evidenceFiles(t) {
+		root := copyCatalog(t)
+
+		var other string
+		editEntity(t, filepath.Join(root, path), func(document map[string]any) {
+			own := collectRefs(registry.Entities[document["deviceId"].(string)].Data)
+			for _, model := range models(t, registry) {
+				for _, ref := range collectRefs(registry.Entities[model].Data) {
+					if other == "" && registry.Entities[ref].Data["driver"] != nil && !slices.Contains(own, ref) {
+						other = ref
+					}
+				}
+			}
+			document["drivers"] = map[string]any{other: []any{registry.Entities[other].Data["driver"]}}
+		})
+		if other == "" {
+			t.Skip("every component with a driver belongs to every model")
+		}
+
+		expectRefused(t, root, path+" with drivers for "+other)
 	}
 }
