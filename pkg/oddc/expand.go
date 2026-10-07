@@ -67,6 +67,17 @@ func (r *Registry) expandObject(
 				continue
 			}
 
+			// A value next to a reference adds to the referenced entity;
+			// it never redefines what that entity holds.
+			if _, held := result[key]; held {
+				return nil, fmt.Errorf(
+					"%q redefines %q, which %q holds",
+					context,
+					key,
+					ref,
+				)
+			}
+
 			expanded, err := r.expandValue(value, active, context)
 			if err != nil {
 				return nil, err
