@@ -12,8 +12,9 @@ import (
 )
 
 // RunContribute sends the workspace's checked changes as a pull request
-// against staging from the contributor's GitHub account, through a fork
-// when the account cannot push to the catalog. The commit's author is the
+// against the branch the workspace follows, staging or verify/<model>,
+// from the contributor's GitHub account, through a fork when the account
+// cannot push to the catalog. The commit's author is the
 // account's noreply address and its dates are in UTC.
 func RunContribute(args []string) error {
 	root := cli.Value(args, "--root", cli.WorkspaceDir())
@@ -67,7 +68,7 @@ func RunContribute(args []string) error {
 	}
 
 	url, err := cli.Gh(
-		"pr", "create", "--repo", oddc.Repository, "--base", BaseBranch, "--head", head,
+		"pr", "create", "--repo", oddc.Repository, "--base", p.Target, "--head", head,
 		"--title", p.Title, "--body", p.Body,
 	)
 	if err != nil {

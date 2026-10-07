@@ -114,3 +114,55 @@ func TestContributeRefuses(t *testing.T) {
 		})
 	}
 }
+
+// A model on its verify branch is proven there: a workspace switched to
+// the branch sends its evidence against it, and updating keeps following it.
+func TestContributeOnVerifyBranch(t *testing.T) {
+	origin, workspace := catalogUpstream(t, framework13)
+	registry, _ := fixture.Catalog(t)
+	facts := fixture.FactsFile(t, registry, framework13)
+	branch := "verify/" + strings.TrimPrefix(framework13, "model/")
+
+	if err := contribute.RunScaffold([]string{"scaffold", "--root", workspace, "--facts", facts, "--id", framework13}); err != nil {
+		t.Fatal(err)
+	}
+	p, err := contribute.Prepare([]string{"contribute", "--root", workspace})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Target != contribute.BaseBranch {
+		t.Errorf("target %q on staging", p.Target)
+	}
+	model := gitOut(t, workspace, "-c", "user.name=t", "-c", "user.email=t@t",
+		"commit-tree", p.Tree, "-p", p.Base, "-m", p.Title)
+	gitOut(t, workspace, "push", "-q", origin, model+":refs/heads/"+branch)
+
+	if err := contribute.RunWorkspace([]string{"workspace", "--root", workspace, "--branch", branch}); err != nil {
+		t.Fatal(err)
+	}
+	if err := contribute.RunEvidence([]string{"evidence", "record", "--root", workspace, "--facts", facts}); err != nil {
+		t.Fatal(err)
+	}
+	if p, err = contribute.Prepare([]string{"contribute", "--root", workspace}); err != nil {
+		t.Fatal(err)
+	}
+	if p.Target != branch {
+		t.Errorf("target %q want %q", p.Target, branch)
+	}
+	sent := gitOut(t, workspace, "diff-tree", "-r", "--name-status", p.Base, p.Tree)
+	if want := "A\tevidence/" + framework13 + "/" + today() + ".json"; sent != want {
+		t.Errorf("sends %q want %q", sent, want)
+	}
+
+	if err := contribute.RunWorkspace([]string{"workspace", "--root", workspace}); err != nil {
+		t.Fatal(err)
+	}
+	if on := gitOut(t, workspace, "symbolic-ref", "--short", "HEAD"); on != branch {
+		t.Errorf("workspace on %q after update, want %q", on, branch)
+	}
+
+	err = contribute.RunWorkspace([]string{"workspace", "--root", workspace, "--branch", "main"})
+	if err == nil || !strings.Contains(err.Error(), "neither") {
+		t.Errorf("--branch main: %v", err)
+	}
+}

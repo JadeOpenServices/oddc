@@ -30,10 +30,6 @@ if [ "$BASE" = main ] && [ "$HEAD_REPO/$HEAD_REF" = "$REPO/staging" ]; then
   exit 0
 fi
 
-if [ "$BASE" != staging ]; then
-  gh pr edit "$PR" --repo "$REPO" --base staging
-  gh pr comment "$PR" --repo "$REPO" --body "Every pull request targets \`staging\`, so this one now does too. See $rules"
-fi
 
 member=false
 case "$ASSOCIATION" in
@@ -58,6 +54,32 @@ $(printf '%s\n' "$changed" | sed 's/^/- /')
 
 A pull request changes at most one, with the components, quirks and evidence it needs. Split it, one device each. See $rules"
   exit 1
+fi
+
+# A model change is proven on verify/<model>, branched from staging, before
+# it reaches staging; the branch merges into staging once oddc status says
+# verified. A change to no model, such as a shared quirk, may also target
+# the verify branch of the model it is for; anything else targets staging.
+target=staging
+if [ -n "$changed" ]; then
+  target="verify/$changed"
+elif [[ $BASE == verify/* ]]; then
+  target=$BASE
+fi
+if [ "$BASE" = "$target" ] || { [ "$BASE" = staging ] && [ "$HEAD_REPO/$HEAD_REF" = "$REPO/$target" ]; }; then
+  :
+else
+  # The branch is named from a path in the pull request: only an ID's form.
+  if ! [[ $target =~ ^(staging|verify/[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*)$ ]]; then
+    echo "not a model ID: $changed" >&2
+    exit 1
+  fi
+  if [ "$target" != staging ] && ! gh api "repos/$REPO/branches/$target" --silent 2>/dev/null; then
+    gh api "repos/$REPO/git/refs" --silent -f "ref=refs/heads/$target" \
+      -f "sha=$(gh api "repos/$REPO/branches/staging" --jq .commit.sha)"
+  fi
+  gh pr edit "$PR" --repo "$REPO" --base "$target"
+  gh pr comment "$PR" --repo "$REPO" --body "This pull request now targets \`$target\`. A device model is proven on its own \`verify/<model>\` branch, which merges into \`staging\` once the model is verified; anything else targets \`staging\`. See $rules"
 fi
 
 # Only maintainers and collaborators verify: anyone else's evidence may

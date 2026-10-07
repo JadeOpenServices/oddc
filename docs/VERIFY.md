@@ -41,8 +41,9 @@ each one missing and writes nothing until none is.
 
 ## Steps
 
-1. Deploy the model on the machine from the ODDC revision under test, so
-   `/etc/oddc` holds it. Use a checkout of that same revision for the
+1. Take the model's verify branch into the workspace:
+   `oddc workspace --branch verify/<vendor>/<model>`. Deploy the model on
+   the machine from that branch, so `/etc/oddc` holds it. Use a checkout of that same revision for the
    steps below; recording refuses when the deployed model is not the one
    in the checkout.
 2. `oddc doctor` must pass.
@@ -57,7 +58,9 @@ each one missing and writes nothing until none is.
    the deployment and the drivers bound to each component; nothing that
    identifies the machine or you.
 4. `oddc status` must say `verified`.
-5. Send it with `oddc contribute`.
+5. Send it with `oddc contribute`; it targets the verify branch.
+6. Once that is merged, open a pull request from the verify branch into
+   `staging`. CI fails it unless every model it changes is `verified`.
 
 If anything fails, record what was tested with `--status detected` and the
 failing results, and fix the catalog before trying again. Any later change

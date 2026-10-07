@@ -27,13 +27,21 @@ How ODDC reaches a machine, how people use it, and how changes get in.
 | Branch    | Purpose                                         | Who writes        |
 |-----------|-------------------------------------------------|-------------------|
 | `main`    | Stable. What consumers pull.                    | Promotion only    |
-| `staging` | Integration. Every pull request targets it.     | Reviewed merges   |
+| `staging` | Integration. Proven changes only.               | Reviewed merges   |
+| `verify/<vendor>/<model>` | One model's change, until it is proven. | Reviewed merges |
 
-- Every contribution branches from the current `staging` and targets
-  `staging`. A pull request against `main` is retargeted to `staging`
-  automatically.
-- `staging` only takes reviewed changes that pass CI. Changes are tested
-  there, on real hardware where they touch a device.
+- Every contribution branches from the current `staging`. A pull request
+  that changes a device model is retargeted to that model's
+  `verify/<vendor>/<model>` branch, created from `staging` when missing;
+  any other pull request is retargeted to `staging`. A change to no model,
+  such as a shared quirk, may also target the verify branch of the model
+  it is for.
+- A maintainer or collaborator tests the model on real hardware from its
+  verify branch and records the evidence there ([VERIFY.md](VERIFY.md)).
+  The verify branch then merges into `staging` by pull request. CI fails
+  any pull request into `staging` unless every model whose closure it
+  changes is `verified`: `oddc status --since origin/staging`.
+- `staging` only takes reviewed changes that pass CI.
 - A maintainer promotes `staging` to `main` once its changes are tested.
   Untested or short-lived changes never reach `main`.
 - Consumers follow `main`: `github:JadeOpenServices/oddc`. Testers may
@@ -128,7 +136,9 @@ else all) as `verified`, `changed` or `unverified`. A model is
 its resolved model. It is `changed` when passing evidence exists, but none
 on that closure; new evidence must be recorded. `status` names the
 evidence, the ODDC revision, BIOS and kernel it was tested with, and its
-results. `doctor` reports the same, and compares this machine's BIOS with
+results. `--since REV` reports instead each model whose closure differs
+from the one at REV, new models included, and fails unless all are
+`verified`. `doctor` reports the same, and compares this machine's BIOS with
 the tested one as information only; it never fails on it. `update` defaults to the flake in
 `/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`. It keeps
 the oddc input on the stage it follows and prints the revision before and
@@ -143,13 +153,17 @@ such a system has its own way to rebuild.
 For contributors:
 
     oddc workspace               # clone or update a local catalog checkout on staging
+    oddc workspace --branch verify/<vendor>/<model>   # follow a model's verify branch instead
     oddc scaffold                # draft a model entity for this machine
     oddc evidence record         # add an evidence record for this machine
     oddc contribute              # check the changes and open a pull request
 
 The workspace is `$XDG_DATA_HOME/oddc`, by default `~/.local/share/oddc` (`--root DIR`);
 `workspace --from URL` clones another source. Updating drops local files
-that staging now holds unchanged, such as a merged contribution.
+that the followed branch now holds unchanged, such as a merged
+contribution. `--branch` switches to `staging` or a verify branch, which
+later updates keep following; git refuses when local changes would be
+lost.
 
 `scaffold` refuses a machine that already matches. Its draft holds the
 DMI vendor, product and board name, the vendor and class entities, and
@@ -173,10 +187,11 @@ to today in UTC.
 
 `contribute` sends only files below `catalog/` and `evidence/`, and only
 when the catalog validates and evidence was only added. It builds one
-commit on the newest staging without touching the workspace, authored by
+commit on the newest followed branch without touching the workspace, authored by
 the GitHub account's noreply address with UTC dates. It uses the
 contributor's own account through `gh`, forks first without push access,
-and always targets `staging` (`--title`, `--body`).
+and targets the branch the workspace follows: its verify branch, else
+`staging` (`--title`, `--body`).
 
 ## Using ODDC on NixOS
 
