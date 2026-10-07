@@ -65,6 +65,26 @@ A contributor must never copy one of those values into a second editable source 
 
 Consumers resolve references instead.
 
+### Ownership rules
+
+- **Exact model or nothing.** A machine matches exactly one device model by
+  its identity, or it matches none. There is no closest model, no family
+  fallback and no generic profile; a consumer without a match fails closed.
+- **One owner per fact.** Every resolved value comes from exactly one
+  entity file. `oddc explain` names it, and the tests fail any value whose
+  named owner does not hold it.
+- **No inheritance, no override.** An entity holds a fact or references the
+  entity that does. A value next to a `ref` adds to what the referenced
+  entity holds; it never redefines a value that entity holds. Nothing
+  fills in a value an entity does not have.
+- **A shared entity owns a fact only when every model using it is evidenced
+  for it.** A vendor, family, class or component entity is used by every
+  model that references it, so a fact placed there is a claim about all of
+  them. Put it there only when each of those models is proven with it;
+  otherwise it belongs to the one model it was proven on. Changing a shared
+  entity changes the closure of every model using it, and each must be
+  proven again ([docs/WORKFLOW.md](docs/WORKFLOW.md)).
+
 ---
 
 ## 3. Composition over inheritance
@@ -94,7 +114,9 @@ Instead, a device model explicitly identifies what it contains:
 
 This makes ownership obvious.
 
-Inheritance or defaults may still be used where there is a genuine semantic default, but it must not be used as a substitute for explicit hardware relationships.
+There is no inheritance and no default. A family, vendor or class entity
+appears in the resolved view under its own reference (`family`, `vendor`,
+`class`), never merged into the model's own values.
 
 ---
 
@@ -327,16 +349,42 @@ Instead there is one generic catalog consumer.
 
 Generic capability modules implement reusable behavior:
 
-    nixos/
+    nixos/modules/
     ├── default.nix
+    ├── deployment.nix
+    ├── public-interface.nix
     ├── capabilities/
-    │   ├── fan-control.nix
-    │   ├── battery.nix
-    │   ├── graphics.nix
-    │   └── secure-boot.nix
+    │   └── fw-fanctrl.nix
     └── quirks/
+        ├── fprintd.nix
+        ├── kernel-fallback.nix
+        └── runtime-power.nix
 
 The catalog determines which capabilities and quirks apply.
+
+### Which module reads what
+
+Each module reads only these paths of `config.oddc.resolved`. The owner is
+the entity that holds the value in the current catalog; a module never
+reads a vendor or model ID to decide what to do.
+
+| Module | Resolved path it reads | Owner |
+| --- | --- | --- |
+| `default.nix` | `policy.kernel.parameters` | the device model |
+| `default.nix` | `class.policy.power.powerProfilesDaemon.enable` | `class/laptop` |
+| `capabilities/fw-fanctrl.nix` | `policy.thermal.fanControl` | the device model |
+| `quirks/fprintd.nix` | `quirks.*.fprintd`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
+| `quirks/fprintd.nix` | `hardware.security.fingerprint.primary.{bus,deviceId}` | the fingerprint component entity |
+| `quirks/kernel-fallback.nix` | `quirks.*.affected.kernel.{minimum,maximumBefore}`, `quirks.*.fallbackPackage`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
+| `quirks/runtime-power.nix` | `quirks.*.runtimePower`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
+| `deployment.nix` | the whole resolved view, written to `/etc/oddc/resolved.json` | each value's own owner |
+
+Policy no module here reads, such as `vendor.policy.secureBoot` or
+`policy.graphics.discrete.driverBranch`, is for consumers: they read it
+from `config.oddc.resolved` or `/etc/oddc/resolved.json`, and fail closed
+when it is absent.
+
+A module that reads a new path adds its row here in the same change.
 
 ---
 
@@ -364,11 +412,14 @@ Executable Nix or program logic lives in exactly one implementation module.
 
 Example:
 
-    catalog/quirks/framework/linux-7-2-dcn-freeze.json
+    catalog/entities/quirk/framework/linux-7-2-dcn-freeze.json
 
-and:
+and the generic module that acts on what it declares:
 
-    nixos/quirks/framework-linux-7-2-dcn-freeze.nix
+    nixos/modules/quirks/kernel-fallback.nix
+
+The module acts on the quirk's resolved values, not on its ID, so another
+quirk of the same kind needs no new Nix.
 
 The device model references the quirk ID.
 
@@ -452,7 +503,9 @@ Do not rewrite old evidence to match today's catalog.
 
 ## 13. Overrides
 
-Overrides are explicit layers outside canonical hardware knowledge.
+Overrides are explicit layers outside canonical hardware knowledge. They
+belong to the consumer's configuration (`oddc.overrides`), never to the
+catalog: inside the catalog nothing overrides anything.
 
 Precedence:
 
@@ -696,7 +749,7 @@ The desired end state is approximately:
     quirk/framework/linux-7-2-dcn-freeze
         owns compatibility metadata
 
-    nixos/quirks/framework-linux-7-2-dcn-freeze.nix
+    nixos/modules/quirks/kernel-fallback.nix
         owns the executable workaround
 
     evidence/...
