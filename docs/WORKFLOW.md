@@ -130,7 +130,9 @@ else GitHub at `main` (`--channel staging`, or `--rev COMMIT`). From GitHub
 they download only the model files, then only the matched model's
 reference closure and evidence; nothing else of the catalog leaves
 GitHub. `fetch` writes that answer to `--out` in canonical layout with the
-`revision` it came from; `--device ID` fetches a named model instead.
+`revision` it came from: from a local checkout its commit, or `local`
+when its catalog, schemas or evidence differ from that commit. `--device ID`
+fetches a named model instead.
 `classify` reads the local catalog (`--root`, `/etc/oddc` on a deployed
 system) and this machine's DMI and PCI/USB/HID IDs from `/sys`
 (`--sys DIR`), or facts from `--facts FILE`; it exits non-zero unless
