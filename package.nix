@@ -34,7 +34,7 @@ buildGoModule {
   nativeCheckInputs = [ git ];
   meta = {
     description = "Validate, resolve and explain ODDC hardware entities";
-    license = lib.licenses.asl20;
+    license = lib.licenses.gpl3Plus;
     mainProgram = "oddc";
   };
 }
