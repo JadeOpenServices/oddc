@@ -131,6 +131,9 @@ pkgs.runCommand "oddc-deployment" { nativeBuildInputs = [ pkgs.jq ]; } ''
   ''}
   ${oddc} doctor --root $root --sys sys
 
+  # The model's kernel, after its quirks, exists in this nixpkgs.
+  echo ${evaluated.config.boot.kernelPackages.kernel.version} > /dev/null
+
   [ "$(cat $root/revision)" = ${self.rev or self.dirtyRev or "unknown"} ]
   ${lib.boolToString (
     lib.elem package.name (map (p: p.name or "") evaluated.config.environment.systemPackages)
