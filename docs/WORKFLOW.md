@@ -105,15 +105,36 @@ system) and this machine's DMI and PCI/USB/HID IDs from `/sys`
 exactly one model matches. `doctor` works offline on `/etc/oddc`. `update` defaults to the flake in
 `/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`.
 
-For contributors (*planned*):
+For contributors:
 
     oddc workspace               # clone or update a local catalog checkout on staging
-    oddc scaffold                # draft model and component entities from this machine
-    oddc evidence record         # sanitized evidence record for this machine
-    oddc contribute              # validate, branch, commit, open a pull request
+    oddc scaffold                # draft a model entity for this machine
+    oddc evidence record         # add an evidence record for this machine
+    oddc contribute              # check the changes and open a pull request
 
-`oddc contribute` uses the contributor's own GitHub account through `gh`.
-Without push access it forks first. It always targets `staging`.
+The workspace is `$XDG_DATA_HOME/oddc`, by default `~/.local/share/oddc` (`--root DIR`);
+`workspace --from URL` clones another source. Updating drops local files
+that staging now holds unchanged, such as a merged contribution.
+
+`scaffold` refuses a machine that already matches. Its draft holds the
+DMI vendor, product and board name, the vendor and class entities, and
+every catalog component present, placed where other models place it
+(`--id ID` names it). It lists present devices it left out. It reads
+`/sys` (`--sys DIR`) or `--facts FILE`, as `classify` does.
+
+`evidence record` writes a new file below `evidence/` for the matching
+model or `--device ID`; it never changes one. A match adds
+`identity: pass`; `--result NAME=STATUS` adds more. `--status` defaults
+to `detected`. The environment holds only the OS name and version and
+the kernel version (`--os`, `--kernel`), and `--date` defaults to today in
+UTC.
+
+`contribute` sends only files below `catalog/` and `evidence/`, and only
+when the catalog validates and evidence was only added. It builds one
+commit on the newest staging without touching the workspace, authored by
+the GitHub account's noreply address with UTC dates. It uses the
+contributor's own account through `gh`, forks first without push access,
+and always targets `staging` (`--title`, `--body`).
 
 ## Using ODDC on NixOS
 
