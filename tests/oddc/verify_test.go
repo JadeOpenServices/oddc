@@ -5,10 +5,42 @@ package oddc_test
 import (
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	. "github.com/JadeOpenServices/oddc/pkg/oddc"
 )
+
+// proof fills a record with every result and driver that proves model
+// hardware-validated.
+func proof(t *testing.T, registry *Registry, model string, record map[string]any) {
+	t.Helper()
+
+	required, err := registry.Requirements(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := registry.ResolveEntity(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results, drivers := map[string]any{}, map[string]any{}
+	for name, want := range required {
+		results[name] = want
+		if !strings.HasPrefix(name, "hardware.") {
+			continue
+		}
+		component := resolved.Resolved
+		for _, key := range strings.Split(name, ".") {
+			component = component[key].(map[string]any)
+		}
+		if driver, ok := component["driver"].(string); ok {
+			drivers[component["id"].(string)] = []any{driver}
+		}
+	}
+	record["results"], record["drivers"] = results, drivers
+}
 
 // verifyCopy loads a copy of the catalog in which edit changed the
 // evidence record at path, and verifies its model.
@@ -50,6 +82,7 @@ func TestVerify(t *testing.T) {
 			}
 			record["closure"] = closure
 			record["status"] = "hardware-validated"
+			proof(t, registry, model, record)
 		}
 
 		if status := verifyCopy(t, path, onClosure); status.Status != Verified || status.Evidence.ID != id {
@@ -79,6 +112,17 @@ func TestVerify(t *testing.T) {
 		})
 		if documented.Status != Unverified || documented.Evidence.ID != id {
 			t.Errorf("%s documented only: %+v", path, documented)
+		}
+
+		// Passing evidence on the current closure that misses one
+		// requirement does not validate.
+		root := copyCatalog(t)
+		editEntity(t, filepath.Join(root, path), func(record map[string]any) {
+			onClosure(root, record)
+			delete(record["results"].(map[string]any), "identity")
+		})
+		if _, err := LoadRegistry(root); err == nil || !strings.Contains(err.Error(), "result identity: missing") {
+			t.Errorf("%s without identity: %v", path, err)
 		}
 
 		if unnamed := verifyCopy(t, path, func(root string, record map[string]any) {

@@ -188,6 +188,22 @@ func (r *Registry) validateEvidence() error {
 				}
 			}
 
+			// Passing evidence on the current closure must prove it; on an
+			// older closure it proves nothing any more.
+			closure, err := r.Closure(evidence.DeviceID)
+			if err != nil {
+				return fmt.Errorf("%s: %w", path, err)
+			}
+			if evidence.Closure == closure {
+				unmet, err := r.Unmet(evidence.DeviceID, evidence)
+				if err != nil {
+					return fmt.Errorf("%s: %w", path, err)
+				}
+				if len(unmet) > 0 {
+					return fmt.Errorf("%s does not prove %s %s: %s", path, evidence.DeviceID, evidence.Status, strings.Join(unmet, "; "))
+				}
+			}
+
 			return nil
 		},
 	)

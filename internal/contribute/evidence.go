@@ -163,6 +163,23 @@ func RunEvidence(args []string) error {
 		Drivers:       drivers,
 		Closure:       closure,
 	}
+	// Passing evidence must prove the model the workspace holds.
+	if status == "runtime-verified" || status == "hardware-validated" {
+		current, err := registry.Closure(device)
+		if err != nil {
+			return err
+		}
+		if closure != "" && closure != current {
+			return fmt.Errorf("the deployed %s is not the one in %s; record from a checkout of the deployed revision %s", device, root, revision)
+		}
+		unmet, err := registry.Unmet(device, record)
+		if err != nil {
+			return err
+		}
+		if len(unmet) > 0 {
+			return fmt.Errorf("this does not prove %s %s:\n  %s", device, status, strings.Join(unmet, "\n  "))
+		}
+	}
 	if err := writeChecked(root, file, record); err != nil {
 		return err
 	}
