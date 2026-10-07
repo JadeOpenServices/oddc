@@ -1,7 +1,6 @@
 # ODDC workflow
 
 How ODDC reaches a machine, how people use it, and how changes get in.
-Items marked *planned* are agreed design that is not implemented yet.
 
 ## Flow
 
@@ -30,7 +29,7 @@ Items marked *planned* are agreed design that is not implemented yet.
 
 - Every contribution branches from the current `staging` and targets
   `staging`. A pull request against `main` is retargeted to `staging`
-  automatically (*planned*).
+  automatically.
 - `staging` only takes reviewed changes that pass CI. Changes are tested
   there, on real hardware where they touch a device.
 - A maintainer promotes `staging` to `main` once its changes are tested.
@@ -52,7 +51,8 @@ Anyone may open a pull request. Only maintainers merge.
   merged, they cannot open another. A good first pull request is how
   maintainers find new collaborators.
 - A bot enforces these rules on every pull request and explains any
-  rejection in a comment (*planned*).
+  rejection in a comment: `.github/workflows/pr-rules.yml`. A pull request
+  with a second device fails its check; a second open one is closed.
 - Code (Nix modules, Go) gets stricter review than catalog data: it runs as
   root on every matching machine.
 
