@@ -91,7 +91,8 @@ For users:
     oddc setup                   # NixOS snippet for the matching model
     oddc fetch --out DIR         # only this machine's model, for installers
     oddc doctor                  # deployed model still matches the hardware?
-    oddc update [--switch]       # update the oddc flake input, then rebuild
+    oddc update [--switch]       # take the newest ODDC of the stage the system follows
+    oddc update --stage staging  # follow staging instead; --stage main returns to releases
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main` (`--channel staging`, or `--rev COMMIT`). From GitHub
@@ -103,7 +104,12 @@ GitHub. `fetch` writes that answer to `--out` in canonical layout with the
 system) and this machine's DMI and PCI/USB/HID IDs from `/sys`
 (`--sys DIR`), or facts from `--facts FILE`; it exits non-zero unless
 exactly one model matches. `doctor` works offline on `/etc/oddc`. `update` defaults to the flake in
-`/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`.
+`/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`. It keeps
+the oddc input on the stage it follows and prints the revision before and
+after. `--stage main` follows releases; `--stage staging` follows what was
+merged since, such as a contributor's own model before its release. It
+switches by rewriting the one `github:JadeOpenServices/oddc` URL in
+`flake.nix`, so an input from elsewhere is only updated.
 
 For contributors:
 

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -237,24 +238,135 @@ func command(name string, args ...string) error {
 	return cmd.Run()
 }
 
-// runUpdate takes the newest catalog into a system flake and, with
-// --switch, rebuilds.
-func runUpdate(args []string) error {
-	flake := value(args, "--flake", "/etc/nixos")
+// Stages a system flake can follow. main holds releases; staging holds
+// what was merged since, contributions included, before it is released.
+var stages = map[string]string{
+	"main":    upstream,
+	"staging": upstream + "/staging",
+}
+
+// lockedInput is the oddc input as a flake.lock records it.
+type lockedInput struct {
+	Locked struct {
+		Rev string `json:"rev"`
+	} `json:"locked"`
+	Original struct {
+		Type  string `json:"type"`
+		Owner string `json:"owner"`
+		Repo  string `json:"repo"`
+		Ref   string `json:"ref"`
+		Rev   string `json:"rev"`
+	} `json:"original"`
+}
+
+// stage names what the input follows: a stage, a pinned commit, or
+// another branch of ODDC on GitHub; "" when it is not ODDC on GitHub.
+func (input lockedInput) stage() string {
+	original := input.Original
+	if original.Type != "github" ||
+		!strings.EqualFold(original.Owner, "JadeOpenServices") ||
+		!strings.EqualFold(original.Repo, "oddc") {
+		return ""
+	}
+
+	switch {
+	case original.Rev != "":
+		return "commit " + short(original.Rev)
+	case original.Ref == "":
+		return "main"
+	default:
+		return original.Ref
+	}
+}
+
+func short(rev string) string {
+	if len(rev) > 7 {
+		return rev[:7]
+	}
+
+	return rev
+}
+
+// lockedOddc reads the oddc input from a flake's lock file.
+func lockedOddc(flake string) (lockedInput, error) {
+	var input lockedInput
 
 	lock, err := os.ReadFile(filepath.Join(flake, "flake.lock"))
 	if err != nil {
-		return fmt.Errorf("%s is not a locked flake: %w", flake, err)
+		return input, fmt.Errorf("%s is not a locked flake: %w", flake, err)
 	}
 
 	var parsed struct {
+		Root  string                     `json:"root"`
 		Nodes map[string]json.RawMessage `json:"nodes"`
 	}
 	if err := json.Unmarshal(lock, &parsed); err != nil {
+		return input, err
+	}
+
+	var root struct {
+		Inputs map[string]json.RawMessage `json:"inputs"`
+	}
+	if err := json.Unmarshal(parsed.Nodes[parsed.Root], &root); err != nil {
+		return input, err
+	}
+
+	var node string
+	if json.Unmarshal(root.Inputs["oddc"], &node) != nil {
+		return input, fmt.Errorf("%s has no oddc input", flake)
+	}
+
+	return input, json.Unmarshal(parsed.Nodes[node], &input)
+}
+
+// oddcURL matches the oddc input's URL in a flake.nix, whatever it follows.
+var oddcURL = regexp.MustCompile(`"github:(?i:JadeOpenServices/oddc)(?:/[^"?]*)?(?:\?[^"]*)?"`)
+
+// setStage points the oddc input in flake.nix at a stage.
+func setStage(flake, url string) error {
+	path := filepath.Join(flake, "flake.nix")
+
+	data, err := os.ReadFile(path)
+	if err != nil {
 		return err
 	}
-	if _, ok := parsed.Nodes["oddc"]; !ok {
-		return fmt.Errorf("%s has no oddc input", flake)
+
+	if found := oddcURL.FindAll(data, -1); len(found) != 1 {
+		return fmt.Errorf(
+			"%s has %d ODDC GitHub URLs, not one; set inputs.oddc.url = %q yourself",
+			path, len(found), url,
+		)
+	}
+
+	return os.WriteFile(path, oddcURL.ReplaceAll(data, []byte(`"`+url+`"`)), 0o644)
+}
+
+// runUpdate takes the newest catalog of the stage a system flake follows
+// into it, after --stage switches the stage, and with --switch rebuilds.
+func runUpdate(args []string) error {
+	flake := value(args, "--flake", "/etc/nixos")
+
+	before, err := lockedOddc(flake)
+	if err != nil {
+		return err
+	}
+
+	if name := value(args, "--stage", ""); name != "" {
+		url, ok := stages[name]
+		if !ok {
+			return fmt.Errorf("--stage is main or staging, not %q", name)
+		}
+
+		if before.stage() == "" {
+			return fmt.Errorf(
+				"the oddc input of %s is not %s; --stage switches only that",
+				flake, upstream,
+			)
+		}
+
+		if err := setStage(flake, url); err != nil {
+			return err
+		}
 	}
 
 	if err := command(
@@ -263,9 +375,32 @@ func runUpdate(args []string) error {
 		return err
 	}
 
+	after, err := lockedOddc(flake)
+	if err != nil {
+		return err
+	}
+
+	from, to := short(before.Locked.Rev), short(after.Locked.Rev)
+	switch {
+	case before.stage() != after.stage():
+		fmt.Printf("oddc: %s %s -> %s %s\n", before.stage(), from, after.stage(), to)
+	case from == to:
+		fmt.Printf("oddc: %s %s is the newest\n", after.stage(), to)
+		if after.Original.Rev != "" {
+			fmt.Println("Pinned to a commit; --stage main or --stage staging follows a stage.")
+		}
+		return nil
+	default:
+		fmt.Printf("oddc: %s %s -> %s\n", after.stage(), from, to)
+	}
+
+	if after.stage() == "staging" && before.stage() != "staging" {
+		fmt.Println("staging is not released yet; `oddc update --stage main` returns to releases.")
+	}
+
 	if !has(args, "--switch") {
 		fmt.Printf(
-			"Updated oddc. Apply with: sudo nixos-rebuild switch --flake %s\n",
+			"Apply with: sudo nixos-rebuild switch --flake %s\n",
 			flake,
 		)
 		return nil

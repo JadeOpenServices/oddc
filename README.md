@@ -94,6 +94,10 @@ On a deployed system, check and update it:
     oddc doctor
     oddc update --switch
 
+Contributors can follow `staging` to get merged models before a release:
+
+    oddc update --stage staging --switch
+
 See [docs/WORKFLOW.md](docs/WORKFLOW.md) for every command.
 
 Validate the registry and evidence:
