@@ -133,3 +133,84 @@ func TestVerify(t *testing.T) {
 		}
 	}
 }
+
+// A kernel-ranged quirk the deployment did not apply is proven
+// not-affected; a quirk without a kernel range is always applied.
+func TestVerifyInactiveQuirks(t *testing.T) {
+	registry := catalog(t)
+
+	tested := false
+	for _, path := range evidenceFiles(t) {
+		var ranged, always string
+		onClosure := func(root string, record map[string]any) {
+			model := record["deviceId"].(string)
+			resolved, err := registry.ResolveEntity(model)
+			if err != nil {
+				t.Fatal(err)
+			}
+			quirks, _ := resolved.Resolved["quirks"].(map[string]any)
+			for _, key := range sortedKeys(quirks) {
+				if _, ok := quirks[key].(map[string]any)["affected"]; ok && ranged == "" {
+					ranged = key
+				} else if !ok && always == "" {
+					always = key
+				}
+			}
+			closure, err := registry.Closure(model)
+			if err != nil {
+				t.Fatal(err)
+			}
+			record["closure"] = closure
+			record["status"] = "hardware-validated"
+			proof(t, registry, model, record)
+		}
+
+		load := func(edit func(record map[string]any)) error {
+			root := copyCatalog(t)
+			editEntity(t, filepath.Join(root, path), func(record map[string]any) {
+				onClosure(root, record)
+				edit(record)
+			})
+			_, err := LoadRegistry(root)
+			return err
+		}
+
+		if err := load(func(map[string]any) {}); err != nil {
+			t.Fatal(err)
+		}
+		if ranged == "" || always == "" {
+			continue
+		}
+		tested = true
+
+		err := load(func(record map[string]any) { record["inactiveQuirks"] = []any{ranged} })
+		if want := "result quirks." + ranged + ": pass, want not-affected"; err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("%s with %s inactive but passing: %v, want %q", path, ranged, err, want)
+		}
+
+		if status := verifyCopy(t, path, func(root string, record map[string]any) {
+			onClosure(root, record)
+			record["inactiveQuirks"] = []any{ranged}
+			record["results"].(map[string]any)["quirks."+ranged] = "not-affected"
+		}); status.Status != Verified {
+			t.Errorf("%s with %s inactive and not affected: %+v", path, ranged, status)
+		}
+
+		err = load(func(record map[string]any) { record["inactiveQuirks"] = []any{always} })
+		if want := "quirk " + always + ": not kernel-ranged"; err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("%s with %s inactive: %v, want %q", path, always, err, want)
+		}
+	}
+	if !tested {
+		t.Fatal("no evidence is for a model with a kernel-ranged and an unranged quirk")
+	}
+}
+
+func sortedKeys(values map[string]any) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}

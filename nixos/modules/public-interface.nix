@@ -92,6 +92,16 @@ in
       description = "Model IDs available in the canonical ODDC entity registry.";
     };
 
+    inactiveQuirks = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      internal = true;
+      description = ''
+        Keys of the resolved model's enabled kernel-ranged quirks that this
+        system does not apply, because its kernel is outside their range.
+      '';
+    };
+
     resolved = mkOption {
       type = types.attrs;
       readOnly = true;

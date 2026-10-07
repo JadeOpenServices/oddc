@@ -14,8 +14,10 @@ How ODDC reaches a machine, how people use it, and how changes get in.
    override) into `config.oddc.resolved`.
 4. **Deployment.** The system receives only the selected model under
    `/etc/oddc`: its reference closure in canonical layout, its evidence,
-   `host-overlay.json` when `oddc.overrides` is set, `resolved.json`, and
-   the ODDC `revision` it was built from. Other models never reach the
+   `host-overlay.json` when `oddc.overrides` is set, `resolved.json`,
+   `inactive-quirks.json` (the model's kernel-ranged quirks it does not
+   apply, because its kernel is outside their range) and the ODDC
+   `revision` it was built from. Other models never reach the
    system closure.
 5. **Behavior.** Generic capability and quirk modules act on resolved
    semantic values, never on vendor or model IDs.
@@ -162,7 +164,8 @@ to `detected`. The record names what was tested. The environment holds
 only the OS name and version, the kernel version, the BIOS version and the
 ODDC revision deployed in `/etc/oddc` (`--os`, `--kernel`, `--bios`,
 `--deployment DIR`). When the deployed model is the recorded one,
-`closure` holds its closure digest, which `status` compares.
+`closure` holds its closure digest, which `status` compares, and
+`inactiveQuirks` the quirks the deployment did not apply.
 `runtime-verified` and `hardware-validated` are written only when the
 record proves them; [VERIFY.md](VERIFY.md) says what each needs. `drivers` lists the kernel driver bound to each of the
 model's components that is present, read from `/sys`. `--date` defaults

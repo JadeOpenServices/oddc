@@ -3,6 +3,7 @@
 package contribute
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -45,23 +46,29 @@ func osName() string {
 }
 
 // deployment is what the NixOS module deployed at root for device: its
-// ODDC revision and the closure digest. Both are "" when root holds no
-// deployment of device.
-func deployment(root, device string) (revision, closure string, err error) {
+// ODDC revision, the closure digest and the quirks it did not apply. All
+// are empty when root holds no deployment of device.
+func deployment(root, device string) (revision, closure string, inactive []string, err error) {
 	if cli.DeployedModel(root) != device {
-		return "", "", nil
+		return "", "", nil, nil
 	}
 
 	registry, err := oddc.LoadRegistry(root)
 	if err != nil {
-		return "", "", fmt.Errorf("deployment %s: %w", root, err)
+		return "", "", nil, fmt.Errorf("deployment %s: %w", root, err)
 	}
 	if closure, err = registry.Closure(device); err != nil {
-		return "", "", err
+		return "", "", nil, err
+	}
+
+	if data, err := os.ReadFile(filepath.Join(root, "inactive-quirks.json")); err == nil {
+		if err := json.Unmarshal(data, &inactive); err != nil {
+			return "", "", nil, fmt.Errorf("deployment %s: inactive-quirks.json: %w", root, err)
+		}
 	}
 
 	data, _ := os.ReadFile(filepath.Join(root, "revision"))
-	return strings.TrimSpace(string(data)), closure, nil
+	return strings.TrimSpace(string(data)), closure, inactive, nil
 }
 
 func kernelRelease() string {
@@ -123,13 +130,13 @@ func RunEvidence(args []string) error {
 	if kernel := cli.Value(args, "--kernel", kernelRelease()); kernel != "" {
 		environment["kernel"] = kernel
 	}
-	// What was tested: the BIOS, the ODDC revision and closure deployed
-	// on this machine, and the drivers bound to the model's components.
+	// What was tested: the BIOS, the ODDC revision, closure and inactive
+	// quirks deployed on this machine, and the drivers bound to the model's components.
 	sys := cli.Value(args, "--sys", "/sys")
 	if bios := cli.Value(args, "--bios", oddc.ReadBIOS(sys)); bios != "" {
 		environment["bios"] = bios
 	}
-	revision, closure, err := deployment(cli.Value(args, "--deployment", cli.SystemRoot), device)
+	revision, closure, inactive, err := deployment(cli.Value(args, "--deployment", cli.SystemRoot), device)
 	if err != nil {
 		return err
 	}
@@ -152,16 +159,17 @@ func RunEvidence(args []string) error {
 	file := filepath.Join(dir, name+".json")
 
 	record := oddc.Evidence{
-		Schema:        schemaRef(root, file, "evidence.schema.json"),
-		SchemaVersion: oddc.SchemaVersion,
-		ID:            path.Base(device) + "-" + name,
-		DeviceID:      device,
-		ObservedAt:    date,
-		Status:        status,
-		Environment:   environment,
-		Results:       results,
-		Drivers:       drivers,
-		Closure:       closure,
+		Schema:         schemaRef(root, file, "evidence.schema.json"),
+		SchemaVersion:  oddc.SchemaVersion,
+		ID:             path.Base(device) + "-" + name,
+		DeviceID:       device,
+		ObservedAt:     date,
+		Status:         status,
+		Environment:    environment,
+		Results:        results,
+		Drivers:        drivers,
+		Closure:        closure,
+		InactiveQuirks: inactive,
 	}
 	// Passing evidence must prove the model the workspace holds.
 	if status == "runtime-verified" || status == "hardware-validated" {

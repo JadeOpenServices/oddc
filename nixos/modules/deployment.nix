@@ -8,7 +8,8 @@
 
 # Deploy the selected model, never the whole catalog. /etc/oddc holds the
 # model's reference closure in canonical layout, its evidence, the host
-# overlay, and the resolved view, so `oddc` works offline.
+# overlay, the resolved view and the quirks it did not apply, so `oddc`
+# works offline.
 let
   registry = import ../../lib/registry.nix {
     inherit lib;
@@ -42,6 +43,7 @@ in
       ))
       {
         "oddc/resolved.json".text = builtins.toJSON cfg.resolved;
+        "oddc/inactive-quirks.json".text = builtins.toJSON (lib.sort lib.lessThan cfg.inactiveQuirks);
       }
       (lib.mkIf (cfg.revision != null) { "oddc/revision".text = "${cfg.revision}\n"; })
       (lib.mkIf (cfg.overrides != { }) {

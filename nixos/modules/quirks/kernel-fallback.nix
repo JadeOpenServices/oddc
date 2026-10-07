@@ -8,16 +8,15 @@
 }:
 
 let
-  quirks = builtins.attrValues (lib.attrByPath [ "quirks" ] { } config.oddc.resolved);
+  quirks = lib.attrByPath [ "quirks" ] { } config.oddc.resolved;
 
-  candidates = lib.filter (
-    candidate:
-    (candidate.enabled or false)
-    && (candidate ? affected.kernel)
-    && (candidate ? fallbackPackage)
+  candidates = lib.filterAttrs (
+    _: candidate:
+    (candidate.enabled or false) && (candidate ? affected.kernel) && (candidate ? fallbackPackage)
   ) quirks;
 
-  quirk = if candidates == [ ] then null else builtins.head candidates;
+  key = if candidates == { } then null else builtins.head (builtins.attrNames candidates);
+  quirk = if key == null then null else candidates.${key};
   kernel = if quirk == null then { } else quirk.affected.kernel;
   minimum = kernel.minimum or "";
   maximumBefore = kernel.maximumBefore or "";
@@ -50,7 +49,7 @@ in
   config = lib.mkIf (quirk != null) {
     assertions = [
       {
-        assertion = builtins.length candidates == 1;
+        assertion = builtins.length (builtins.attrNames candidates) == 1;
         message = "ODDC resolved more than one enabled kernel fallback quirk.";
       }
       {
@@ -64,5 +63,9 @@ in
     ];
 
     boot.kernelPackages = lib.mkForce safeKernelPackages;
+
+    # Outside its kernel range the quirk is not applied; evidence then
+    # proves it not-affected instead of passing.
+    oddc.inactiveQuirks = lib.optional (!affected) key;
   };
 }

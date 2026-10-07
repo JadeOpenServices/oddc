@@ -76,6 +76,23 @@ let
   );
   battery = lib.attrByPath [ "class" "formFactor" ] null canonical == "laptop";
 
+  # Enabled kernel-ranged quirks whose range misses the newest kernel are
+  # not applied.
+  latest = pkgs.linuxPackages_latest.kernel.version;
+  inactive = lib.sort lib.lessThan (
+    lib.attrNames (
+      lib.filterAttrs (
+        _: quirk:
+        (quirk.enabled or false)
+        && quirk ? affected.kernel
+        && !(
+          lib.versionAtLeast latest quirk.affected.kernel.minimum
+          && lib.versionOlder latest quirk.affected.kernel.maximumBefore
+        )
+      ) (canonical.quirks or { })
+    )
+  );
+
   others = lib.remove id registry.modelIds;
   check = lib.escapeShellArgs [
     "--argjson"
@@ -99,6 +116,9 @@ pkgs.runCommand "oddc-deployment" { nativeBuildInputs = [ pkgs.jq ]; } ''
   ${oddc} resolve --root $root \
     | jq -e ${check} '.resolved | getpath($path) == $want'
   jq -e ${check} 'getpath($path) == $want' $root/resolved.json
+
+  jq -e --argjson want ${lib.escapeShellArg (builtins.toJSON inactive)} '. == $want' \
+    $root/inactive-quirks.json
 
   mkdir -p sys/class/dmi/id
   ${oddc} doctor --root $root --sys sys && exit 1
