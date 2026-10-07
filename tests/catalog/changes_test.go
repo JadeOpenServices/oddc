@@ -31,7 +31,7 @@ func TestClass(t *testing.T) {
 	}
 }
 
-// TestListChanges commits this repository's own flake.nix and README.md
+// TestListChanges commits this repository's own go.mod and README.md
 // over a git copy of the catalog, along with a change to existing evidence.
 func TestListChanges(t *testing.T) {
 	root := fixture.GitCatalog(t)
@@ -41,7 +41,7 @@ func TestListChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, file := range []string{"flake.nix", "README.md"} {
+	for _, file := range []string{"go.mod", "README.md"} {
 		data, err := os.ReadFile(filepath.Join(fixture.Repository, file))
 		if err != nil {
 			t.Fatal(err)
@@ -70,7 +70,7 @@ func TestListChanges(t *testing.T) {
 
 	want := map[string]catalog.Change{
 		"README.md": {Path: "README.md", Status: "A", Class: "docs"},
-		"flake.nix": {Path: "flake.nix", Status: "A", Class: "nix"},
+		"go.mod":    {Path: "go.mod", Status: "A", Class: "go"},
 		relative:    {Path: relative, Status: "D", Class: "evidence", AppendOnly: true},
 	}
 	if len(changes.Changes) != len(want) {
