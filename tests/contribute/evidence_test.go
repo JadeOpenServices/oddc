@@ -2,6 +2,7 @@ package contribute_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -68,5 +69,60 @@ func TestEvidenceRecordRefusesIdentifyingResult(t *testing.T) {
 	file := filepath.Join(workspace, "evidence", filepath.FromSlash(models[0]), date+".json")
 	if cli.Exists(file) {
 		t.Fatal("refused record was left behind")
+	}
+}
+
+// A record names what was tested: the BIOS, the deployed ODDC revision
+// and the drivers bound to the model's components. It runs on the model
+// the catalog has evidence for, with the BIOS of the Framework Laptop 13
+// that recorded it and the catalog's own commit as the revision.
+func TestEvidenceRecordWhatWasTested(t *testing.T) {
+	origin, workspace := catalogUpstream(t)
+	registry, _ := fixture.Catalog(t)
+
+	data, err := os.ReadFile(fixture.FirstEvidence(t, fixture.Repository))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var existing oddc.Evidence
+	if err := json.Unmarshal(data, &existing); err != nil {
+		t.Fatal(err)
+	}
+	model := existing.DeviceID
+
+	sys := fixture.Sysfs(t, registry, model)
+	fixture.Components(t, sys, registry, model)
+	fixture.Write(t, filepath.Join(sys, "class", "dmi", "id", "bios_version"), []byte("03.20\n"))
+	revision := gitOut(t, origin, "rev-parse", "HEAD")
+
+	if err := contribute.RunEvidence([]string{
+		"evidence", "record", "--root", workspace, "--sys", sys,
+		"--revision", revision, "--result", "wifi=pass", "--date", today(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	data, err = os.ReadFile(filepath.Join(workspace, "evidence", filepath.FromSlash(model), today()+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var record oddc.Evidence
+	if err := json.Unmarshal(data, &record); err != nil {
+		t.Fatal(err)
+	}
+
+	if record.Environment["bios"] != "03.20" || record.Environment["oddc"] != revision {
+		t.Errorf("environment %v, want bios 03.20 and oddc %s", record.Environment, revision)
+	}
+	want, err := registry.ComponentDrivers(model, oddc.ReadDrivers(sys))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(want) == 0 || fmt.Sprint(record.Drivers) != fmt.Sprint(want) {
+		t.Errorf("drivers %v, want %v", record.Drivers, want)
+	}
+
+	if result := oddc.Validate(workspace); !result.Valid {
+		t.Fatal(result.Errors)
 	}
 }

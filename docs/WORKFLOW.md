@@ -143,9 +143,12 @@ every catalog component present, placed where other models place it
 `evidence record` writes a new file below `evidence/` for the matching
 model or `--device ID`; it never changes one. A match adds
 `identity: pass`; `--result NAME=STATUS` adds more. `--status` defaults
-to `detected`. The environment holds only the OS name and version and
-the kernel version (`--os`, `--kernel`), and `--date` defaults to today in
-UTC.
+to `detected`. The record names what was tested. The environment holds
+only the OS name and version, the kernel version, the BIOS version and the
+ODDC revision deployed in `/etc/oddc` (`--os`, `--kernel`, `--bios`,
+`--revision`). `drivers` lists the kernel driver bound to each of the
+model's components that is present, read from `/sys`. `--date` defaults
+to today in UTC.
 
 `contribute` sends only files below `catalog/` and `evidence/`, and only
 when the catalog validates and evidence was only added. It builds one
