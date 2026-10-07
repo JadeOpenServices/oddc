@@ -6,6 +6,7 @@
 #
 #   pr-rules.sh            enforce on $PR, with the environment the workflow sets
 #   pr-rules.sh models     print the device models among the paths on stdin
+#   pr-rules.sh entities   print those whose entity the paths on stdin change
 set -euo pipefail
 
 # models prints each device model, vendor/model, that the paths on stdin
@@ -17,10 +18,18 @@ models() {
     sort -u
 }
 
-if [ "${1:-}" = models ]; then
-  models
-  exit 0
-fi
+# entities prints each device model whose own entity the paths on stdin
+# change.
+entities() {
+  sed -nE 's|^catalog/entities/model/([^/]+/[^/]+)\.json$|\1|p' | sort -u
+}
+
+case "${1:-}" in
+  models | entities)
+    "$1"
+    exit 0
+    ;;
+esac
 
 : "${REPO:?}" "${PR:?}" "${AUTHOR:?}" "${ASSOCIATION:?}" "${BASE:?}" "${HEAD_REPO:?}" "${HEAD_REF:?}" "${HEAD_SHA:?}"
 rules="https://github.com/$REPO/blob/staging/docs/WORKFLOW.md#contribution-rules"
@@ -46,7 +55,15 @@ case "$ASSOCIATION" in
     ;;
 esac
 
-changed=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename' | models)
+# A shared change moves the closure of every model using it at once, so a
+# member's pull request may carry evidence for each of them; it still
+# changes at most one model's own entity. Anyone else's changes one model.
+files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename')
+if [ "$member" = true ]; then
+  changed=$(printf '%s\n' "$files" | entities)
+else
+  changed=$(printf '%s\n' "$files" | models)
+fi
 if [ "$(printf '%s' "$changed" | grep -c .)" -gt 1 ]; then
   gh pr comment "$PR" --repo "$REPO" --body "This pull request changes more than one device model:
 

@@ -57,6 +57,10 @@ Anyone may open a pull request. Only maintainers merge.
   collaborators are exempt.
 - **One device per pull request.** A pull request changes at most one
   device model, with the components, quirks and evidence that model needs.
+  A change to shared components or quirks changes every model using them
+  at once, and each must be proven again; a maintainer's or collaborator's
+  pull request may therefore carry evidence for several models, while
+  still changing at most one model's own entity.
 - **New contributors wait.** Until a contributor's first pull request is
   merged, they cannot open another. A good first pull request is how
   maintainers find new collaborators.
