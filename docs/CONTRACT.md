@@ -33,6 +33,10 @@ reused for something else. Renaming or removing an ID is a breaking change.
   its errors. Exits non-zero when it is not. `--since REV` also fails
   when evidence was changed or removed since REV; evidence is append-only.
   Valid evidence holds nothing that identifies a machine or a person.
+- `oddc changes --root DIR --from REV [--to REV] --json`: `from` and
+  `to` as full commits and every changed `path` with its git `status` and
+  `class`: `data`, `evidence`, `schema`, `nix`, `go`, `docs` or `other`.
+  `appendOnlyViolation` marks evidence that was changed or removed.
 - `oddc classify --root DIR [--sys DIR | --facts FILE]`: which model a
   machine's facts match and why. `result` is `matched` (with `model`),
   `ambiguous` (with the tied models) or `none`; it exits non-zero unless
