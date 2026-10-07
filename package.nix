@@ -18,7 +18,7 @@ buildGoModule {
   };
   vendorHash = null;
   subPackages = [ "cmd/oddc" ];
-  # The registry tests read the catalog from the source root.
+  # The tests read the catalog from the source root.
   doCheck = true;
   # validate --since compares revisions with git.
   nativeCheckInputs = [ git ];

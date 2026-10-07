@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JadeOpenServices/oddc"
+	"github.com/JadeOpenServices/oddc/pkg/oddc"
 )
 
 // Contributor commands. A contribution is data: files below catalog/ and

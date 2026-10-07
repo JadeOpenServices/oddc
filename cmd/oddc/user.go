@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JadeOpenServices/oddc"
+	"github.com/JadeOpenServices/oddc/pkg/oddc"
 )
 
 const upstream = "github:JadeOpenServices/oddc"

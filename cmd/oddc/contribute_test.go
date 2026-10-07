@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JadeOpenServices/oddc"
+	"github.com/JadeOpenServices/oddc/pkg/oddc"
 )
 
 // The GitHub half of contribute (fork, push, pull request) is not tested
