@@ -1,4 +1,4 @@
-package oddc
+package oddc_test
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	. "github.com/JadeOpenServices/oddc/pkg/oddc"
 )
 
 // The facts a model declares classify to that model, with every

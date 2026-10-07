@@ -20,8 +20,14 @@ buildGoModule {
   };
   vendorHash = null;
   subPackages = [ "cmd/oddc" ];
-  # The tests read the catalog from the source root.
+  # The tests live under tests/ and read the catalog from the source root;
+  # the default check would only test subPackages.
   doCheck = true;
+  checkPhase = ''
+    runHook preCheck
+    go test ./...
+    runHook postCheck
+  '';
   # validate --since compares revisions with git.
   nativeCheckInputs = [ git ];
   meta = {

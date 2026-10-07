@@ -1,4 +1,4 @@
-package main
+package system_test
 
 import (
 	"os"
@@ -7,13 +7,16 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/JadeOpenServices/oddc/internal/system"
+	"github.com/JadeOpenServices/oddc/tests/fixture"
 )
 
 // systemFlake writes a flake.nix that takes ODDC as the README shows.
 func systemFlake(t *testing.T) (dir, readme string) {
 	t.Helper()
 
-	data, err := os.ReadFile(filepath.Join(repository, "README.md"))
+	data, err := os.ReadFile(filepath.Join(fixture.Repository, "README.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +27,7 @@ func systemFlake(t *testing.T) (dir, readme string) {
 	}
 
 	dir = t.TempDir()
-	write(t, filepath.Join(dir, "flake.nix"), []byte("{\n  "+readme+"\n  outputs = _: { };\n}\n"))
+	fixture.Write(t, filepath.Join(dir, "flake.nix"), []byte("{\n  "+readme+"\n  outputs = _: { };\n}\n"))
 
 	return dir, readme
 }
@@ -40,22 +43,22 @@ func TestSetStage(t *testing.T) {
 	}
 	original := read()
 
-	if err := setStage(flake, stages["staging"]); err != nil {
+	if err := system.SetStage(flake, system.Stages["staging"]); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(read(), `"github:JadeOpenServices/oddc/staging"`) {
 		t.Fatalf("not on staging:\n%s", read())
 	}
 
-	if err := setStage(flake, stages["main"]); err != nil {
+	if err := system.SetStage(flake, system.Stages["main"]); err != nil {
 		t.Fatal(err)
 	}
 	if read() != original {
 		t.Fatalf("main is not the README's input:\n%s", read())
 	}
 
-	write(t, filepath.Join(flake, "flake.nix"), []byte(original+"# "+readme+"\n"))
-	if err := setStage(flake, stages["staging"]); err == nil {
+	fixture.Write(t, filepath.Join(flake, "flake.nix"), []byte(original+"# "+readme+"\n"))
+	if err := system.SetStage(flake, system.Stages["staging"]); err == nil {
 		t.Fatal("chose between two ODDC URLs")
 	}
 }
@@ -86,20 +89,20 @@ func TestUpdateStage(t *testing.T) {
 	}
 
 	for _, stage := range []string{"main", "staging", "staging", "main"} {
-		if err := runUpdate([]string{"update", "--flake", flake, "--stage", stage}); err != nil {
+		if err := system.RunUpdate([]string{"update", "--flake", flake, "--stage", stage}); err != nil {
 			t.Fatal(err)
 		}
 
-		input, err := lockedOddc(flake)
+		input, err := system.LockedOddc(flake)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if input.stage() != stage || input.Locked.Rev != heads[stage] {
-			t.Fatalf("on %s %s, want %s %s", input.stage(), input.Locked.Rev, stage, heads[stage])
+		if input.Stage() != stage || input.Locked.Rev != heads[stage] {
+			t.Fatalf("on %s %s, want %s %s", input.Stage(), input.Locked.Rev, stage, heads[stage])
 		}
 	}
 
-	if err := runUpdate([]string{"update", "--flake", flake, "--stage", "release"}); err == nil {
+	if err := system.RunUpdate([]string{"update", "--flake", flake, "--stage", "release"}); err == nil {
 		t.Fatal("took an unknown stage")
 	}
 }

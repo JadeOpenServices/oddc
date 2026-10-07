@@ -71,7 +71,10 @@ Use `oddc explain` to inspect the final owner and override history.
     lib/         Nix functions that load and resolve the catalog
     checks/      flake checks
     pkg/oddc/    the Go library: load, validate, resolve, classify, fetch
-    cmd/oddc/    the `oddc` command
+    cmd/oddc/    the `oddc` command, which only dispatches to internal/
+    internal/    the commands by use: system, catalog, contribute, and the
+                 cli helpers they share
+    tests/       Go tests by package, on a shared fixture of this catalog
     docs/        workflow, consumer contract, releases
 
 ## Install
