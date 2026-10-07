@@ -109,7 +109,10 @@ the oddc input on the stage it follows and prints the revision before and
 after. `--stage main` follows releases; `--stage staging` follows what was
 merged since, such as a contributor's own model before its release. It
 switches by rewriting the one `github:JadeOpenServices/oddc` URL in
-`flake.nix`, so an input from elsewhere is only updated.
+`flake.nix`, so an input from elsewhere is only updated. A git flake
+leaves out files git does not track, so when the flake has any, `update`
+prints no rebuild command and `--switch` refuses before changing anything:
+such a system has its own way to rebuild.
 
 For contributors:
 

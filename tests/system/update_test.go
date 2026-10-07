@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -104,5 +105,38 @@ func TestUpdateStage(t *testing.T) {
 
 	if err := system.RunUpdate([]string{"update", "--flake", flake, "--stage", "release"}); err == nil {
 		t.Fatal("took an unknown stage")
+	}
+}
+
+// A git flake leaves out what git does not track, so a plain rebuild of a
+// flake that needs such files would fail.
+func TestUntracked(t *testing.T) {
+	flake, _ := systemFlake(t)
+	if got := system.Untracked(flake); got != nil {
+		t.Fatalf("outside git: %q", got)
+	}
+
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"add", "flake.nix"},
+		{"-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "flake"},
+	} {
+		if out, err := exec.Command("git", append([]string{"-C", flake}, args...)...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	if got := system.Untracked(flake); got != nil {
+		t.Fatalf("all tracked: %q", got)
+	}
+
+	fixture.Write(t, filepath.Join(flake, "generated", "hardware.nix"), []byte("{ }\n"))
+	fixture.Write(t, filepath.Join(flake, ".gitignore"), []byte("/generated\n"))
+	if got := system.Untracked(flake); !slices.Equal(got, []string{".gitignore", "generated/"}) {
+		t.Fatalf("untracked: %q", got)
+	}
+
+	if err := system.RunUpdate([]string{"update", "--flake", flake, "--switch"}); err == nil ||
+		!strings.Contains(err.Error(), "generated/") {
+		t.Fatalf("switched a flake with untracked files: %v", err)
 	}
 }
