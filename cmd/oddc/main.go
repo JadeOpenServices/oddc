@@ -1,483 +1,52 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"sort"
 	"strings"
 
-	"github.com/JadeOpenServices/oddc/pkg/oddc"
+	"github.com/JadeOpenServices/oddc/internal/catalog"
+	"github.com/JadeOpenServices/oddc/internal/contribute"
+	"github.com/JadeOpenServices/oddc/internal/system"
 )
 
-func value(
-	args []string,
-	name string,
-	fallback string,
-) string {
-	for i := 0; i+1 < len(args); i++ {
-		if args[i] == name {
-			return args[i+1]
-		}
-	}
-
-	return fallback
-}
-
-func values(
-	args []string,
-	name string,
-) []string {
-	var result []string
-
-	for i := 0; i+1 < len(args); i++ {
-		if args[i] == name {
-			result = append(
-				result,
-				args[i+1],
-			)
-		}
-	}
-
-	return result
-}
-
-func loadOverlays(
-	paths []string,
-) ([]oddc.Overlay, error) {
-	result := make(
-		[]oddc.Overlay,
-		0,
-		len(paths),
-	)
-
-	for _, path := range paths {
-		overlay, err := oddc.ReadOverlay(path)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(
-			result,
-			overlay,
-		)
-	}
-
-	return result, nil
-}
-
-// systemRoot is where the NixOS module deploys the selected model.
-const systemRoot = "/etc/oddc"
-
-func has(
-	args []string,
-	name string,
-) bool {
-	for _, arg := range args {
-		if arg == name {
-			return true
-		}
-	}
-
-	return false
-}
-
-func exists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
-// deployedModel returns the model a deployed root was built for, or "".
-func deployedModel(root string) string {
-	data, err := os.ReadFile(
-		filepath.Join(root, "resolved.json"),
-	)
-	if err != nil {
-		return ""
-	}
-
-	var resolved struct {
-		Model struct {
-			ID string `json:"id"`
-		} `json:"model"`
-	}
-	if json.Unmarshal(data, &resolved) != nil {
-		return ""
-	}
-
-	return resolved.Model.ID
-}
-
-// withDefaults completes args for a deployed system: the root defaults to
-// the system root when it holds a deployment, else the working directory;
-// resolve and explain default to the deployed model and its host overlay.
-func withDefaults(
-	args []string,
-	system string,
-) []string {
-	result := append([]string{}, args...)
-
-	if !has(result, "--root") {
-		root := "."
-		if deployedModel(system) != "" {
-			root = system
-		}
-
-		result = append(result, "--root", root)
-	}
-
-	if args[0] != "resolve" && args[0] != "explain" {
-		return result
-	}
-
-	root := value(result, "--root", ".")
-	model := deployedModel(root)
-
-	if !has(result, "--device") && model != "" {
-		result = append(result, "--device", model)
-	}
-
-	overlay := filepath.Join(root, "host-overlay.json")
-	if !has(result, "--host") &&
-		value(result, "--device", "") == model &&
-		exists(overlay) {
-		result = append(result, "--host", overlay)
-	}
-
-	return result
+// commands by name, in the order usage lists them: this machine, the
+// catalog, then contributing to it.
+var commands = []struct {
+	name string
+	run  func(args []string) error
+}{
+	{"detect", system.RunDetect},
+	{"setup", system.RunSetup},
+	{"fetch", system.RunFetch},
+	{"doctor", system.RunDoctor},
+	{"update", system.RunUpdate},
+	{"validate", catalog.Run},
+	{"list", catalog.Run},
+	{"index", catalog.Run},
+	{"classify", catalog.Run},
+	{"resolve", catalog.Run},
+	{"explain", catalog.Run},
+	{"workspace", contribute.RunWorkspace},
+	{"scaffold", contribute.RunScaffold},
+	{"evidence", contribute.RunEvidence},
+	{"contribute", contribute.RunContribute},
 }
 
 func run(args []string) error {
+	names := make([]string, 0, len(commands))
+	for _, command := range commands {
+		if len(args) > 0 && args[0] == command.name {
+			return command.run(args)
+		}
+		names = append(names, command.name)
+	}
+
 	if len(args) == 0 {
-		return fmt.Errorf(
-			"usage: oddc <detect|setup|fetch|doctor|update|validate|list|index|classify|resolve|explain|workspace|scaffold|evidence|contribute>",
-		)
+		return fmt.Errorf("usage: oddc <%s>", strings.Join(names, "|"))
 	}
 
-	switch args[0] {
-	case "detect":
-		return runDetect(args)
-	case "setup":
-		return runSetup(args)
-	case "fetch":
-		return runFetch(args)
-	case "doctor":
-		return runDoctor(args)
-	case "update":
-		return runUpdate(args)
-	case "workspace":
-		return runWorkspace(args)
-	case "scaffold":
-		return runScaffold(args)
-	case "evidence":
-		return runEvidence(args)
-	case "contribute":
-		return runContribute(args)
-	}
-
-	args = withDefaults(args, systemRoot)
-
-	root := value(
-		args,
-		"--root",
-		".",
-	)
-
-	if args[0] == "validate" {
-		return runValidate(root, value(args, "--since", ""), has(args, "--json"))
-	}
-
-	registry, err := oddc.LoadRegistry(root)
-	if err != nil {
-		return err
-	}
-
-	switch args[0] {
-	case "list":
-		kind := value(
-			args,
-			"--kind",
-			"",
-		)
-
-		ids := make([]string, 0, len(registry.Entities))
-		for id, entity := range registry.Entities {
-			if kind == "" || entity.Kind == kind {
-				ids = append(ids, id)
-			}
-		}
-		sort.Strings(ids)
-
-		for _, id := range ids {
-			entity := registry.Entities[id]
-			fmt.Printf(
-				"%s\t%s\t%s\n",
-				id,
-				entity.Kind,
-				entity.Metadata.Name,
-			)
-		}
-
-		return nil
-
-	case "index":
-		index, err := registry.Index(revision(root))
-		if err != nil {
-			return err
-		}
-
-		data, err := json.MarshalIndent(index, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(string(data))
-		return nil
-
-	case "classify":
-		return runClassify(registry, args)
-
-	case "resolve", "explain":
-		modelID := value(
-			args,
-			"--device",
-			"",
-		)
-		if modelID == "" {
-			return fmt.Errorf(
-				"--device is required",
-			)
-		}
-
-		project, err := loadOverlays(
-			values(args, "--project"),
-		)
-		if err != nil {
-			return err
-		}
-
-		host, err := loadOverlays(
-			values(args, "--host"),
-		)
-		if err != nil {
-			return err
-		}
-
-		resolved, err := registry.ResolveModel(
-			modelID,
-			project,
-			host,
-		)
-		if err != nil {
-			return err
-		}
-
-		if args[0] == "resolve" {
-			data, err := json.MarshalIndent(
-				resolved,
-				"",
-				"  ",
-			)
-			if err != nil {
-				return err
-			}
-
-			fmt.Println(string(data))
-			return nil
-		}
-
-		path := value(
-			args,
-			"--path",
-			"",
-		)
-		if path == "" {
-			return fmt.Errorf(
-				"--path is required",
-			)
-		}
-
-		resolvedValue, exists := oddc.Lookup(
-			resolved.Resolved,
-			path,
-		)
-		if !exists {
-			return fmt.Errorf(
-				"unknown resolved path %q",
-				path,
-			)
-		}
-
-		fmt.Printf(
-			"path: %s\n",
-			path,
-		)
-		fmt.Printf(
-			"value: %v\n",
-			resolvedValue,
-		)
-
-		if current, exists :=
-			resolved.Provenance[path]; exists {
-			fmt.Printf(
-				"source: %s\n",
-				current.Source,
-			)
-		}
-
-		if history := resolved.History[path]; len(history) > 1 {
-			fmt.Println("history:")
-
-			for _, item := range history {
-				fmt.Printf(
-					"  %s -> %v\n",
-					item.Source,
-					item.Value,
-				)
-			}
-		}
-
-		return nil
-
-	default:
-		return fmt.Errorf(
-			"unknown command %q",
-			args[0],
-		)
-	}
-}
-
-// revision is the recorded revision of a fetched answer or deployment,
-// else the commit checked out at root, else "local".
-func revision(root string) string {
-	recorded := oddc.DirSource{Root: root}.Revision()
-	if recorded != "local" {
-		return recorded
-	}
-
-	out, err := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
-	if err != nil {
-		return recorded
-	}
-
-	return strings.TrimSpace(string(out))
-}
-
-// evidenceChanges lists evidence files that were changed or removed since
-// the commit where root's HEAD branched from since. Evidence is append-only:
-// only added files are allowed.
-func evidenceChanges(root, since string) ([]string, error) {
-	base, err := exec.Command("git", "-C", root, "merge-base", since, "HEAD").Output()
-	if err != nil {
-		return nil, fmt.Errorf("--since %s: no common commit with HEAD: %w", since, err)
-	}
-
-	out, err := exec.Command(
-		"git", "-C", root, "diff", "--name-status", "--no-renames",
-		strings.TrimSpace(string(base)), "--", "evidence",
-	).Output()
-	if err != nil {
-		return nil, fmt.Errorf("--since %s: %w", since, err)
-	}
-
-	var changes []string
-	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		status, file, ok := strings.Cut(line, "\t")
-		if !ok || status == "A" {
-			continue
-		}
-
-		verb := "changed"
-		if status == "D" {
-			verb = "removed"
-		}
-		changes = append(changes, fmt.Sprintf(
-			"%s %s since %s; evidence is append-only",
-			file,
-			verb,
-			since,
-		))
-	}
-
-	return changes, nil
-}
-
-// runValidate fails when the catalog is invalid or, with since, when
-// evidence was changed or removed since that revision; with --json it
-// prints the full result either way.
-func runValidate(root, since string, asJSON bool) error {
-	result := oddc.Validate(root)
-	result.Revision = revision(root)
-
-	if since != "" {
-		changes, err := evidenceChanges(root, since)
-		if err != nil {
-			changes = []string{err.Error()}
-		}
-		if len(changes) > 0 {
-			result.Valid = false
-			result.Errors = append(result.Errors, changes...)
-		}
-	}
-
-	if asJSON {
-		data, err := json.MarshalIndent(result, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(data))
-	}
-
-	if !result.Valid {
-		return errors.New(strings.Join(result.Errors, "; "))
-	}
-
-	if !asJSON {
-		fmt.Printf(
-			"PASS: ODDC v2 entity registry valid (%d entities, %d evidence)\n",
-			result.Entities,
-			result.Evidence,
-		)
-	}
-
-	return nil
-}
-
-// runClassify prints which model the facts match and why, from --facts
-// FILE or else the sysfs below --sys. It fails unless exactly one model
-// matches.
-func runClassify(registry *oddc.Registry, args []string) error {
-	facts, err := readFacts(args)
-	if err != nil {
-		return err
-	}
-
-	classification, err := registry.Classify(facts)
-	if err != nil {
-		return err
-	}
-
-	data, err := json.MarshalIndent(classification, "", "  ")
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(data))
-
-	switch classification.Result {
-	case oddc.ResultMatched:
-		return nil
-	case oddc.ResultAmbiguous:
-		return fmt.Errorf(
-			"%w: %s",
-			oddc.ErrAmbiguousModelMatch,
-			strings.Join(classification.Ambiguous, ", "),
-		)
-	default:
-		return oddc.ErrNoModelMatch
-	}
+	return fmt.Errorf("unknown command %q", args[0])
 }
 
 func main() {
