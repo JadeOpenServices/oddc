@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package cli holds what the oddc commands share: flags, paths, where the
 // catalog comes from, and running git, gh and other tools.
 package cli

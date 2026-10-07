@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 {
   description = "ODDC: a portable, normalized hardware knowledge base for NixOS";
 

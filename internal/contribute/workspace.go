@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package contribute holds the contributor commands. A contribution is
 // data: files below catalog/ and evidence/ of a workspace checkout, sent as
 // one pull request against staging from the contributor's own GitHub

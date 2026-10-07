@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package system holds the commands for this machine and its system flake:
 // detect, setup, fetch, doctor and update.
 package system

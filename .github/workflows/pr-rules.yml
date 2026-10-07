@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 name: pr-rules
 # pull_request_target runs this repository's own workflow with a token that
 # may edit the pull request. It checks out the base, never the pull request.

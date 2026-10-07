@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # A deployed system carries only the selected model's closure, and the
 # deployed `oddc` command reads it back. Every expectation comes from the
 # catalog: the override reuses one of the model's own canonical values, and
