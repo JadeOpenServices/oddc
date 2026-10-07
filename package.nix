@@ -14,6 +14,8 @@ buildGoModule {
       ./catalog
       ./evidence
       ./schemas
+      # The update tests take the oddc input from the README.
+      ./README.md
     ];
   };
   vendorHash = null;
