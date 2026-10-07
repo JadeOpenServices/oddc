@@ -1,8 +1,10 @@
-package oddc
+package oddc_test
 
 import (
 	"path/filepath"
 	"testing"
+
+	. "github.com/JadeOpenServices/oddc/pkg/oddc"
 )
 
 // Each case adds one identifying detail to a copy of every real evidence

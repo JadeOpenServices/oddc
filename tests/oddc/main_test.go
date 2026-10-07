@@ -1,14 +1,16 @@
-package oddc
+package oddc_test
 
 import (
 	"os"
 	"testing"
+
+	"github.com/JadeOpenServices/oddc/tests/fixture"
 )
 
 // The tests read the catalog, evidence and schemas from the repository
 // root.
 func TestMain(m *testing.M) {
-	if err := os.Chdir("../.."); err != nil {
+	if err := os.Chdir(fixture.Repository); err != nil {
 		panic(err)
 	}
 
