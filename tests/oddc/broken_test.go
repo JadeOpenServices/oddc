@@ -123,6 +123,47 @@ func TestBrokenCatalogReferenceCycle(t *testing.T) {
 	}
 }
 
+// A value next to a reference must not redefine one the referenced entity
+// holds: each reference in each model gets one of its target's own keys.
+func TestBrokenCatalogRedefinedValue(t *testing.T) {
+	registry := catalog(t)
+
+	for _, id := range models(t, registry) {
+		for _, ref := range collectRefs(registry.Entities[id].Data) {
+			key := ""
+			for name := range registry.Entities[ref].Data {
+				if key == "" || name < key {
+					key = name
+				}
+			}
+			if key == "" {
+				continue
+			}
+
+			root := copyCatalog(t)
+			editEntity(t, entityPath(t, root, id), func(document map[string]any) {
+				redefine(document["data"], ref, key)
+			})
+
+			expectRefused(t, root, id+" redefining "+key+" of "+ref)
+		}
+	}
+}
+
+// redefine sets key next to every reference to ref below value.
+func redefine(value any, ref, key string) {
+	object, ok := value.(map[string]any)
+	if !ok {
+		return
+	}
+	if object["ref"] == ref {
+		object[key] = "redefined"
+	}
+	for _, child := range object {
+		redefine(child, ref, key)
+	}
+}
+
 func TestBrokenCatalogPositionalData(t *testing.T) {
 	registry := catalog(t)
 
