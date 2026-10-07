@@ -153,7 +153,7 @@ func withDefaults(
 func run(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf(
-			"usage: oddc <detect|setup|fetch|doctor|update|validate|list|index|classify|resolve|explain>",
+			"usage: oddc <detect|setup|fetch|doctor|update|validate|list|index|classify|resolve|explain|workspace|scaffold|evidence|contribute>",
 		)
 	}
 
@@ -168,6 +168,14 @@ func run(args []string) error {
 		return runDoctor(args)
 	case "update":
 		return runUpdate(args)
+	case "workspace":
+		return runWorkspace(args)
+	case "scaffold":
+		return runScaffold(args)
+	case "evidence":
+		return runEvidence(args)
+	case "contribute":
+		return runContribute(args)
 	}
 
 	args = withDefaults(args, systemRoot)
@@ -442,18 +450,9 @@ func runValidate(root, since string, asJSON bool) error {
 // FILE or else the sysfs below --sys. It fails unless exactly one model
 // matches.
 func runClassify(registry *oddc.Registry, args []string) error {
-	facts := oddc.ReadFacts(value(args, "--sys", "/sys"))
-
-	if path := value(args, "--facts", ""); path != "" {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		facts = oddc.Facts{}
-		if err := json.Unmarshal(data, &facts); err != nil {
-			return fmt.Errorf("%s: %w", path, err)
-		}
+	facts, err := readFacts(args)
+	if err != nil {
+		return err
 	}
 
 	classification, err := registry.Classify(facts)
