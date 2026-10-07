@@ -100,6 +100,7 @@ For users:
     oddc setup                   # NixOS snippet for the matching model
     oddc fetch --out DIR         # only this machine's model, for installers
     oddc doctor                  # deployed model still matches the hardware?
+    oddc status                  # is the deployed model verified by evidence?
     oddc update [--switch]       # take the newest ODDC of the stage the system follows
     oddc update --stage staging  # follow staging instead; --stage main returns to releases
 
@@ -112,7 +113,16 @@ GitHub. `fetch` writes that answer to `--out` in canonical layout with the
 `classify` reads the local catalog (`--root`, `/etc/oddc` on a deployed
 system) and this machine's DMI and PCI/USB/HID IDs from `/sys`
 (`--sys DIR`), or facts from `--facts FILE`; it exits non-zero unless
-exactly one model matches. `doctor` works offline on `/etc/oddc`. `update` defaults to the flake in
+exactly one model matches. `doctor` works offline on `/etc/oddc`.
+`status` reports each model (`--device ID`, default the deployed model,
+else all) as `verified`, `changed` or `unverified`. A model is
+`verified` when its newest passing evidence (`runtime-verified` or
+`hardware-validated`) was recorded on its current closure, the digest of
+its resolved model. It is `changed` when passing evidence exists, but none
+on that closure; new evidence must be recorded. `status` names the
+evidence, the ODDC revision, BIOS and kernel it was tested with, and its
+results. `doctor` reports the same, and compares this machine's BIOS with
+the tested one as information only; it never fails on it. `update` defaults to the flake in
 `/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`. It keeps
 the oddc input on the stage it follows and prints the revision before and
 after. `--stage main` follows releases; `--stage staging` follows what was
@@ -146,7 +156,8 @@ model or `--device ID`; it never changes one. A match adds
 to `detected`. The record names what was tested. The environment holds
 only the OS name and version, the kernel version, the BIOS version and the
 ODDC revision deployed in `/etc/oddc` (`--os`, `--kernel`, `--bios`,
-`--revision`). `drivers` lists the kernel driver bound to each of the
+`--deployment DIR`). When the deployed model is the recorded one,
+`closure` holds its closure digest, which `status` compares. `drivers` lists the kernel driver bound to each of the
 model's components that is present, read from `/sys`. `--date` defaults
 to today in UTC.
 

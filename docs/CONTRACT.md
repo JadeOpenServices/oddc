@@ -47,11 +47,15 @@ reused for something else. Renaming or removing an ID is a breaking change.
   the model; components explain it. Facts are
   `{"identity": {...}, "devices": {"pci": ["vvvv:pppp"], "usb": [...], "hid": [...]}}`
   with the identity fields of `MachineIdentity`.
+- `oddc status --root DIR [--device ID] --json`: per model its `status`
+  (`verified`, `changed` or `unverified`), its current `closure`
+  (`sha256:` digest of the resolved model) and the `evidence` that
+  decided it. Only `verified` means the model was proven on this closure.
 - The files themselves, described by `schemas/entity.schema.json`,
   `schemas/evidence.schema.json` and `schemas/overlay.schema.json`.
 - In Go, package `github.com/JadeOpenServices/oddc/pkg/oddc`: `LoadRegistry`,
   `Validate`, `Registry.Index`, `Registry.ResolveModel`,
-  `Registry.MatchModel`, `Registry.Classify`, `ReadFacts` and `Fetch`.
+  `Registry.MatchModel`, `Registry.Classify`, `Registry.Verify`, `ReadFacts` and `Fetch`.
 
 Resolved values sit under stable named paths below `hardware`,
 `capabilities` and `policy`; `oddc explain` names the owner of each.

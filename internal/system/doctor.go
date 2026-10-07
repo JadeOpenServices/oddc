@@ -50,6 +50,8 @@ func RunDoctor(args []string) error {
 		} else {
 			report("PASS", "hardware identity matches")
 		}
+
+		verification(registry, model, oddc.ReadBIOS(cli.Value(args, "--sys", "/sys")), report)
 	}
 
 	if data, err := os.ReadFile(
@@ -65,4 +67,39 @@ func RunDoctor(args []string) error {
 	}
 
 	return nil
+}
+
+// verification reports whether the deployed closure is proven by evidence
+// and whether this machine runs the BIOS that evidence was recorded on.
+// Neither fails: a laptop on another BIOS or an unproven closure still
+// deploys, and the user sees what is known.
+func verification(registry *oddc.Registry, model, bios string, report func(status, format string, a ...any)) {
+	status, err := registry.Verify(model)
+	if err != nil {
+		report("FAIL", "verification: %v", err)
+		return
+	}
+
+	record := status.Evidence
+	switch status.Status {
+	case oddc.Verified:
+		report("PASS", "verified by evidence %s", record.ID)
+	case oddc.Changed:
+		report("WARN", "changed since evidence %s; record new evidence with `oddc evidence record`", record.ID)
+	default:
+		report("WARN", "unverified: no passing evidence names this closure; record it with `oddc evidence record`")
+	}
+	if record == nil {
+		return
+	}
+
+	tested, _ := record.Environment["bios"].(string)
+	switch {
+	case tested == "" || bios == "":
+		report("WARN", "BIOS not compared: evidence %s or this machine does not name it", record.ID)
+	case tested != bios:
+		report("WARN", "BIOS %s differs from %s that evidence %s was recorded on", bios, tested, record.ID)
+	default:
+		report("PASS", "BIOS %s as evidence %s", bios, record.ID)
+	}
 }

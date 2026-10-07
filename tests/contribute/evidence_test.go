@@ -74,10 +74,10 @@ func TestEvidenceRecordRefusesIdentifyingResult(t *testing.T) {
 	}
 }
 
-// A record names what was tested: the BIOS, the deployed ODDC revision
-// and the drivers bound to the model's components. It runs on the model
-// the catalog has evidence for, with the BIOS of the Framework Laptop 13
-// that recorded it and the catalog's own commit as the revision.
+// A record names what was tested: the BIOS, the deployed ODDC revision and
+// closure, and the drivers bound to the model's components. It runs on the
+// model the catalog has evidence for, with the BIOS of the Framework Laptop
+// 13 that recorded it and the catalog's own commit as the revision.
 func TestEvidenceRecordWhatWasTested(t *testing.T) {
 	origin, workspace := catalogUpstream(t)
 	registry, _ := fixture.Catalog(t)
@@ -96,10 +96,16 @@ func TestEvidenceRecordWhatWasTested(t *testing.T) {
 	fixture.Components(t, sys, registry, model)
 	fixture.Write(t, filepath.Join(sys, "class", "dmi", "id", "bios_version"), []byte("03.20\n"))
 	revision := gitOut(t, origin, "rev-parse", "HEAD")
+	deployment := fixture.Deployment(t, registry, model, false)
+	fixture.Write(t, filepath.Join(deployment, "revision"), []byte(revision+"\n"))
+	closure, err := registry.Closure(model)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if err := contribute.RunEvidence([]string{
-		"evidence", "record", "--root", workspace, "--sys", sys,
-		"--revision", revision, "--result", "wifi=pass", "--date", today(),
+		"evidence", "record", "--root", workspace, "--sys", sys, "--deployment", deployment,
+		"--result", "wifi=pass", "--date", today(),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -115,6 +121,9 @@ func TestEvidenceRecordWhatWasTested(t *testing.T) {
 
 	if record.Environment["bios"] != "03.20" || record.Environment["oddc"] != revision {
 		t.Errorf("environment %v, want bios 03.20 and oddc %s", record.Environment, revision)
+	}
+	if record.Closure != closure {
+		t.Errorf("closure %q, want %q", record.Closure, closure)
 	}
 	want, err := registry.ComponentDrivers(model, oddc.ReadDrivers(sys))
 	if err != nil {
