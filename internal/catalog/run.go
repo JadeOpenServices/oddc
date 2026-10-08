@@ -1,5 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package catalog holds the commands that read a catalog: validate, list,
-// index, classify, resolve and explain.
+// index, classify, resolve, explain and changes.
 package catalog
 
 import (

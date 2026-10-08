@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package main
 
 import (
@@ -27,6 +29,7 @@ var commands = []struct {
 	{"classify", catalog.Run},
 	{"resolve", catalog.Run},
 	{"explain", catalog.Run},
+	{"changes", catalog.RunChanges},
 	{"workspace", contribute.RunWorkspace},
 	{"scaffold", contribute.RunScaffold},
 	{"evidence", contribute.RunEvidence},

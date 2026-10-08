@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # root holds an ODDC catalog: this repository, or an answer `oddc fetch`
 # wrote. Either way entities live at catalog/entities/<id>.json and
 # evidence at evidence/<model id>/.
