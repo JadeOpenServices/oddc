@@ -34,16 +34,16 @@ func noMatch(identity oddc.MachineIdentity) error {
 
 // Detect fetches this machine's model and loads it.
 func Detect(args []string) (*oddc.Registry, string, error) {
-	src, err := cli.Source(args)
-	if err != nil {
-		return nil, "", err
-	}
-
 	dir, err := os.MkdirTemp("", "oddc-Detect-")
 	if err != nil {
 		return nil, "", err
 	}
 	defer os.RemoveAll(dir)
+
+	src, err := cli.Source(args, dir)
+	if err != nil {
+		return nil, "", err
+	}
 
 	identity := oddc.ReadIdentity(cli.Value(args, "--sys", "/sys"))
 	answer := filepath.Join(dir, "answer")
@@ -72,7 +72,13 @@ func RunFetch(args []string) error {
 		return errors.New("--out is required")
 	}
 
-	src, err := cli.Source(args)
+	scratch, err := os.MkdirTemp("", "oddc-fetch-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(scratch)
+
+	src, err := cli.Source(args, scratch)
 	if err != nil {
 		return err
 	}

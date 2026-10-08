@@ -4,6 +4,7 @@
   lib,
   buildGoModule,
   git,
+  makeWrapper,
 }:
 buildGoModule {
   pname = "oddc";
@@ -32,6 +33,11 @@ buildGoModule {
   '';
   # validate --since compares revisions with git.
   nativeCheckInputs = [ git ];
+  # detect, setup and fetch read GitHub with git.
+  nativeBuildInputs = [ makeWrapper ];
+  postInstall = ''
+    wrapProgram $out/bin/oddc --suffix PATH : ${lib.makeBinPath [ git ]}
+  '';
   meta = {
     description = "Validate, resolve and explain ODDC hardware entities";
     license = lib.licenses.gpl3Plus;
