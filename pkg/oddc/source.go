@@ -12,9 +12,8 @@ import (
 
 // Upstream is where ODDC publishes its catalog.
 const (
-	GitHubAPI  = "https://api.github.com"
-	GitHubRaw  = "https://raw.githubusercontent.com"
 	Repository = "JadeOpenServices/oddc"
+	Remote     = "https://github.com/" + Repository + ".git"
 )
 
 // Source serves catalog files by their slash-separated repository path,
