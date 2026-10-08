@@ -5,10 +5,8 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/JadeOpenServices/oddc/pkg/oddc"
 )
@@ -51,8 +49,8 @@ func WorkspaceDir() string {
 
 // Source finds the catalog: an explicit --root, the local workspace,
 // else GitHub at --rev or the --channel branch. Reading from GitHub
-// downloads only the files a command needs.
-func Source(args []string) (oddc.Source, error) {
+// downloads only the files a command needs, into scratch.
+func Source(args []string, scratch string) (oddc.Source, error) {
 	if root := Value(args, "--root", ""); root != "" {
 		return oddc.DirSource{Root: root}, nil
 	}
@@ -61,11 +59,9 @@ func Source(args []string) (oddc.Source, error) {
 		return oddc.DirSource{Root: dir}, nil
 	}
 
-	return oddc.NewGitHubSource(
-		&http.Client{Timeout: time.Minute},
-		oddc.GitHubAPI,
-		oddc.GitHubRaw,
-		oddc.Repository,
+	return oddc.NewGitSource(
+		filepath.Join(scratch, "git"),
+		oddc.Remote,
 		Value(args, "--rev", Value(args, "--channel", "main")),
 	)
 }
