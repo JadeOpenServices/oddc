@@ -18,9 +18,11 @@
     {
       lib = import ./lib;
       # Through the flake, a deployment from the flake's own catalog records
-      # the ODDC revision it was built from; an answer records its own.
+      # the ODDC revision it was built from; an answer records its own and
+      # must come from the same revision as the module.
       nixosModules = builtins.mapAttrs (_: module: { config, ... }: {
         imports = [ module ];
+        oddc.moduleRevision = nixpkgs.lib.mkDefault (self.rev or null);
         oddc.revision = nixpkgs.lib.mkIf (!builtins.pathExists (config.oddc.catalog + "/revision")) (
           nixpkgs.lib.mkDefault (self.rev or self.dirtyRev or null)
         );

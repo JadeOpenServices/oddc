@@ -69,6 +69,17 @@ in
       '';
     };
 
+    moduleRevision = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      internal = true;
+      description = ''
+        Commit of the ODDC source this module comes from, set by the flake
+        module from its input; null for a dirty tree. An answer recorded at
+        any other revision fails evaluation.
+      '';
+    };
+
     cli.enable = mkOption {
       type = types.bool;
       default = config.oddc.deploy.enable;
