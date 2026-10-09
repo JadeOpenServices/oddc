@@ -12,8 +12,9 @@ import (
 )
 
 // RunContribute sends the workspace's checked changes as a pull request
-// against staging from the contributor's GitHub account, through a fork
-// when the account cannot push to the catalog. The commit's author is the
+// against the branch the workspace follows, staging or verify/<model>,
+// from the contributor's GitHub account, through a fork when the account
+// cannot push to the catalog. The commit's author is the
 // account's noreply address and its dates are in UTC.
 func RunContribute(args []string) error {
 	root := cli.Value(args, "--root", cli.WorkspaceDir())
@@ -23,7 +24,13 @@ func RunContribute(args []string) error {
 		return err
 	}
 
-	user, err := cli.Gh("api", "user", "--jq", `.login + " " + (.id | tostring)`)
+	g, err := findGh()
+	if err != nil {
+		return err
+	}
+	defer g.done()
+
+	user, err := g.run("api", "user", "--jq", `.login + " " + (.id | tostring)`)
 	if err != nil {
 		return err
 	}
@@ -44,30 +51,30 @@ func RunContribute(args []string) error {
 	}
 
 	repo, head := oddc.Repository, p.Branch
-	push, err := cli.Gh("api", "repos/"+repo, "--jq", ".permissions.push")
+	push, err := g.run("api", "repos/"+repo, "--jq", ".permissions.push")
 	if err != nil {
 		return err
 	}
 	if push != "true" {
-		if _, err := cli.Gh("repo", "fork", repo, "--clone=false", "--remote=false"); err != nil {
+		if _, err := g.run("repo", "fork", repo, "--clone=false", "--remote=false"); err != nil {
 			return err
 		}
 		repo, head = login+"/"+path.Base(oddc.Repository), login+":"+p.Branch
 	}
 
 	remote := "https://github.com/" + repo + ".git"
-	sent, err := cli.Git(root, "ls-remote", remote, "refs/heads/"+p.Branch)
+	sent, err := cli.GitEnv(root, g.git(), "ls-remote", remote, "refs/heads/"+p.Branch)
 	if err != nil {
 		return err
 	}
 	if sent == "" {
-		if _, err := cli.Git(root, "push", "--quiet", remote, commit+":refs/heads/"+p.Branch); err != nil {
+		if _, err := cli.GitEnv(root, g.git(), "push", "--quiet", remote, commit+":refs/heads/"+p.Branch); err != nil {
 			return err
 		}
 	}
 
-	url, err := cli.Gh(
-		"pr", "create", "--repo", oddc.Repository, "--base", BaseBranch, "--head", head,
+	url, err := g.run(
+		"pr", "create", "--repo", oddc.Repository, "--base", p.Target, "--head", head,
 		"--title", p.Title, "--body", p.Body,
 	)
 	if err != nil {

@@ -4,6 +4,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -47,15 +48,20 @@ func WorkspaceDir() string {
 	return filepath.Join(home, ".local", "share", "oddc")
 }
 
-// Source finds the catalog: an explicit --root, the local workspace,
-// else GitHub at --rev or the --channel branch. Reading from GitHub
-// downloads only the files a command needs, into scratch.
+// Source finds the catalog: GitHub at --rev or the --channel branch when
+// either is given, else an explicit --root, the local workspace, or GitHub
+// at main. Reading from GitHub downloads only the files a command needs,
+// into scratch.
 func Source(args []string, scratch string) (oddc.Source, error) {
+	remote := Has(args, "--rev") || Has(args, "--channel")
 	if root := Value(args, "--root", ""); root != "" {
+		if remote {
+			return nil, errors.New("--root reads a local catalog, --rev and --channel read GitHub: use one or the other")
+		}
 		return oddc.DirSource{Root: root}, nil
 	}
 
-	if dir := WorkspaceDir(); Exists(filepath.Join(dir, "catalog")) {
+	if dir := WorkspaceDir(); !remote && Exists(filepath.Join(dir, "catalog")) {
 		return oddc.DirSource{Root: dir}, nil
 	}
 

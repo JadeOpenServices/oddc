@@ -69,6 +69,17 @@ in
       '';
     };
 
+    moduleRevision = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      internal = true;
+      description = ''
+        Commit of the ODDC source this module comes from, set by the flake
+        module from its input; null for a dirty tree. An answer recorded at
+        any other revision fails evaluation.
+      '';
+    };
+
     cli.enable = mkOption {
       type = types.bool;
       default = config.oddc.deploy.enable;
@@ -90,6 +101,16 @@ in
       type = types.listOf types.str;
       readOnly = true;
       description = "Model IDs available in the canonical ODDC entity registry.";
+    };
+
+    inactiveQuirks = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      internal = true;
+      description = ''
+        Keys of the resolved model's enabled kernel-ranged quirks that this
+        system does not apply, because its kernel is outside their range.
+      '';
     };
 
     resolved = mkOption {

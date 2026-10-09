@@ -15,17 +15,7 @@ import (
 // revision is the recorded revision of a fetched answer or deployment,
 // else the commit checked out at root, else "local".
 func revision(root string) string {
-	recorded := oddc.DirSource{Root: root}.Revision()
-	if recorded != "local" {
-		return recorded
-	}
-
-	out, err := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
-	if err != nil {
-		return recorded
-	}
-
-	return strings.TrimSpace(string(out))
+	return oddc.DirSource{Root: root}.Revision()
 }
 
 // evidenceChanges lists evidence files that were changed or removed since

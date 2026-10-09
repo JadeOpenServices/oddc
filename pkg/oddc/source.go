@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -30,14 +31,30 @@ type DirSource struct {
 	Root string
 }
 
-// Revision is the recorded revision of a fetched answer, else "local".
+// Revision is the recorded revision of a fetched answer, else the commit
+// checked out at Root when its catalog, schemas and evidence are exactly
+// that commit's, else "local": never a commit the files differ from.
 func (s DirSource) Revision() string {
 	data, err := os.ReadFile(filepath.Join(s.Root, "revision"))
+	if err == nil {
+		return strings.TrimSpace(string(data))
+	}
+
+	git := func(args ...string) (string, error) {
+		out, err := exec.Command("git", append([]string{"-C", s.Root}, args...)...).Output()
+		return strings.TrimSpace(string(out)), err
+	}
+
+	head, err := git("rev-parse", "HEAD")
 	if err != nil {
 		return "local"
 	}
+	changed, err := git("status", "--porcelain", "--untracked-files=all", "--", "catalog", "schemas", "evidence")
+	if err != nil || changed != "" {
+		return "local"
+	}
 
-	return strings.TrimSpace(string(data))
+	return head
 }
 
 func (s DirSource) List(dir string) ([]string, error) {

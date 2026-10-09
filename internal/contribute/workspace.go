@@ -2,14 +2,15 @@
 
 // Package contribute holds the contributor commands. A contribution is
 // data: files below catalog/ and evidence/ of a workspace checkout, sent as
-// one pull request against staging from the contributor's own GitHub
-// account.
+// one pull request against staging, or a model's verify branch, from the
+// contributor's own GitHub account.
 package contribute
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/JadeOpenServices/oddc/internal/cli"
 	"github.com/JadeOpenServices/oddc/pkg/oddc"
@@ -20,39 +21,72 @@ const (
 	BaseBranch  = "staging"
 )
 
-// RunWorkspace clones the catalog on staging to the workspace, or updates
-// an existing workspace to the newest staging.
+// verifyBranch is the branch a model change is proven on before it
+// reaches staging: verify/<vendor>/<model>.
+var verifyBranch = regexp.MustCompile(`^verify/[a-z0-9]+(?:-[a-z0-9]+)*/[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
+// workspaceBranch is the upstream branch the workspace at dir follows: its
+// verify branch when it is on one, else staging.
+func workspaceBranch(dir string) string {
+	branch, _ := cli.Git(dir, "symbolic-ref", "--quiet", "--short", "HEAD")
+	if verifyBranch.MatchString(branch) {
+		return branch
+	}
+
+	return BaseBranch
+}
+
+// RunWorkspace clones the catalog on staging, or --branch verify/<model>,
+// to the workspace, or updates an existing workspace to the newest of the
+// branch it follows; --branch switches it.
 func RunWorkspace(args []string) error {
 	dir := cli.Value(args, "--root", cli.WorkspaceDir())
+	exists := cli.Exists(filepath.Join(dir, ".git"))
 
-	if !cli.Exists(filepath.Join(dir, ".git")) {
+	want := BaseBranch
+	if exists {
+		want = workspaceBranch(dir)
+	}
+	want = cli.Value(args, "--branch", want)
+	if want != BaseBranch && !verifyBranch.MatchString(want) {
+		return fmt.Errorf("--branch %q is neither %s nor verify/<vendor>/<model>", want, BaseBranch)
+	}
+
+	if !exists {
 		if err := cli.Command(
-			"git", "clone", "--quiet", "--branch", BaseBranch,
+			"git", "clone", "--quiet", "--branch", want,
 			cli.Value(args, "--from", upstreamGit), dir,
 		); err != nil {
 			return err
 		}
 
-		fmt.Printf("Workspace %s is on %s.\n", dir, BaseBranch)
+		fmt.Printf("Workspace %s is on %s.\n", dir, want)
 		return nil
 	}
 
-	if _, err := cli.Git(dir, "fetch", "--quiet", "origin", BaseBranch); err != nil {
+	if _, err := cli.Git(dir, "fetch", "--quiet", "origin", want); err != nil {
 		return err
 	}
 
 	branch, _ := cli.Git(dir, "symbolic-ref", "--quiet", "--short", "HEAD")
-	if branch != BaseBranch {
+	if branch != want && !cli.Has(args, "--branch") {
 		return fmt.Errorf(
 			"workspace %s is not on %s; fetched it without updating",
 			dir,
-			BaseBranch,
+			want,
 		)
 	}
 
-	upstream := "origin/" + BaseBranch
+	upstream := "origin/" + want
 	if err := dropMerged(dir, upstream); err != nil {
 		return err
+	}
+
+	if branch != want {
+		// git refuses when local changes would be lost.
+		if _, err := cli.Git(dir, "switch", "--quiet", want); err != nil {
+			return err
+		}
 	}
 
 	if _, err := cli.Git(dir, "merge", "--quiet", "--ff-only", upstream); err != nil {
@@ -64,7 +98,7 @@ func RunWorkspace(args []string) error {
 		return err
 	}
 
-	fmt.Printf("Workspace %s is on %s at %s.\n", dir, BaseBranch, head)
+	fmt.Printf("Workspace %s is on %s at %s.\n", dir, want, head)
 	return nil
 }
 

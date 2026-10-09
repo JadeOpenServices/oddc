@@ -3,6 +3,8 @@
 package contribute_test
 
 import (
+	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -74,4 +76,45 @@ func refs(object map[string]any, path string, found map[string]string) {
 
 func today() string {
 	return time.Now().UTC().Format(time.DateOnly)
+}
+
+// unusedDate is the latest day up to today on which the catalog at root
+// holds no evidence, so a test's record never meets a real one.
+func unusedDate(t *testing.T, root string) string {
+	t.Helper()
+
+	for day := time.Now().UTC(); ; day = day.AddDate(0, 0, -1) {
+		date := day.Format(time.DateOnly)
+		found, err := filepath.Glob(filepath.Join(root, "evidence", "*", "*", "*", date+"*.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(found) == 0 {
+			return date
+		}
+	}
+}
+
+// stdout runs f and returns what it printed; f must not fail.
+func stdout(t *testing.T, f func() error) string {
+	t.Helper()
+
+	read, write, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved := os.Stdout
+	os.Stdout = write
+	err = f()
+	os.Stdout = saved
+	write.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := io.ReadAll(read)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(out)
 }

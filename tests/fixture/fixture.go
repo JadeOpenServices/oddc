@@ -6,9 +6,11 @@
 package fixture
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/JadeOpenServices/oddc/pkg/oddc"
@@ -100,4 +102,78 @@ func Identity(t *testing.T, registry *oddc.Registry, model string) oddc.MachineI
 	}
 
 	return identity
+}
+
+// Components adds a model's components to the sysfs at sys, each with the
+// driver its catalog entity names bound, as the kernel lays them out.
+// Components the catalog names no driver for are added unbound.
+func Components(t *testing.T, sys string, registry *oddc.Registry, model string) {
+	t.Helper()
+
+	resolved, err := registry.ResolveEntity(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	n := 0
+	var walk func(object map[string]any)
+	walk = func(object map[string]any) {
+		bus, _ := object["bus"].(string)
+		id, _ := object["deviceId"].(string)
+		driver, _ := object["driver"].(string)
+		if vendor, product, ok := strings.Cut(id, ":"); ok && bus != "" {
+			n++
+			var dir, bound string
+			switch bus {
+			case "pci":
+				dir = filepath.Join(sys, "bus", "pci", "devices", fmt.Sprintf("0000:00:%02x.0", n))
+				Write(t, filepath.Join(dir, "vendor"), []byte("0x"+vendor+"\n"))
+				Write(t, filepath.Join(dir, "device"), []byte("0x"+product+"\n"))
+				bound = dir
+			case "usb":
+				dir = filepath.Join(sys, "bus", "usb", "devices", fmt.Sprintf("1-%d", n))
+				Write(t, filepath.Join(dir, "idVendor"), []byte(vendor+"\n"))
+				Write(t, filepath.Join(dir, "idProduct"), []byte(product+"\n"))
+				bound = dir + ":1.0"
+			default: // hid and i2c
+				bound = filepath.Join(sys, "bus", "hid", "devices",
+					fmt.Sprintf("0018:%s:%s.%04X", strings.ToUpper(vendor), strings.ToUpper(product), n))
+			}
+			if err := os.MkdirAll(bound, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if driver != "" {
+				target := filepath.Join(sys, "bus", factsBus(bus), "drivers", driver)
+				if err := os.MkdirAll(target, 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink(target, filepath.Join(bound, "driver")); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+
+		for _, key := range sortedKeys(object) {
+			if child, ok := object[key].(map[string]any); ok {
+				walk(child)
+			}
+		}
+	}
+	walk(resolved.Resolved)
+}
+
+func factsBus(bus string) string {
+	if bus == "i2c" {
+		return "hid"
+	}
+	return bus
+}
+
+func sortedKeys(object map[string]any) []string {
+	keys := make([]string, 0, len(object))
+	for key := range object {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
