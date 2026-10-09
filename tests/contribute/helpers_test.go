@@ -33,8 +33,8 @@ func gitOut(t *testing.T, dir string, args ...string) string {
 }
 
 // catalogUpstream makes a bare repository holding the catalog on staging,
-// less the models named in without and their evidence, and a workspace
-// cloned from it, as `oddc workspace` does.
+// less the models named in without and their evidence where the catalog
+// has them, and a workspace cloned from it, as `oddc workspace` does.
 func catalogUpstream(t *testing.T, without ...string) (origin, workspace string) {
 	t.Helper()
 
@@ -42,10 +42,10 @@ func catalogUpstream(t *testing.T, without ...string) (origin, workspace string)
 	gitOut(t, source, "branch", "-M", contribute.BaseBranch)
 	if len(without) > 0 {
 		for _, model := range without {
-			gitOut(t, source, "rm", "-q", "-r", "--",
+			gitOut(t, source, "rm", "-q", "-r", "--ignore-unmatch", "--",
 				"catalog/entities/"+model+".json", "evidence/"+model)
 		}
-		gitOut(t, source, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "without")
+		gitOut(t, source, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "without")
 	}
 
 	origin = filepath.Join(t.TempDir(), "origin.git")
