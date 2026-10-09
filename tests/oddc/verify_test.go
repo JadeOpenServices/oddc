@@ -3,6 +3,7 @@
 package oddc_test
 
 import (
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -49,10 +50,25 @@ func verifyCopy(t *testing.T, path string, edit func(root string, record map[str
 
 	root := copyCatalog(t)
 	var model string
-	editEntity(t, filepath.Join(root, path), func(record map[string]any) {
-		model = record["deviceId"].(string)
-		edit(root, record)
+	record := filepath.Join(root, path)
+	editEntity(t, record, func(document map[string]any) {
+		model = document["deviceId"].(string)
+		edit(root, document)
 	})
+
+	// The record at path alone decides its model, whatever other evidence
+	// the catalog holds for it.
+	others, err := filepath.Glob(filepath.Join(filepath.Dir(record), "*.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, other := range others {
+		if other != record {
+			if err := os.Remove(other); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
 
 	registry, err := LoadRegistry(root)
 	if err != nil {

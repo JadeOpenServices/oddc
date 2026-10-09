@@ -19,7 +19,7 @@ import (
 func TestEvidenceRecordOnlyAdds(t *testing.T) {
 	_, workspace := catalogUpstream(t)
 	registry, models := fixture.Catalog(t)
-	date := today()
+	date := unusedDate(t, workspace)
 
 	for _, model := range models {
 		sys := fixture.Sysfs(t, registry, model)
@@ -59,7 +59,7 @@ func TestEvidenceRecordRefusesIdentifyingResult(t *testing.T) {
 	_, workspace := catalogUpstream(t)
 	registry, models := fixture.Catalog(t)
 	sys := fixture.Sysfs(t, registry, models[0])
-	date := today()
+	date := unusedDate(t, workspace)
 
 	err := contribute.RunEvidence([]string{
 		"evidence", "record", "--root", workspace, "--sys", sys,
@@ -109,6 +109,7 @@ func recordable(t *testing.T) (registry *oddc.Registry, model, revision, workspa
 
 func TestEvidenceRecordWhatWasTested(t *testing.T) {
 	registry, model, revision, workspace, sys, deployment := recordable(t)
+	date := unusedDate(t, workspace)
 	closure, err := registry.Closure(model)
 	if err != nil {
 		t.Fatal(err)
@@ -116,12 +117,12 @@ func TestEvidenceRecordWhatWasTested(t *testing.T) {
 
 	if err := contribute.RunEvidence([]string{
 		"evidence", "record", "--root", workspace, "--sys", sys, "--deployment", deployment,
-		"--result", "wifi=pass", "--date", today(),
+		"--result", "wifi=pass", "--date", date,
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	data, err := os.ReadFile(filepath.Join(workspace, "evidence", filepath.FromSlash(model), today()+".json"))
+	data, err := os.ReadFile(filepath.Join(workspace, "evidence", filepath.FromSlash(model), date+".json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,16 +153,17 @@ func TestEvidenceRecordWhatWasTested(t *testing.T) {
 // Passing evidence is written only when it proves the model.
 func TestEvidenceRecordPassingNeedsProof(t *testing.T) {
 	registry, model, _, workspace, sys, deployment := recordable(t)
+	date := unusedDate(t, workspace)
 	record := []string{
 		"evidence", "record", "--root", workspace, "--sys", sys, "--deployment", deployment,
-		"--status", "hardware-validated", "--date", today(),
+		"--status", "hardware-validated", "--date", date,
 	}
 
 	err := contribute.RunEvidence(append(record, "--result", "hardware.network.wifi.primary=pass"))
 	if err == nil || !strings.Contains(err.Error(), "does not prove") {
 		t.Fatalf("unproven evidence: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(workspace, "evidence", filepath.FromSlash(model), today()+".json")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(workspace, "evidence", filepath.FromSlash(model), date+".json")); !os.IsNotExist(err) {
 		t.Fatalf("unproven evidence was written: %v", err)
 	}
 
@@ -186,6 +188,7 @@ func TestEvidenceRecordPassingNeedsProof(t *testing.T) {
 // and must be proven not-affected.
 func TestEvidenceRecordInactiveQuirks(t *testing.T) {
 	registry, model, _, workspace, sys, deployment := recordable(t)
+	date := unusedDate(t, workspace)
 	resolved, err := registry.ResolveEntity(model)
 	if err != nil {
 		t.Fatal(err)
@@ -207,7 +210,7 @@ func TestEvidenceRecordInactiveQuirks(t *testing.T) {
 	}
 	record := []string{
 		"evidence", "record", "--root", workspace, "--sys", sys, "--deployment", deployment,
-		"--status", "hardware-validated", "--date", today(),
+		"--status", "hardware-validated", "--date", date,
 	}
 	for name, want := range required {
 		if name != "identity" {
@@ -223,7 +226,7 @@ func TestEvidenceRecordInactiveQuirks(t *testing.T) {
 	if err := contribute.RunEvidence(append(record, "--result", "quirks."+ranged+"=not-affected")); err != nil {
 		t.Fatal(err)
 	}
-	data, err := os.ReadFile(filepath.Join(workspace, "evidence", filepath.FromSlash(model), today()+".json"))
+	data, err := os.ReadFile(filepath.Join(workspace, "evidence", filepath.FromSlash(model), date+".json"))
 	if err != nil {
 		t.Fatal(err)
 	}
