@@ -2,7 +2,8 @@
 
 # A system built from the answer `oddc fetch` writes for one model deploys
 # what a system built from the whole catalog deploys, and knows no other
-# model. Only the recorded revision differs: the answer's own.
+# model. Only the recorded revision differs: the answer's own. An answer
+# recorded at another revision than the module's fails evaluation.
 {
   self,
   nixpkgs,
@@ -20,7 +21,7 @@ let
   '';
 
   evaluate =
-    catalog:
+    catalog: moduleRevision:
     lib.nixosSystem {
       inherit (pkgs.stdenv.hostPlatform) system;
       modules = [
@@ -35,6 +36,7 @@ let
           };
         }
         (lib.optionalAttrs (catalog != null) { oddc.catalog = catalog; })
+        { oddc.moduleRevision = lib.mkForce moduleRevision; }
       ];
     };
 
@@ -47,9 +49,16 @@ let
       }) (lib.filterAttrs (name: _: lib.hasPrefix "oddc/" name) evaluated.config.environment.etc)
     );
 
-  full = evaluate null;
-  fetched = evaluate answer;
+  revision = lib.trim (builtins.readFile "${answer}/revision");
+
+  failed = evaluated: map (a: a.message) (lib.filter (a: !a.assertion) evaluated.config.assertions);
+
+  full = evaluate null null;
+  fetched = evaluate answer revision;
+  stale = evaluate answer "0000000000000000000000000000000000000000";
 in
+assert failed fetched == [ ];
+assert lib.any (lib.hasPrefix "oddc.catalog was fetched at ODDC ${revision}") (failed stale);
 assert fetched.config.oddc.availableModels == [ id ];
 assert fetched.config.oddc.resolved == full.config.oddc.resolved;
 pkgs.runCommand "oddc-answer-deployment" { } ''

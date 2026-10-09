@@ -229,7 +229,10 @@ To keep only one machine's data, point the module at the answer
     oddc.catalog = ./generated/oddc;
 
 With an answer only its model is available, and `/etc/oddc/revision`
-records the revision it was fetched from.
+records the revision it was fetched from. That must be the revision of
+the oddc input: after `nix flake update oddc`, evaluation fails until the
+answer is fetched again with `oddc fetch --rev` at the new input commit.
+A dirty ODDC tree as input has no revision and is not compared.
 `oddc.deploy.enable = false` deploys nothing under `/etc/oddc`;
 `oddc.cli.enable = false` leaves out the `oddc` command.
 

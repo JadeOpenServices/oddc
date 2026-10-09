@@ -75,6 +75,16 @@ in
           assertion = lib.hasPrefix "model/" cfg.device;
           message = "oddc.device must reference a model/* entity.";
         }
+        {
+          assertion =
+            registry.revision == null || cfg.moduleRevision == null || registry.revision == cfg.moduleRevision;
+          message = ''
+            oddc.catalog was fetched at ODDC ${toString registry.revision}, but the
+            ODDC module is ${toString cfg.moduleRevision}. Fetch it again at the
+            module's revision:
+              oddc fetch --rev ${toString cfg.moduleRevision} --device ${cfg.device} --out DIR
+          '';
+        }
       ];
     })
 
