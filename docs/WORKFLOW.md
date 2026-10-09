@@ -126,8 +126,9 @@ For users:
     oddc update --stage staging  # follow staging instead; --stage main returns to releases
 
 `detect`, `setup` and `fetch` read the local workspace when present,
-else GitHub at `main` (`--channel staging`, or `--rev COMMIT`, the full
-commit ID). From GitHub they download only the model files, then only the
+else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full
+commit ID) always read GitHub, even with a workspace, and cannot be
+combined with `--root`. From GitHub they download only the model files, then only the
 matched model's reference closure and evidence; nothing else of the
 catalog leaves GitHub. They read it with git, not the GitHub API: the
 commit's file list first, then each file when needed, each checked
