@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schemas/evidence.schema.json",
+  "schemaVersion": "2.0.0",
+  "id": "galaxy-book-12-lte-2026-10-09",
+  "deviceId": "model/samsung-electronics-co-ltd/galaxy-book-12-lte",
+  "observedAt": "2026-10-09",
+  "status": "detected",
+  "environment": {
+    "kernel": "7.2.2",
+    "os": "NixOS 26.05"
+  },
+  "results": {
+    "identity": "pass"
+  }
+}

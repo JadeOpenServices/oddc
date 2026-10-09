@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "DeviceModel",
+  "metadata": {
+    "id": "model/samsung-electronics-co-ltd/galaxy-book-12-lte",
+    "name": "SAMSUNG ELECTRONICS CO., LTD. Galaxy Book 12 LTE"
+  },
+  "data": {
+    "class": {
+      "ref": "class/laptop"
+    },
+    "identity": {
+      "dmi": {
+        "boardName": {
+          "sm-w728nzkadbt": "SM-W728NZKADBT"
+        },
+        "productName": {
+          "galaxy-book-12-lte": "Galaxy Book 12 LTE"
+        },
+        "systemVendor": {
+          "samsung-electronics-co-ltd": "SAMSUNG ELECTRONICS CO., LTD."
+        }
+      }
+    }
+  }
+}
