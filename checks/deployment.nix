@@ -76,6 +76,23 @@ let
   );
   battery = lib.attrByPath [ "class" "formFactor" ] null canonical == "laptop";
 
+  # Enabled kernel-ranged quirks whose range misses the newest kernel are
+  # not applied.
+  latest = pkgs.linuxPackages_latest.kernel.version;
+  inactive = lib.sort lib.lessThan (
+    lib.attrNames (
+      lib.filterAttrs (
+        _: quirk:
+        (quirk.enabled or false)
+        && quirk ? affected.kernel
+        && !(
+          lib.versionAtLeast latest quirk.affected.kernel.minimum
+          && lib.versionOlder latest quirk.affected.kernel.maximumBefore
+        )
+      ) (canonical.quirks or { })
+    )
+  );
+
   others = lib.remove id registry.modelIds;
   check = lib.escapeShellArgs [
     "--argjson"
@@ -100,6 +117,9 @@ pkgs.runCommand "oddc-deployment" { nativeBuildInputs = [ pkgs.jq ]; } ''
     | jq -e ${check} '.resolved | getpath($path) == $want'
   jq -e ${check} 'getpath($path) == $want' $root/resolved.json
 
+  jq -e --argjson want ${lib.escapeShellArg (builtins.toJSON inactive)} '. == $want' \
+    $root/inactive-quirks.json
+
   mkdir -p sys/class/dmi/id
   ${oddc} doctor --root $root --sys sys && exit 1
   ${lib.concatMapStrings (entry: ''
@@ -110,6 +130,9 @@ pkgs.runCommand "oddc-deployment" { nativeBuildInputs = [ pkgs.jq ]; } ''
     echo Battery > sys/class/power_supply/BAT0/type
   ''}
   ${oddc} doctor --root $root --sys sys
+
+  # The model's kernel, after its quirks, exists in this nixpkgs.
+  echo ${evaluated.config.boot.kernelPackages.kernel.version} > /dev/null
 
   [ "$(cat $root/revision)" = ${self.rev or self.dirtyRev or "unknown"} ]
   ${lib.boolToString (

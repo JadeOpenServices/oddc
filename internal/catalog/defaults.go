@@ -10,7 +10,8 @@ import (
 
 // WithDefaults completes args for a deployed system: the root defaults to
 // the system root when it holds a deployment, else the working directory;
-// resolve and explain default to the deployed model and its host overlay.
+// resolve, explain and status default to the deployed model, and resolve
+// and explain to its host overlay.
 func WithDefaults(
 	args []string,
 	system string,
@@ -26,7 +27,7 @@ func WithDefaults(
 		result = append(result, "--root", root)
 	}
 
-	if args[0] != "resolve" && args[0] != "explain" {
+	if args[0] != "resolve" && args[0] != "explain" && args[0] != "status" {
 		return result
 	}
 

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"sort"
@@ -13,6 +14,7 @@ import (
 	"testing"
 
 	. "github.com/JadeOpenServices/oddc/pkg/oddc"
+	"github.com/JadeOpenServices/oddc/tests/fixture"
 )
 
 // closureOf lists a model and every entity it references, transitively.
@@ -129,7 +131,7 @@ func TestFetchEveryModelFromCheckout(t *testing.T) {
 			t.Fatalf("Fetch for %s = %q, %v", model, matched, err)
 		}
 
-		expectAnswer(t, registry, model, out, "local")
+		expectAnswer(t, registry, model, out, DirSource{Root: "."}.Revision())
 	}
 }
 
@@ -143,7 +145,29 @@ func TestFetchModelByID(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		expectAnswer(t, registry, model, out, "local")
+		expectAnswer(t, registry, model, out, DirSource{Root: "."}.Revision())
+	}
+}
+
+// A checkout's revision is its commit only while its catalog and evidence
+// are exactly that commit's; a new or changed file makes it "local".
+func TestCheckoutRevision(t *testing.T) {
+	root := fixture.GitCatalog(t)
+	head, err := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := (DirSource{Root: root}).Revision(), strings.TrimSpace(string(head)); got != want {
+		t.Fatalf("clean checkout revision %q, want %q", got, want)
+	}
+
+	fixture.Write(t, filepath.Join(root, "evidence", "new.json"), []byte("{}"))
+	if got := (DirSource{Root: root}).Revision(); got != "local" {
+		t.Errorf("checkout with a new file has revision %q, want local", got)
+	}
+
+	if got := (DirSource{Root: t.TempDir()}).Revision(); got != "local" {
+		t.Errorf("non-git directory has revision %q, want local", got)
 	}
 }
 

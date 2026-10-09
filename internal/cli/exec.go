@@ -3,6 +3,7 @@
 package cli
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
@@ -19,9 +20,9 @@ func Command(name string, args ...string) error {
 	return cmd.Run()
 }
 
-// Gh runs the GitHub CLI, signed in as the contributor.
-func Gh(args ...string) (string, error) {
-	cmd := exec.Command("gh", args...)
+// Gh runs the GitHub CLI at bin, signed in as the contributor.
+func Gh(bin string, args ...string) (string, error) {
+	cmd := exec.Command(bin, args...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
@@ -31,6 +32,21 @@ func Gh(args ...string) (string, error) {
 	}
 
 	return strings.TrimSpace(string(out)), nil
+}
+
+// Ask asks a yes-or-no question on the terminal; the answer defaults to
+// yes. Without a terminal it asks nothing and answers no.
+func Ask(question string) bool {
+	info, err := os.Stdin.Stat()
+	if err != nil || info.Mode()&os.ModeCharDevice == 0 {
+		return false
+	}
+
+	fmt.Fprintf(os.Stderr, "%s [Y/n] ", question)
+	answer, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+	answer = strings.ToLower(strings.TrimSpace(answer))
+
+	return answer == "" || answer == "y" || answer == "yes"
 }
 
 func Git(dir string, args ...string) (string, error) {

@@ -18,3 +18,11 @@ jobs:
         env:
           BASE: origin/${{ github.base_ref }}
         run: nix run . -- validate --root . --since "$BASE" --json
+      # Only proven models reach staging: every model whose closure changed
+      # must be verified by evidence on its new closure (verify/<model>).
+      - if: github.event_name == 'pull_request' && github.base_ref == 'staging'
+        run: nix run . -- status --root . --since origin/staging
+      # Only proven models reach main: promotion fails unless every model
+      # is verified on its current closure.
+      - if: (github.event_name == 'pull_request' && github.base_ref == 'main') || github.ref == 'refs/heads/main'
+        run: nix run . -- status --root . --verified

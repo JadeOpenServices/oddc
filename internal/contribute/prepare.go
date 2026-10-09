@@ -74,21 +74,22 @@ func pullRequestTitle(root, base string, paths []string) string {
 }
 
 // Prepared is a checked contribution: the tree it sends, built on the
-// newest staging.
+// newest Target, the branch the workspace follows.
 type Prepared struct {
-	Base, Tree, Branch, Title, Body string
-	Paths                           []string
+	Target, Base, Tree, Branch, Title, Body string
+	Paths                                   []string
 }
 
-// Prepare checks the workspace's changes and builds their
-// tree on the newest staging in a separate index, so the workspace itself
-// stays as it is. Nothing leaves the machine unless the catalog validates
+// Prepare checks the workspace's changes and builds their tree on the
+// newest staging, or the verify branch the workspace is on, in a separate
+// index, so the workspace itself stays as it is. Nothing leaves the machine unless the catalog validates
 // and evidence was only added.
 func Prepare(args []string) (Prepared, error) {
 	root := cli.Value(args, "--root", cli.WorkspaceDir())
-	p := Prepared{Base: "origin/" + BaseBranch}
+	target := workspaceBranch(root)
+	p := Prepared{Target: target, Base: "origin/" + target}
 
-	if _, err := cli.Git(root, "fetch", "--quiet", "origin", BaseBranch); err != nil {
+	if _, err := cli.Git(root, "fetch", "--quiet", "origin", target); err != nil {
 		return p, err
 	}
 
@@ -97,7 +98,7 @@ func Prepare(args []string) (Prepared, error) {
 		return p, err
 	}
 	if len(paths) == 0 {
-		return p, fmt.Errorf("nothing to contribute: catalog/ and evidence/ match %s", BaseBranch)
+		return p, fmt.Errorf("nothing to contribute: catalog/ and evidence/ match %s", target)
 	}
 	p.Paths = paths
 

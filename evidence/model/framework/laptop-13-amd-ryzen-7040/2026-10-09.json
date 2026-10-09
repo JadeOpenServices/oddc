@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/evidence.schema.json",
+  "schemaVersion": "2.0.0",
+  "id": "laptop-13-amd-ryzen-7040-2026-10-09",
+  "deviceId": "model/framework/laptop-13-amd-ryzen-7040",
+  "observedAt": "2026-10-09",
+  "status": "runtime-verified",
+  "environment": {
+    "bios": "03.20",
+    "kernel": "7.1.12",
+    "oddc": "9958ddcb93c26721a60f033e21cbb27c8c89325f",
+    "os": "NixOS 26.05"
+  },
+  "results": {
+    "identity": "pass"
+  },
+  "drivers": {
+    "bluetooth/realtek/3571": [
+      "btusb"
+    ],
+    "graphics/amd/radeon-780m": [
+      "amdgpu"
+    ],
+    "touchpad/pixart/0274": [
+      "hid-multitouch"
+    ],
+    "wifi/realtek/rtl8852be": [
+      "rtw89_8852be"
+    ]
+  },
+  "closure": "sha256:e716f593405441f179515c25fecd15ee135dca0b88aa1020aaf2f15872132eb8"
+}
