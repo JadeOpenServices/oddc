@@ -80,3 +80,30 @@ func TestFetchUnknownMachineSuggestsScaffold(t *testing.T) {
 		t.Errorf("unmatched fetch left %s", out)
 	}
 }
+
+// An explicit --rev reads GitHub at that commit, never a local catalog.
+func TestFetchRevisionIsNotLocal(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "oddc")
+	rev := strings.Repeat("0", 40)
+
+	err := system.RunFetch([]string{"fetch", "--root", fixture.Repository, "--rev", rev, "--out", out})
+	if err == nil || !strings.Contains(err.Error(), "use one or the other") {
+		t.Errorf("--root with --rev: %v", err)
+	}
+
+	// With a workspace present, --rev still goes to GitHub, where no commit
+	// has this ID; without a network the fetch fails the same way.
+	data := t.TempDir()
+	if err := os.Mkdir(filepath.Join(data, "oddc"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(fixture.Repository, "catalog"), filepath.Join(data, "oddc", "catalog")); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("XDG_DATA_HOME", data)
+	out = filepath.Join(t.TempDir(), "oddc")
+	err = system.RunFetch([]string{"fetch", "--rev", rev, "--device", "model/framework/laptop-13-amd-ryzen-7040", "--out", out})
+	if err == nil || !strings.Contains(err.Error(), "resolve") {
+		t.Errorf("--rev with a workspace: %v", err)
+	}
+}
