@@ -201,7 +201,11 @@ commit on the newest followed branch without touching the workspace, authored by
 the GitHub account's noreply address with UTC dates. It uses the
 contributor's own account through `gh`, forks first without push access,
 and targets the branch the workspace follows: its verify branch, else
-`staging` (`--title`, `--body`).
+`staging` (`--title`, `--body`). git pushes with gh's login and never asks
+for a GitHub password. Without `gh`, `contribute` offers to use it from
+nixpkgs for that run only, as `nix shell nixpkgs#gh` would; without a
+login it offers `gh auth login`, and to sign out again at the end. Without
+a terminal it asks nothing and says what to run instead.
 
 ## Using ODDC on NixOS
 
