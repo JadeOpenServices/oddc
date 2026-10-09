@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -35,7 +36,9 @@ func placeholder(value string) bool {
 // describes yet. The draft holds the machine's DMI system vendor, product
 // and board name, its vendor and class when the catalog has them, and
 // every catalog component present in facts, placed where other models
-// place it. An empty id is derived from the vendor and product.
+// place it. An empty id is derived from the vendor and product: the
+// catalog vendor's ID when one has the machine's DMI system vendor, else
+// that DMI name.
 //
 // Notes lists what the draft leaves out: present devices no component
 // describes, as "bus vvvv:pppp", and components no model places yet.
@@ -45,8 +48,13 @@ func (r *Registry) DraftModel(id string, facts Facts) (Entity, []string, error) 
 		return Entity{}, nil, errors.New("facts lack a DMI system vendor and product name")
 	}
 
+	vendor := r.dmiVendor(identity.SysVendor)
 	if id == "" {
-		id = "model/" + slug(identity.SysVendor) + "/" + slug(identity.ProductName)
+		name := slug(identity.SysVendor)
+		if vendor != "" {
+			name = strings.TrimPrefix(vendor, "vendor/")
+		}
+		id = "model/" + name + "/" + slug(identity.ProductName)
 	}
 	if _, exists := r.Entities[id]; exists {
 		return Entity{}, nil, fmt.Errorf("%s already exists", id)
@@ -65,7 +73,7 @@ func (r *Registry) DraftModel(id string, facts Facts) (Entity, []string, error) 
 	}
 	data := map[string]any{"identity": map[string]any{"dmi": dmi}}
 
-	if vendor := "vendor/" + slug(identity.SysVendor); r.Entities[vendor].Kind == "Vendor" {
+	if vendor != "" {
 		data["vendor"] = map[string]any{"ref": vendor}
 	}
 	if class := "class/" + slug(identity.FormFactor); r.Entities[class].Kind == "DeviceClass" {
@@ -107,8 +115,12 @@ func (r *Registry) DraftModel(id string, facts Facts) (Entity, []string, error) 
 	sort.Strings(notes)
 
 	name := strings.TrimSpace(identity.ProductName)
-	if vendor := strings.TrimSpace(identity.SysVendor); !strings.HasPrefix(strings.ToLower(name), strings.ToLower(vendor)) {
-		name = vendor + " " + name
+	vendorName := strings.TrimSpace(identity.SysVendor)
+	if vendor != "" {
+		vendorName = r.Entities[vendor].Metadata.Name
+	}
+	if !strings.HasPrefix(strings.ToLower(name), strings.ToLower(vendorName)) {
+		name = vendorName + " " + name
 	}
 
 	return Entity{
@@ -117,6 +129,19 @@ func (r *Registry) DraftModel(id string, facts Facts) (Entity, []string, error) 
 		Metadata:   EntityMetadata{ID: id, Name: name},
 		Data:       data,
 	}, notes, nil
+}
+
+// dmiVendor is the ID of the vendor whose DMI system vendor is
+// sysVendor, or "" when no vendor has it.
+func (r *Registry) dmiVendor(sysVendor string) string {
+	for _, id := range sortedEntityIDs(r.Entities) {
+		entity := r.Entities[id]
+		if entity.Kind == "Vendor" && slices.Contains(stringsAt(entity.Data, "identity.dmi.systemVendor"), strings.TrimSpace(sysVendor)) {
+			return id
+		}
+	}
+
+	return ""
 }
 
 type placement struct {
