@@ -176,8 +176,10 @@ func TestEvidenceRecordPassingNeedsProof(t *testing.T) {
 			record = append(record, "--result", name+"="+want)
 		}
 	}
-	if err := contribute.RunEvidence(record); err != nil {
-		t.Fatal(err)
+	out := stdout(t, func() error { return contribute.RunEvidence(record) })
+	// The status comes from the catalog the record went into, not /etc/oddc.
+	if want := model + " in " + workspace + ": verified"; !strings.Contains(out, want) {
+		t.Errorf("output %q, want %q", out, want)
 	}
 	if result := oddc.Validate(workspace); !result.Valid {
 		t.Fatal(result.Errors)

@@ -192,6 +192,21 @@ func RunEvidence(args []string) error {
 		return err
 	}
 
-	fmt.Printf("Recorded %s.\nSend it with `oddc contribute`.\n", file)
+	// The status of the catalog the record went into: a plain `oddc
+	// status` reads the deployed one in /etc/oddc, which does not hold it.
+	written, err := oddc.LoadRegistry(root)
+	if err != nil {
+		return err
+	}
+	verification, err := written.Verify(device)
+	if err != nil {
+		return err
+	}
+
+	contribute := "oddc contribute"
+	if cli.Has(args, "--root") {
+		contribute += " --root " + root
+	}
+	fmt.Printf("Recorded %s.\n%s in %s: %s\nSend it with `%s`.\n", file, device, root, verification.Status, contribute)
 	return nil
 }

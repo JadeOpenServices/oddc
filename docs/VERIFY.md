@@ -43,9 +43,10 @@ each one missing and writes nothing until none is.
 
 1. Take the model's verify branch into the workspace:
    `oddc workspace --branch verify/<vendor>/<model>`. Deploy the model on
-   the machine from that branch, so `/etc/oddc` holds it. Use a checkout of that same revision for the
-   steps below; recording refuses when the deployed model is not the one
-   in the checkout.
+   the machine from that branch, so `/etc/oddc` holds it. The steps below
+   use the workspace; recording refuses when the deployed model is not the
+   one in it. To record into another checkout, add `--root DIR` to the
+   `evidence record`, `status` and `contribute` steps.
 2. `oddc doctor` must pass.
 3. Test each part, then record:
 
@@ -57,7 +58,10 @@ each one missing and writes nothing until none is.
    The record holds the OS, kernel, BIOS, the ODDC revision and closure of
    the deployment and the drivers bound to each component; nothing that
    identifies the machine or you.
-4. `oddc status` must say `verified`.
+4. The record prints the model's status in the catalog it went into; it
+   must say `verified`. A plain `oddc status` reads the deployed catalog
+   in `/etc/oddc`, which does not hold the new record; check it again with
+   `oddc status --root ~/.local/share/oddc`.
 5. Send it with `oddc contribute`; it targets the verify branch.
 6. Once that is merged, open a pull request from the verify branch into
    `staging`. CI fails it unless every model it changes is `verified`.
