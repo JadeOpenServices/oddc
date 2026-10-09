@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/evidence.schema.json",
+  "schemaVersion": "2.0.0",
+  "id": "zbook-x2-g4-2026-10-09",
+  "deviceId": "model/hp/zbook-x2-g4",
+  "observedAt": "2026-10-09",
+  "status": "runtime-verified",
+  "environment": {
+    "bios": "P72 Ver. 01.53",
+    "kernel": "7.2.2",
+    "oddc": "624f0a51cb3698b9a6841f20fcbac5dbf4519f6c",
+    "os": "NixOS 26.05"
+  },
+  "results": {
+    "identity": "pass"
+  },
+  "drivers": {
+    "graphics/nvidia/quadro-m620": [
+      "nvidia"
+    ],
+    "pen/wacom/056a-016c": [
+      "wacom"
+    ],
+    "quickkeys/hp/03f0-0a56": [
+      "hid-generic"
+    ],
+    "touchscreen/03eb-8abb": [
+      "hid-multitouch"
+    ]
+  },
+  "closure": "sha256:533745e1bdb057bb47f57e35767c168dd42db637bffcbd9c5021ab52b0225694"
+}
