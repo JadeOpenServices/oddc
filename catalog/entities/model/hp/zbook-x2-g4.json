@@ -2,10 +2,30 @@
   "$schema": "../../../../schemas/entity.schema.json",
   "apiVersion": "oddc.openjade.de/v2",
   "data": {
+    "capabilities": {
+      "chargeThresholds": false,
+      "tabletModeSwitch": true
+    },
     "class": {
       "ref": "class/laptop"
     },
     "hardware": {
+      "audio": {
+        "codec": {
+          "ref": "audio/conexant/cx8200"
+        },
+        "controller": {
+          "ref": "audio/intel/sunrise-point-lp-hda"
+        }
+      },
+      "camera": {
+        "front": {
+          "ref": "camera/chicony/b5e7"
+        },
+        "rear": {
+          "ref": "camera/realtek/5666"
+        }
+      },
       "graphics": {
         "discrete": {
           "ref": "graphics/nvidia/quadro-m620"
@@ -18,6 +38,12 @@
         }
       },
       "input": {
+        "keyboard": {
+          "primary": {
+            "attachment": "detachable",
+            "ref": "keyboard/nxp/1fc9-0088"
+          }
+        },
         "pen": {
           "primary": {
             "ref": "pen/wacom/056a-016c"
@@ -31,6 +57,54 @@
         "touchscreen": {
           "primary": {
             "ref": "touchscreen/03eb-8abb"
+          }
+        }
+      },
+      "network": {
+        "bluetooth": {
+          "primary": {
+            "attachment": "internal",
+            "ref": "bluetooth/intel/0a2b"
+          }
+        },
+        "wifi": {
+          "primary": {
+            "ref": "wifi/intel/8265"
+          }
+        }
+      },
+      "security": {
+        "fingerprint": {
+          "primary": {
+            "attachment": "internal",
+            "ref": "fingerprint/validity/003f"
+          }
+        }
+      },
+      "sensors": {
+        "hub": {
+          "imu": {
+            "model": {
+              "name": "LSM9DS1"
+            },
+            "vendor": {
+              "name": "STMicroelectronics"
+            }
+          },
+          "provides": {
+            "accelerometer": true,
+            "gyroscope": true,
+            "inclinometer": true,
+            "magnetometer": true,
+            "orientation": true
+          },
+          "ref": "sensorhub/intel/sunrise-point-lp-ish"
+        }
+      },
+      "storage": {
+        "cardReader": {
+          "primary": {
+            "ref": "cardreader/realtek/rts522a"
           }
         }
       }

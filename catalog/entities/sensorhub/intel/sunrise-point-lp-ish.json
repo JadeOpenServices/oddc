@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "pci",
+    "deviceId": "8086:9d35",
+    "driver": "intel_ish_ipc",
+    "vendor": {
+      "name": "Intel"
+    }
+  },
+  "kind": "SensorHubComponent",
+  "metadata": {
+    "id": "sensorhub/intel/sunrise-point-lp-ish",
+    "name": "Intel Sunrise Point-LP Integrated Sensor Hub"
+  }
+}

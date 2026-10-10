@@ -7,7 +7,9 @@
     "deviceId": "056a:016c",
     "vendor": {
       "name": "Wacom"
-    }
+    },
+    "driver": "wacom",
+    "technology": "emr"
   },
   "kind": "PenComponent",
   "metadata": {
@@ -19,6 +21,10 @@
       "implementation": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report.go",
       "tests": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report_test.go",
       "type": "validated-implementation"
+    },
+    "libwacom": {
+      "type": "upstream-data",
+      "reference": "libwacom 2.18.0 data/wacom-isdv4-016c.tablet (HP ZBook x2 G4, Sensor Type: EMR)"
     }
   }
 }

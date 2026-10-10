@@ -4,7 +4,11 @@
   "data": {
     "bus": "hid",
     "classification": "touchscreen",
-    "deviceId": "03eb:8abb"
+    "deviceId": "03eb:8abb",
+    "driver": "hid-multitouch",
+    "vendor": {
+      "name": "Atmel"
+    }
   },
   "kind": "TouchscreenComponent",
   "metadata": {
@@ -16,6 +20,10 @@
       "implementation": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report.go",
       "tests": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/report_test.go",
       "type": "validated-implementation"
+    },
+    "linuxwacom": {
+      "type": "upstream-data",
+      "reference": "linuxwacom/wacom-hid-descriptors 'HP ZBook x2 G4/README': Atmel I2C 03EB:8ABB [ATML1000:00]"
     }
   }
 }

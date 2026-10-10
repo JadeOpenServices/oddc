@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "hid",
+    "deviceId": "1fc9:0088",
+    "driver": "hid-generic",
+    "functions": {
+      "keyboard": true,
+      "touchpad": true
+    },
+    "vendor": {
+      "name": "NXP Semiconductors"
+    }
+  },
+  "kind": "KeyboardComponent",
+  "metadata": {
+    "id": "keyboard/nxp/1fc9-0088",
+    "name": "HP ZBook x2 detachable keyboard (NXP 1FC9:0088)"
+  }
+}

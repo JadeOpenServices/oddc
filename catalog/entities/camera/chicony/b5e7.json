@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "usb",
+    "deviceId": "04f2:b5e7",
+    "driver": "uvcvideo",
+    "streams": {
+      "color": {
+        "name": "HP HD Camera"
+      },
+      "infrared": {
+        "name": "HP IR Camera"
+      }
+    },
+    "vendor": {
+      "name": "Chicony"
+    }
+  },
+  "kind": "CameraComponent",
+  "metadata": {
+    "id": "camera/chicony/b5e7",
+    "name": "HP HD Camera (Chicony 04F2:B5E7)"
+  }
+}
