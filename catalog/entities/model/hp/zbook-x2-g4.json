@@ -26,11 +26,23 @@
       "camera": {
         "front": {
           "attachment": "internal",
-          "ref": "camera/chicony/b5e7"
+          "ref": "camera/chicony/b5e7",
+          "usbPort": {
+            "connectType": "hardwired",
+            "controller": "hardware.usb.controller",
+            "hub": "usb2",
+            "port": 9
+          }
         },
         "rear": {
           "attachment": "internal",
-          "ref": "camera/realtek/5666"
+          "ref": "camera/realtek/5666",
+          "usbPort": {
+            "connectType": "hardwired",
+            "controller": "hardware.usb.controller",
+            "hub": "usb3",
+            "port": 2
+          }
         }
       },
       "graphics": {
@@ -49,7 +61,13 @@
           "primary": {
             "attachment": "detachable",
             "detachSignal": "bus-presence",
-            "ref": "keyboard/nxp/1fc9-0088"
+            "ref": "keyboard/nxp/1fc9-0088",
+            "usbPort": {
+              "connectType": "hardwired",
+              "controller": "hardware.usb.controller",
+              "hub": "usb2",
+              "port": 4
+            }
           }
         },
         "pen": {
@@ -86,7 +104,13 @@
                 "fromTop": 6
               }
             },
-            "ref": "quickkeys/hp/03f0-0a56"
+            "ref": "quickkeys/hp/03f0-0a56",
+            "usbPort": {
+              "connectType": "hardwired",
+              "controller": "hardware.usb.controller",
+              "hub": "usb2",
+              "port": 2
+            }
           }
         },
         "touchscreen": {
@@ -99,7 +123,13 @@
         "bluetooth": {
           "primary": {
             "attachment": "internal",
-            "ref": "bluetooth/intel/0a2b"
+            "ref": "bluetooth/intel/0a2b",
+            "usbPort": {
+              "connectType": "hardwired",
+              "controller": "hardware.usb.controller",
+              "hub": "usb2",
+              "port": 7
+            }
           }
         },
         "wifi": {
@@ -112,7 +142,13 @@
         "fingerprint": {
           "primary": {
             "attachment": "internal",
-            "ref": "fingerprint/validity/003f"
+            "ref": "fingerprint/validity/003f",
+            "usbPort": {
+              "connectType": "hardwired",
+              "controller": "hardware.usb.controller",
+              "hub": "usb2",
+              "port": 8
+            }
           }
         }
       },
@@ -141,6 +177,12 @@
           "primary": {
             "ref": "cardreader/realtek/rts522a"
           }
+        }
+      },
+      "usb": {
+        "controller": {
+          "attachment": "internal",
+          "ref": "usbcontroller/intel/sunrise-point-lp-xhci"
         }
       },
       "usbC": {
@@ -241,6 +283,11 @@
     "tabletModeSwitch": {
       "observedAt": "2026-10-10",
       "reason": "No switch reports tablet mode on its own: Intel Virtual Switches follows the kickstand (kickstandSwitch), HP WMI hotkeys never changes, and detaching the keyboard raises no event at all (kernel 7.2.2). Tablet mode is the stand closed or the keyboard gone.",
+      "type": "validation"
+    },
+    "usbPort": {
+      "observedAt": "2026-10-10",
+      "reason": "Read on the machine from sysfs: each built-in USB device sits on the PCH xHCI 0000:00:14.0 (8086:9d2f), port/connect_type hardwired, removable fixed; USB 2 root hub ports 2, 4, 7, 8, 9 and USB 3 root hub port 2. A USB stick on a USB-C port showed up on the Thunderbolt controller as hotplug, removable.",
       "type": "validation"
     }
   }

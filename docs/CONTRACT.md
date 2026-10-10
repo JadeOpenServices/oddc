@@ -55,10 +55,19 @@ reused for something else. Renaming or removing an ID is a breaking change.
   `schemas/evidence.schema.json` and `schemas/overlay.schema.json`.
 - In Go, package `github.com/JadeOpenServices/oddc/pkg/oddc`: `LoadRegistry`,
   `Validate`, `Registry.Index`, `Registry.ResolveModel`,
-  `Registry.MatchModel`, `Registry.Classify`, `Registry.Verify`, `ReadFacts` and `Fetch`.
+  `Registry.MatchModel`, `Registry.Classify`, `Registry.Verify`, `ReadFacts`,
+  `InternalUSBDevices` and `Fetch`.
 
 Resolved values sit under stable named paths below `hardware`,
 `capabilities` and `policy`; `oddc explain` names the owner of each.
+
+A built-in USB device carries `usbPort` on its placement: `controller`
+(the path of a USB controller component in the same model), `hub`
+(`usb2` or `usb3`), `port` and `connectType` (`hardwired`). IDs and
+serial numbers can be cloned, so trust a USB device as internal only when
+its ID appears on that port of that controller; the same ID anywhere else
+is external. In Go, `InternalUSBDevices` lists them with the controller's
+PCI ID. Bus numbers are not part of it: they change with boot order.
 
 ## Releases
 
