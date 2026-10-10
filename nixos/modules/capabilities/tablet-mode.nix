@@ -53,16 +53,19 @@ in
     boot.kernelModules = [ "uinput" ];
 
     # The stand's input device, by the ACPI device it belongs to.
-    services.udev.extraRules = lib.mkIf hasKickstand ''
-      SUBSYSTEM=="input", KERNEL=="event*", KERNELS=="${kickstand.acpiId}:*", SYMLINK+="oddc/kickstand", TAG+="systemd"
-    '';
+    oddc.deviceNames.kickstand = lib.mkIf hasKickstand {
+      subsystem = "input";
+      rule = ''
+        SUBSYSTEM=="input", KERNEL=="event*", KERNELS=="${kickstand.acpiId}:*", SYMLINK+="oddc/kickstand", TAG+="systemd"
+      '';
+    };
 
     systemd.services.oddc-tablet-mode = {
       description = "ODDC tablet mode switch";
 
       wantedBy = [ "multi-user.target" ];
-      after = [ "systemd-udevd.service" ] ++ lib.optional hasKickstand "dev-oddc-kickstand.device";
-      requires = lib.optional hasKickstand "dev-oddc-kickstand.device";
+      after = [ "oddc-device-names.service" ] ++ lib.optional hasKickstand "dev-oddc-kickstand.device";
+      requires = [ "oddc-device-names.service" ] ++ lib.optional hasKickstand "dev-oddc-kickstand.device";
 
       restartTriggers = [ tabletModeView ];
 
