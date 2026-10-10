@@ -152,6 +152,11 @@
               "button5": "KEY_MACRO14",
               "button6": "KEY_MACRO15"
             }
+          },
+          "presetKeys": {
+            "preset1": "KEY_MACRO_PRESET1",
+            "preset2": "KEY_MACRO_PRESET2",
+            "preset3": "KEY_MACRO_PRESET3"
           }
         }
       }

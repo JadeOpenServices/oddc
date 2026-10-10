@@ -144,7 +144,8 @@ exactly one model matches. `doctor` works offline on `/etc/oddc`.
 `quickkeys` reads a model's Quick Keys from their hidraw node (`--device`,
 default `/dev/oddc/quickkeys`) and sends the key that
 `policy.input.quickKeys.keymap` names for the active preset on a virtual
-keyboard (`/dev/uinput`). It refuses any node that is not the model's
+keyboard (`/dev/uinput`); the preset switch sends the key
+`policy.input.quickKeys.presetKeys` names for the preset it selects. It refuses any node that is not the model's
 device. The NixOS module names that node and runs it as
 `oddc-quick-keys.service` for a model whose Quick Keys are mappable
 (`oddc.quickKeys.enable`, default on); keys are rebound with

@@ -28,6 +28,10 @@ var KeyCodes = func() map[string]uint16 {
 		"KEY_MICMUTE":            248,
 		"KEY_KEYBOARD":           0x176,
 		"KEY_ROTATE_LOCK_TOGGLE": 0x231,
+		"KEY_MACRO_PRESET_CYCLE": 0x2b2,
+		"KEY_MACRO_PRESET1":      0x2b3,
+		"KEY_MACRO_PRESET2":      0x2b4,
+		"KEY_MACRO_PRESET3":      0x2b5,
 	}
 	for n := 13; n <= 24; n++ {
 		codes[fmt.Sprintf("KEY_F%d", n)] = uint16(183 + n - 13)

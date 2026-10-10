@@ -58,8 +58,8 @@ func readCapture(t *testing.T, model string) [][]byte {
 
 // Replaying a real capture through the decoder sends, for each button
 // press, the key the keymap names for the preset the report shows; the
-// preset switch sends nothing; every key is let go; and the capture
-// reaches every key of the keymap.
+// preset switch sends the presetKeys key of the preset it selects; every
+// key is let go; and the capture reaches every key of both.
 func TestQuickKeysCapture(t *testing.T) {
 	registry, models := fixture.Catalog(t)
 	tested := 0
@@ -99,10 +99,17 @@ func TestQuickKeysCapture(t *testing.T) {
 			var want []string
 			for bit := 1; bit < 0x100; bit <<= 1 {
 				name, known := buttonName[bit]
-				if newly&bit == 0 || !known || protocol.Buttons[name].PresetSwitch {
+				if newly&bit == 0 || !known {
 					continue
 				}
-				want = append(want, quickKeys.Keymap[presetName[int(report[protocol.PresetByteOffset])]][name])
+				preset := presetName[int(report[protocol.PresetByteOffset])]
+				key := quickKeys.Keymap[preset][name]
+				if protocol.Buttons[name].PresetSwitch {
+					key = quickKeys.PresetKeys[preset]
+				}
+				if key != "" {
+					want = append(want, key)
+				}
 			}
 
 			var got []string
@@ -129,6 +136,11 @@ func TestQuickKeysCapture(t *testing.T) {
 		if len(held) != 0 {
 			t.Fatalf("%s: keys still held after the capture: %v", model, held)
 		}
+		for preset, key := range quickKeys.PresetKeys {
+			if pressed[KeyCodes[key]] == 0 {
+				t.Errorf("%s: capture never selects %s (%s)", model, preset, key)
+			}
+		}
 		for preset, buttons := range quickKeys.Keymap {
 			for button, key := range buttons {
 				if pressed[KeyCodes[key]] == 0 {
@@ -153,7 +165,7 @@ func keyName(code uint16) string {
 }
 
 // A keymap is refused when it names a key, button or preset that does not
-// exist, or gives the preset switch a key.
+// exist, or gives the preset switch a key; presetKeys likewise.
 func TestQuickKeysKeymapRefused(t *testing.T) {
 	registry, models := fixture.Catalog(t)
 
@@ -191,10 +203,22 @@ func TestQuickKeysKeymapRefused(t *testing.T) {
 				continue
 			}
 			broken := quickKeys
+			broken.PresetKeys = nil
 			broken.Keymap = map[string]map[string]string{change.preset: {change.button: change.key}}
 
 			if _, err := NewQuickKeysDecoder(broken); err == nil {
 				t.Errorf("%s: keymap with %s accepted", model, change.name)
+			}
+		}
+
+		for _, presetKeys := range []map[string]string{
+			{preset: "KEY_NOT_A_KEY"},
+			{"preset99": "KEY_MACRO_PRESET1"},
+		} {
+			broken := quickKeys
+			broken.PresetKeys = presetKeys
+			if _, err := NewQuickKeysDecoder(broken); err == nil {
+				t.Errorf("%s: presetKeys %v accepted", model, presetKeys)
 			}
 		}
 	}
