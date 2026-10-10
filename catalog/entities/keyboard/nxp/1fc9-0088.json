@@ -6,7 +6,8 @@
       "bus": "hid",
       "deviceId": "04f2:1573",
       "driver": "hid-generic",
-      "note": "the same keyboard, detached and paired; HID bus type 0005 (Bluetooth)"
+      "note": "the same keyboard, detached and paired; HID bus type 0005 (Bluetooth)",
+      "touchpadTwoFingerScroll": false
     },
     "bus": "hid",
     "deviceId": "1fc9:0088",
@@ -23,5 +24,12 @@
   "metadata": {
     "id": "keyboard/nxp/1fc9-0088",
     "name": "HP ZBook x2 detachable keyboard (NXP 1FC9:0088)"
+  },
+  "sources": {
+    "bluetooth.touchpadTwoFingerScroll": {
+      "observedAt": "2026-10-11",
+      "reason": "Raw HID capture over Bluetooth (hidraw, report 5 = buttons, X, Y, wheel, AC pan): one finger 904 reports, two-finger vertical swipes 47 reports and two-finger horizontal 3, with 0 wheel and 0 pan reports; over USB the same firmware sends wheel events. Neither the USB nor the Bluetooth descriptor has a precision touchpad collection or a gesture setting; feature report 9 returns 25 random-looking bytes and 0x13 is not answered over Bluetooth.",
+      "type": "validation"
+    }
   }
 }
