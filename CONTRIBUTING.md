@@ -379,6 +379,7 @@ reads a vendor or model ID to decide what to do.
 | `quirks/runtime-power.nix` | `quirks.*.runtimePower`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `capabilities/quick-keys.nix` | `hardware.input.quickKeys.primary.{deviceId,access.mappable,protocol}` | the Quick Keys component entity |
 | `capabilities/quick-keys.nix` | `policy.input.quickKeys.{keymap,presetKeys}` | the device model |
+| `capabilities/tablet-mode.nix` | `hardware.input.keyboard.*.{attachment,detachSignal,bus,deviceId}`, `capabilities.tabletModeSwitch` | the device model; `bus`, `deviceId` the keyboard component entity |
 | `deployment.nix` | the whole resolved view, written to `/etc/oddc/resolved.json` | each value's own owner |
 
 Policy no module here reads, such as `vendor.policy.secureBoot` or

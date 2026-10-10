@@ -43,6 +43,7 @@
         "keyboard": {
           "primary": {
             "attachment": "detachable",
+            "detachSignal": "bus-presence",
             "ref": "keyboard/nxp/1fc9-0088"
           }
         },
@@ -215,6 +216,11 @@
     "name": "HP ZBook x2 G4"
   },
   "sources": {
+    "detachSignal": {
+      "observedAt": "2026-10-10",
+      "reason": "Detaching the keyboard removes 1fc9:0088 from USB and attaching adds it back (libinput, kernel log). The embedded controller raises no event for it: with ACPI EC debugging on, a charger unplug raised Query(0x09), a detach raised none. So presence on the bus is the only tablet mode signal.",
+      "type": "validation"
+    },
     "intelHid5ButtonArray": {
       "observedAt": "2026-10-10",
       "reason": "Volume buttons send nothing: intel-hid enables the 5-button array only for machines in its button_array_table, which lacks this model. With the parameter, the Intel HID 5 button array device sends KEY_VOLUMEUP and KEY_VOLUMEDOWN (tested on kernel 7.2.2).",

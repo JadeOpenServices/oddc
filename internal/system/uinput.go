@@ -19,9 +19,12 @@ const (
 	uiDevSetup   = 0x405c5503 // _IOW('U', 3, struct uinput_setup)
 	uiSetEvBit   = 0x40045564 // _IOW('U', 100, int)
 	uiSetKeyBit  = 0x40045565 // _IOW('U', 101, int)
+	uiSetSwBit   = 0x4004556d // _IOW('U', 109, int)
 
 	evSyn      = 0x00
 	evKey      = 0x01
+	evSw       = 0x05
+	swTablet   = 0x01
 	synReport  = 0
 	busVirtual = 0x06
 )
@@ -34,26 +37,36 @@ type uinputSetup struct {
 	FFEffectsMax                      uint32
 }
 
-// keyboard is a uinput device that sends the keys it was created with.
+// keyboard is a uinput device that sends the keys or switches it was
+// created with.
 type keyboard struct {
 	file *os.File
 }
 
 func newKeyboard(path, name string, vendor, product uint16, codes []uint16) (*keyboard, error) {
+	return newUinput(path, name, vendor, product, evKey, uiSetKeyBit, codes)
+}
+
+// newTabletSwitch creates a device with one switch, SW_TABLET_MODE.
+func newTabletSwitch(path, name string) (*keyboard, error) {
+	return newUinput(path, name, 0, 0, evSw, uiSetSwBit, []uint16{swTablet})
+}
+
+func newUinput(path, name string, vendor, product uint16, kind uint16, setBit uintptr, codes []uint16) (*keyboard, error) {
 	file, err := os.OpenFile(path, os.O_WRONLY|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		return nil, err
 	}
 	k := &keyboard{file: file}
 
-	if err := k.ioctl(uiSetEvBit, evKey); err != nil {
+	if err := k.ioctl(uiSetEvBit, uintptr(kind)); err != nil {
 		k.Close()
 		return nil, fmt.Errorf("uinput: %w", err)
 	}
 	for _, code := range codes {
-		if err := k.ioctl(uiSetKeyBit, uintptr(code)); err != nil {
+		if err := k.ioctl(setBit, uintptr(code)); err != nil {
 			k.Close()
-			return nil, fmt.Errorf("uinput key %d: %w", code, err)
+			return nil, fmt.Errorf("uinput code %d: %w", code, err)
 		}
 	}
 
@@ -92,6 +105,19 @@ func (k *keyboard) Send(events []oddc.KeyEvent) error {
 		}
 		buffer = appendInputEvent(buffer, evKey, event.Code, value)
 	}
+	buffer = appendInputEvent(buffer, evSyn, synReport, 0)
+
+	_, err := k.file.Write(buffer)
+	return err
+}
+
+// SetSwitch sets one switch and reports it.
+func (k *keyboard) SetSwitch(code uint16, on bool) error {
+	value := int32(0)
+	if on {
+		value = 1
+	}
+	buffer := appendInputEvent(nil, evSw, code, value)
 	buffer = appendInputEvent(buffer, evSyn, synReport, 0)
 
 	_, err := k.file.Write(buffer)
