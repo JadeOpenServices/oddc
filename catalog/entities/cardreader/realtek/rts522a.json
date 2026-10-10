@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "pci",
+    "deviceId": "10ec:522a",
+    "driver": "rtsx_pci",
+    "model": {
+      "name": "RTS522A"
+    },
+    "vendor": {
+      "name": "Realtek"
+    }
+  },
+  "kind": "CardReaderComponent",
+  "metadata": {
+    "id": "cardreader/realtek/rts522a",
+    "name": "Realtek RTS522A"
+  }
+}

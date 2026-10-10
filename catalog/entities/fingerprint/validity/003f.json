@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "usb",
+    "deviceId": "138a:003f",
+    "model": {
+      "name": "VFS495"
+    },
+    "vendor": {
+      "name": "Validity Sensors"
+    }
+  },
+  "kind": "FingerprintComponent",
+  "metadata": {
+    "id": "fingerprint/validity/003f",
+    "name": "Validity VFS495"
+  },
+  "sources": {
+    "libfprint": {
+      "type": "upstream-hwdb",
+      "reference": "libfprint 1.94.10, 60-autosuspend-libfprint-2.hwdb, section 'Known unsupported devices': usb:v138Ap003F"
+    }
+  }
+}

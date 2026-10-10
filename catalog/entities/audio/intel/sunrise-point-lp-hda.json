@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "pci",
+    "deviceId": "8086:9d71",
+    "driver": "snd_hda_intel",
+    "vendor": {
+      "name": "Intel"
+    }
+  },
+  "kind": "AudioControllerComponent",
+  "metadata": {
+    "id": "audio/intel/sunrise-point-lp-hda",
+    "name": "Intel Sunrise Point-LP HD Audio"
+  }
+}
