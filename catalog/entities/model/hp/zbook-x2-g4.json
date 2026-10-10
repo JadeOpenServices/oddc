@@ -133,6 +133,11 @@
             "ref": "cardreader/realtek/rts522a"
           }
         }
+      },
+      "usbC": {
+        "thunderbolt": {
+          "ref": "thunderbolt/intel/jhl6540"
+        }
       }
     },
     "identity": {
