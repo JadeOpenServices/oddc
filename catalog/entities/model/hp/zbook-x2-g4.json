@@ -235,7 +235,7 @@
     },
     "kickstandSwitch": {
       "observedAt": "2026-10-10",
-      "reason": "Guided test on the machine: Intel Virtual Switches (INT33D6) sets SW_TABLET_MODE to 0 when the stand opens and 1 when it closes, with the keyboard attached in front. Folding the keyboard behind (only possible with the stand closed) and detaching it change nothing there.",
+      "reason": "Guided test on the machine: Intel Virtual Switches (INT33D6) sets SW_TABLET_MODE to 0 when the stand opens and 1 when it closes, with the keyboard attached in front. Folding the keyboard behind (only possible with the stand closed) and detaching it change nothing there. The switch flips at one stand angle; opening further changes nothing. A guided test of the combined switch (stand, detach, reattach in both stand positions) gave tablet mode exactly when the stand was closed or the keyboard gone.",
       "type": "validation"
     },
     "tabletModeSwitch": {
