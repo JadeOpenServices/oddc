@@ -127,6 +127,33 @@
         "discrete": {
           "driverBranch": "legacy_580"
         }
+      },
+      "input": {
+        "quickKeys": {
+          "keymap": {
+            "preset1": {
+              "button1": "KEY_MACRO1",
+              "button2": "KEY_MACRO2",
+              "button4": "KEY_MACRO3",
+              "button5": "KEY_MACRO4",
+              "button6": "KEY_MACRO5"
+            },
+            "preset2": {
+              "button1": "KEY_MACRO6",
+              "button2": "KEY_MACRO7",
+              "button4": "KEY_MACRO8",
+              "button5": "KEY_MACRO9",
+              "button6": "KEY_MACRO10"
+            },
+            "preset3": {
+              "button1": "KEY_MACRO11",
+              "button2": "KEY_MACRO12",
+              "button4": "KEY_MACRO13",
+              "button5": "KEY_MACRO14",
+              "button6": "KEY_MACRO15"
+            }
+          }
+        }
       }
     },
     "support": {
