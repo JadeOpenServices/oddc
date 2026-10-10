@@ -23,6 +23,7 @@ var commands = []struct {
 	{"fetch", system.RunFetch},
 	{"doctor", system.RunDoctor},
 	{"update", system.RunUpdate},
+	{"quickkeys", system.RunQuickKeys},
 	{"validate", catalog.Run},
 	{"list", catalog.Run},
 	{"index", catalog.Run},
