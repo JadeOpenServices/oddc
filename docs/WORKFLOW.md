@@ -124,6 +124,7 @@ For users:
     oddc status                  # is the deployed model verified by evidence?
     oddc update [--switch]       # take the newest ODDC of the stage the system follows
     oddc update --stage staging  # follow staging instead; --stage main returns to releases
+    oddc quickkeys               # Quick Keys to key presses; the NixOS module runs it
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full
@@ -140,6 +141,15 @@ fetches a named model instead.
 system) and this machine's DMI and PCI/USB/HID IDs from `/sys`
 (`--sys DIR`), or facts from `--facts FILE`; it exits non-zero unless
 exactly one model matches. `doctor` works offline on `/etc/oddc`.
+`quickkeys` reads a model's Quick Keys from their hidraw node (`--device`,
+default `/dev/oddc/quickkeys`) and sends the key that
+`policy.input.quickKeys.keymap` names for the active preset on a virtual
+keyboard (`/dev/uinput`); the preset switch sends the key
+`policy.input.quickKeys.presetKeys` names for the preset it selects. It refuses any node that is not the model's
+device. The NixOS module names that node and runs it as
+`oddc-quick-keys.service` for a model whose Quick Keys are mappable
+(`oddc.quickKeys.enable`, default on); keys are rebound with
+`oddc.overrides.policy.input.quickKeys.keymap.<preset>.<button>`.
 `status` reports each model (`--device ID`, default the deployed model,
 else all) as `verified`, `changed` or `unverified`. A model is
 `verified` when its newest passing evidence (`runtime-verified` or

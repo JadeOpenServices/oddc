@@ -18,6 +18,7 @@ buildGoModule {
       ./evidence
       ./schemas
       ./tests/contribute/testdata
+      ./tests/oddc/testdata
       # The update tests take the oddc input from the README.
       ./README.md
     ];
