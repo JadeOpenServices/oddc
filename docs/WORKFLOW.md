@@ -140,7 +140,9 @@ fetches a named model instead.
 `classify` reads the local catalog (`--root`, `/etc/oddc` on a deployed
 system) and this machine's DMI and PCI/USB/HID IDs from `/sys`
 (`--sys DIR`), or facts from `--facts FILE`; it exits non-zero unless
-exactly one model matches. `doctor` works offline on `/etc/oddc`.
+exactly one model matches. `doctor` works offline on `/etc/oddc`. It names every component of the deployed model
+that cannot be used on Linux (`support.linux` on its entity), with the
+reason, as `INFO`; that never fails it.
 `quickkeys` reads a model's Quick Keys from their hidraw node (`--device`,
 default `/dev/oddc/quickkeys`) and sends the key that
 `policy.input.quickKeys.keymap` names for the active preset on a virtual

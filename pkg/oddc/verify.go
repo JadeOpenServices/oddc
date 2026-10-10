@@ -135,7 +135,9 @@ func (r *Registry) Verify(model string) (Verification, error) {
 // capability, quirk and policy section of the resolved model. A component
 // is named by its path, as "hardware.network.wifi.primary"; the others as
 // "capabilities.usb4". Each must be "pass", except a capability the model
-// does not have, which must be "not-exposed".
+// does not have, which must be "not-exposed", and a component its entity
+// marks as unusable on Linux, which must be "unsupported": present, and
+// not working.
 func (r *Registry) Requirements(model string) (map[string]string, error) {
 	resolved, err := r.ResolveEntity(model)
 	if err != nil {
@@ -145,6 +147,9 @@ func (r *Registry) Requirements(model string) (map[string]string, error) {
 	required := map[string]string{"identity": "pass"}
 	for _, component := range modelComponents(resolved.Resolved) {
 		required[component.Path] = "pass"
+	}
+	for _, component := range UnsupportedComponents(resolved.Resolved) {
+		required[component.Path] = "unsupported"
 	}
 	for _, section := range []string{"capabilities", "quirks", "policy"} {
 		values, _ := resolved.Resolved[section].(map[string]any)

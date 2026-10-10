@@ -51,6 +51,12 @@ func RunDoctor(args []string) error {
 			report("PASS", "hardware identity matches")
 		}
 
+		if resolved, err := registry.ResolveEntity(model); err == nil {
+			for _, part := range oddc.UnsupportedComponents(resolved.Resolved) {
+				report("INFO", "%s (%s) cannot be used on Linux: %s", part.Name, part.Path, part.Reason)
+			}
+		}
+
 		verification(registry, model, oddc.ReadBIOS(cli.Value(args, "--sys", "/sys")), report)
 	}
 
