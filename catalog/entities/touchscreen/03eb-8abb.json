@@ -8,6 +8,10 @@
     "driver": "hid-multitouch",
     "vendor": {
       "name": "Atmel"
+    },
+    "capabilities": {
+      "multiTouch": true,
+      "maxContacts": 10
     }
   },
   "kind": "TouchscreenComponent",
@@ -24,6 +28,11 @@
     "linuxwacom": {
       "type": "upstream-data",
       "reference": "linuxwacom/wacom-hid-descriptors 'HP ZBook x2 G4/README': Atmel I2C 03EB:8ABB [ATML1000:00]"
+    },
+    "guidedTest20261010": {
+      "type": "validation",
+      "observedAt": "2026-10-10",
+      "reason": "libinput reports ntouches 10 for this touchscreen; the guided touch test on an HP ZBook x2 G4 had 1, 2 and 5 fingers at once tracked. Its pen channel (input 'ATML1000:00 03EB:8ABB UNKNOWN') reported nothing with the pens at hand and is not claimed."
     }
   }
 }
