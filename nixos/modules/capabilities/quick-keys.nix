@@ -54,15 +54,21 @@ in
 
     # The one hidraw node of this device gets a stable name and starts the
     # service; no other HID device is touched.
-    services.udev.extraRules = ''
-      SUBSYSTEM=="hidraw", KERNELS=="*:${hidId}.*", SYMLINK+="oddc/quickkeys", TAG+="systemd", ENV{SYSTEMD_WANTS}+="oddc-quick-keys.service"
-    '';
+    oddc.deviceNames.quickKeys = {
+      subsystem = "hidraw";
+      rule = ''
+        SUBSYSTEM=="hidraw", KERNELS=="*:${hidId}.*", SYMLINK+="oddc/quickkeys", TAG+="systemd", ENV{SYSTEMD_WANTS}+="oddc-quick-keys.service"
+      '';
+    };
 
     systemd.services.oddc-quick-keys = {
       description = "ODDC Quick Keys";
 
       bindsTo = [ "dev-oddc-quickkeys.device" ];
-      after = [ "dev-oddc-quickkeys.device" ];
+      after = [
+        "dev-oddc-quickkeys.device"
+        "oddc-device-names.service"
+      ];
 
       restartTriggers = [ quickKeysView ];
 
