@@ -2,6 +2,12 @@
   "$schema": "../../../../schemas/entity.schema.json",
   "apiVersion": "oddc.openjade.de/v2",
   "data": {
+    "bluetooth": {
+      "bus": "hid",
+      "deviceId": "04f2:1573",
+      "driver": "hid-generic",
+      "note": "the same keyboard, detached and paired; HID bus type 0005 (Bluetooth)"
+    },
     "bus": "hid",
     "deviceId": "1fc9:0088",
     "driver": "hid-generic",

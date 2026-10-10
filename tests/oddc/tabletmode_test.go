@@ -58,3 +58,34 @@ func TestTabletModeFromKeyboardPresence(t *testing.T) {
 		t.Fatal("no model signals tablet mode through a detachable keyboard")
 	}
 }
+
+// A detachable keyboard that also pairs over Bluetooth reports another
+// HID identity there; that identity never counts as the keyboard being
+// attached, so typing over Bluetooth keeps the tablet in tablet mode.
+func TestTabletModeIgnoresBluetoothKeyboard(t *testing.T) {
+	registry, models := fixture.Catalog(t)
+	found := 0
+
+	for _, model := range models {
+		resolved, err := registry.ResolveEntity(model)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, keyboard := range TabletModeKeyboards(resolved.Resolved) {
+			wireless, ok := Lookup(resolved.Resolved, keyboard.Path+".bluetooth.deviceId")
+			if !ok {
+				continue
+			}
+			found++
+
+			devices := map[string][]string{"hid": {wireless.(string)}}
+			if !TabletMode([]DetachableKeyboard{keyboard}, devices, false) {
+				t.Errorf("%s: laptop mode with only the Bluetooth keyboard %s", model, wireless)
+			}
+		}
+	}
+
+	if found == 0 {
+		t.Fatal("no detachable keyboard records a Bluetooth identity")
+	}
+}
