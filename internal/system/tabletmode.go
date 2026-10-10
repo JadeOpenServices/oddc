@@ -24,7 +24,8 @@ const attachSettle = 2 * time.Second
 // none of its detachable keyboards is on its bus, off once neither has
 // been true for attachSettle. It holds the stand's own switch, so the
 // desktop sees only this one. It reads the model from --resolved (default
-// /etc/oddc/resolved.json) and the devices from --sys.
+// /etc/oddc/resolved.json), the devices from --sys and the stand's switch
+// from --kickstand (default: found under --sys).
 func RunTabletMode(args []string) error {
 	data, err := os.ReadFile(cli.Value(args, "--resolved", "/etc/oddc/resolved.json"))
 	if err != nil {
@@ -48,7 +49,7 @@ func RunTabletMode(args []string) error {
 
 	standClosed, standChanges := false, make(chan bool)
 	if stand, ok := oddc.KickstandSwitch(resolved); ok {
-		switchDevice, err := openKickstand(sys, stand)
+		switchDevice, err := openKickstand(sys, stand, cli.Value(args, "--kickstand", ""))
 		if err != nil {
 			return err
 		}

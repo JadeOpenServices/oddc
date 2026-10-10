@@ -33,39 +33,61 @@ type kickstand struct {
 	closed int32
 }
 
-// openKickstand finds the input device of the ACPI device the model names
-// (its sysfs parent is ACPIID:nn) that has the switch, and grabs it.
-func openKickstand(sys string, stand oddc.Kickstand) (*kickstand, error) {
+// openKickstand opens the stand's switch: node when given (as the NixOS
+// module names it), else the first input device found. Either way the
+// device must belong to the ACPI device the model names (its sysfs parent
+// is ACPIID:nn) and have the switch; then it is grabbed.
+func openKickstand(sys string, stand oddc.Kickstand, node string) (*kickstand, error) {
 	code, ok := switchCodes[stand.Switch]
 	if !ok {
 		return nil, fmt.Errorf("kickstand: unknown switch %q", stand.Switch)
 	}
 
-	events, _ := filepath.Glob(filepath.Join(sys, "class", "input", "event*"))
-	for _, event := range events {
-		parent, err := filepath.EvalSymlinks(filepath.Join(event, "device", "device"))
-		if err != nil || !strings.HasPrefix(filepath.Base(parent), stand.ACPIID+":") {
-			continue
-		}
-
-		if !hasSwitch(filepath.Join(event, "device", "capabilities", "sw"), code) {
-			continue
-		}
-
-		file, err := os.Open(filepath.Join("/dev/input", filepath.Base(event)))
+	path := ""
+	if node != "" {
+		real, err := filepath.EvalSymlinks(node)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("kickstand: %w", err)
 		}
-		k := &kickstand{file: file, code: code, closed: int32(stand.ClosedValue)}
-		if err := k.ioctl(eviocGrab, 1); err != nil {
-			file.Close()
-			return nil, fmt.Errorf("kickstand: grab %s: %w", file.Name(), err)
+		if !isKickstand(filepath.Join(sys, "class", "input", filepath.Base(real)), stand.ACPIID, code) {
+			return nil, fmt.Errorf("kickstand: %s is not the %s switch of %s", node, stand.Switch, stand.ACPIID)
 		}
-
-		return k, nil
+		path = node
+	} else {
+		events, _ := filepath.Glob(filepath.Join(sys, "class", "input", "event*"))
+		for _, event := range events {
+			if isKickstand(event, stand.ACPIID, code) {
+				path = filepath.Join("/dev/input", filepath.Base(event))
+				break
+			}
+		}
+		if path == "" {
+			return nil, fmt.Errorf("kickstand: no input device of %s with %s", stand.ACPIID, stand.Switch)
+		}
 	}
 
-	return nil, fmt.Errorf("kickstand: no input device of %s", stand.ACPIID)
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	k := &kickstand{file: file, code: code, closed: int32(stand.ClosedValue)}
+	if err := k.ioctl(eviocGrab, 1); err != nil {
+		file.Close()
+		return nil, fmt.Errorf("kickstand: grab %s: %w", path, err)
+	}
+
+	return k, nil
+}
+
+// isKickstand reports whether the input device at a sysfs event path
+// belongs to the ACPI device acpiID and has the switch code.
+func isKickstand(event, acpiID string, code uint16) bool {
+	parent, err := filepath.EvalSymlinks(filepath.Join(event, "device", "device"))
+	if err != nil || !strings.HasPrefix(filepath.Base(parent), acpiID+":") {
+		return false
+	}
+
+	return hasSwitch(filepath.Join(event, "device", "capabilities", "sw"), code)
 }
 
 // hasSwitch reads an input device's switch bitmap, a hex number in sysfs.

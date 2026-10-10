@@ -56,7 +56,7 @@ in
     oddc.deviceNames.kickstand = lib.mkIf hasKickstand {
       subsystem = "input";
       rule = ''
-        SUBSYSTEM=="input", KERNEL=="event*", KERNELS=="${kickstand.acpiId}:*", SYMLINK+="oddc/kickstand", TAG+="systemd"
+        SUBSYSTEM=="input", KERNEL=="event*", KERNELS=="${kickstand.acpiId}:*", ENV{ID_INPUT_SWITCH}=="1", SYMLINK+="oddc/kickstand", TAG+="systemd"
       '';
     };
 
@@ -72,7 +72,7 @@ in
       unitConfig.ConditionVirtualization = "no";
 
       serviceConfig = {
-        ExecStart = "${config.oddc.cli.package}/bin/oddc tabletmode --resolved ${tabletModeView}";
+        ExecStart = "${config.oddc.cli.package}/bin/oddc tabletmode --resolved ${tabletModeView}" + lib.optionalString hasKickstand " --kickstand /dev/oddc/kickstand";
         Restart = "on-failure";
         RestartSec = "2s";
 
