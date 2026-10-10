@@ -51,6 +51,32 @@
         },
         "quickKeys": {
           "primary": {
+            "layout": {
+              "button1": {
+                "edge": "right",
+                "fromTop": 1
+              },
+              "button2": {
+                "edge": "right",
+                "fromTop": 2
+              },
+              "button3": {
+                "edge": "right",
+                "fromTop": 3
+              },
+              "button4": {
+                "edge": "right",
+                "fromTop": 4
+              },
+              "button5": {
+                "edge": "right",
+                "fromTop": 5
+              },
+              "button6": {
+                "edge": "right",
+                "fromTop": 6
+              }
+            },
             "ref": "quickkeys/hp/03f0-0a56"
           }
         },
