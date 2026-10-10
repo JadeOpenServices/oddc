@@ -4,7 +4,7 @@
   "data": {
     "capabilities": {
       "chargeThresholds": false,
-      "tabletModeSwitch": true
+      "tabletModeSwitch": false
     },
     "class": {
       "ref": "class/laptop"
@@ -212,6 +212,11 @@
       "reason": "Volume buttons send nothing: intel-hid enables the 5-button array only for machines in its button_array_table, which lacks this model. With the parameter, the Intel HID 5 button array device sends KEY_VOLUMEUP and KEY_VOLUMEDOWN (tested on kernel 7.2.2).",
       "reference": "drivers/platform/x86/intel/hid.c button_array_table",
       "removeWhen": "the kernel in use lists the HP ZBook x2 G4 in button_array_table",
+      "type": "validation"
+    },
+    "tabletModeSwitch": {
+      "observedAt": "2026-10-10",
+      "reason": "Intel Virtual Switches and HP WMI hotkeys declare SW_TABLET_MODE (HP WMI also SW_DOCK), but detaching the keyboard sends no event and the states read the same detached and attached (tablet mode 0, dock 1), kernel 7.2.2. The keyboard (1fc9:0088) leaving and joining USB is the working signal.",
       "type": "validation"
     }
   }
