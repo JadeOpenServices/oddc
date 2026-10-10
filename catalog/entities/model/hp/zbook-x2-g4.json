@@ -246,6 +246,34 @@
         "parameters": {
           "intelHid5ButtonArray": "intel_hid.enable_5_button_array=1"
         }
+      },
+      "secureBoot": {
+        "enrollmentBackend": "sbctl",
+        "factoryOwnershipProof": "pk-equals-pkdefault",
+        "firmwareName": "HP BIOS P72",
+        "instructions": {
+          "avoidReset": "Do not use Reset Secure Boot keys to factory defaults: it puts the factory PK back and leaves Setup Mode.",
+          "disableSecureBoot": "Set Legacy Support to Disable and Secure Boot to Disable.",
+          "enterFirmware": "Press F10 at power-on and open Advanced > Secure Boot Configuration.",
+          "enterSetupMode": "Tick Clear Secure Boot Keys, save and exit, and confirm with the 4-digit code the firmware shows at the next start. This clears PK, KEK, db and dbx.",
+          "restoreDbx": "Before enrolling, while still in Setup Mode, write the firmware's built-in dbx (dbxDefault) back into dbx; the firmware accepts it unsigned only in Setup Mode."
+        },
+        "preserveFirmwareBuiltin": {
+          "KEK": true,
+          "db": true
+        },
+        "requiredAbsent": {
+          "KEK": true,
+          "PK": true,
+          "db": true
+        },
+        "requiredPresent": {
+          "dbx": true
+        },
+        "setupModeStrategy": "firmware-setup-mode",
+        "untouched": {
+          "dbx": true
+        }
       }
     },
     "support": {
@@ -279,6 +307,10 @@
       "observedAt": "2026-10-10",
       "reason": "Guided test on the machine: Intel Virtual Switches (INT33D6) sets SW_TABLET_MODE to 0 when the stand opens and 1 when it closes, with the keyboard attached in front. Folding the keyboard behind (only possible with the stand closed) and detaching it change nothing there. The switch flips at one stand angle; opening further changes nothing. A guided test of the combined switch (stand, detach, reattach in both stand positions) gave tablet mode exactly when the stand was closed or the keyboard gone.",
       "type": "validation"
+    },
+    "policy.secureBoot": {
+      "observedAt": "2026-10-11",
+      "reason": "Tested on the ZBook x2 G4, BIOS P72 01.53, 2026-10-10/11: PK equalled PKDefault before ownership; Reset to factory defaults restored the PK and left Setup Mode; Clear Secure Boot Keys emptied PK, KEK, db and dbx and entered Setup Mode; PKDefault, KEKDefault, dbDefault and dbxDefault stay available."
     },
     "tabletModeSwitch": {
       "observedAt": "2026-10-10",
