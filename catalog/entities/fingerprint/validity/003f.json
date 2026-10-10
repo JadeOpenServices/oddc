@@ -9,6 +9,12 @@
     },
     "vendor": {
       "name": "Validity Sensors"
+    },
+    "support": {
+      "linux": {
+        "status": "unsupported",
+        "reason": "no Linux driver; libfprint lists the VFS495 as a known unsupported device"
+      }
     }
   },
   "kind": "FingerprintComponent",
