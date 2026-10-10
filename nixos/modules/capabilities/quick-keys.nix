@@ -75,7 +75,10 @@ in
       unitConfig.ConditionVirtualization = "no";
 
       serviceConfig = {
-        ExecStart = "${config.oddc.cli.package}/bin/oddc quickkeys --resolved ${quickKeysView} --device /dev/oddc/quickkeys";
+        ExecStart = "${config.oddc.cli.package}/bin/oddc quickkeys --resolved ${quickKeysView} --device /dev/oddc/quickkeys --state /run/oddc/quick-keys";
+        # The active preset, for desktops to show: /run/oddc/quick-keys/preset.
+        RuntimeDirectory = "oddc/quick-keys";
+        RuntimeDirectoryMode = "0755";
         Restart = "on-failure";
         RestartSec = "2s";
 

@@ -19,7 +19,9 @@ import (
 // RunQuickKeys turns a Quick Keys device's hidraw reports into key
 // presses on a uinput keyboard, following the resolved model's protocol
 // and keymap (--resolved, default /etc/oddc/resolved.json). It reads only
-// --device, and only when that hidraw node is the model's device.
+// --device, and only when that hidraw node is the model's device. With
+// --state DIR it writes the active preset's name to DIR/preset whenever a
+// report shows it changed.
 func RunQuickKeys(args []string) error {
 	data, err := os.ReadFile(cli.Value(args, "--resolved", "/etc/oddc/resolved.json"))
 	if err != nil {
@@ -63,11 +65,19 @@ func RunQuickKeys(args []string) error {
 	defer keys.Close()
 	defer keys.Send(decoder.Release())
 
+	stateDir := cli.Value(args, "--state", "")
+	preset := ""
 	report := make([]byte, 64)
 	for {
 		n, err := device.Read(report)
 		if err != nil {
 			return fmt.Errorf("reading %s: %w", device.Name(), err)
+		}
+		if now := decoder.Preset(report[:n]); stateDir != "" && now != "" && now != preset {
+			if err := writePreset(stateDir, now); err != nil {
+				return err
+			}
+			preset = now
 		}
 		if err := keys.Send(decoder.Decode(report[:n])); err != nil {
 			return fmt.Errorf("uinput: %w", err)
@@ -131,3 +141,13 @@ func splitDeviceID(deviceID string) (uint16, uint16) {
 // unixMajor and unixMinor split a Linux dev_t.
 func unixMajor(dev uint64) uint64 { return (dev>>8)&0xfff | (dev>>32)&^0xfff }
 func unixMinor(dev uint64) uint64 { return dev&0xff | (dev>>12)&^0xff }
+
+// writePreset replaces dir/preset with the preset's name in one step, so
+// a reader never sees a half-written file.
+func writePreset(dir, preset string) error {
+	temporary := filepath.Join(dir, ".preset")
+	if err := os.WriteFile(temporary, []byte(preset+"\n"), 0o644); err != nil {
+		return err
+	}
+	return os.Rename(temporary, filepath.Join(dir, "preset"))
+}

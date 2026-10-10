@@ -91,6 +91,9 @@ func TestQuickKeysCapture(t *testing.T) {
 		previous := 0
 
 		for i, report := range readCapture(t, model) {
+			if got, want := decoder.Preset(report), presetName[int(report[protocol.PresetByteOffset])]; got != want {
+				t.Fatalf("%s report %d: preset %q, want %q", model, i, got, want)
+			}
 			events := decoder.Decode(report)
 			buttons := int(report[protocol.ButtonByteOffset])
 			newly := buttons &^ previous
