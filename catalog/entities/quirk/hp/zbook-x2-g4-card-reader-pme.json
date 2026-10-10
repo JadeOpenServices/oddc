@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Quirk",
+  "metadata": {
+    "id": "quirk/hp/zbook-x2-g4-card-reader-pme",
+    "name": "HP ZBook x2 G4 card reader PME storm on GPE 0x69"
+  },
+  "data": {
+    "pchPmeSci": {
+      "action": "disable",
+      "gpe": "0x69",
+      "rootPort": {
+        "deviceId": "9d12",
+        "subsystemDeviceId": "824c",
+        "subsystemVendorId": "103c",
+        "vendorId": "8086"
+      }
+    }
+  },
+  "sources": {
+    "reproduced20261011": {
+      "observedAt": "2026-10-11",
+      "reason": "BIOS P72 01.53, kernel 7.2.2. Removing the SD card while the RTS522A reader (02:00.0) sleeps in D3hot makes it send a PME; root port #3 (00:1c.2) has PMEX (config 0xD8 bit 31) set and latches PMSX (0xDC bit 31), which raises GPE 0x69. The firmware's _L69 is empty and platform _OSC aborts (AE_AML_BUFFER_LIMIT), so nothing clears PMSX: about 7,700 GPEs per second until reboot. Clearing PMSX stopped it (7,510/s to 0). With PMEX cleared, pulling and reinserting the card raised no GPE and Linux still saw the card go and come back through its PME polling. BIOS 01.53 is the newest HP release for board 824C.",
+      "type": "validation"
+    }
+  }
+}

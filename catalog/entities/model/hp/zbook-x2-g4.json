@@ -276,6 +276,12 @@
         }
       }
     },
+    "quirks": {
+      "cardReaderPmeStorm": {
+        "enabled": true,
+        "ref": "quirk/hp/zbook-x2-g4-card-reader-pme"
+      }
+    },
     "support": {
       "lifecycle": {
         "status": "experimental"

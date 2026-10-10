@@ -358,6 +358,7 @@ Generic capability modules implement reusable behavior:
     └── quirks/
         ├── fprintd.nix
         ├── kernel-fallback.nix
+        ├── pch-pme-sci.nix
         └── runtime-power.nix
 
 The catalog determines which capabilities and quirks apply.
@@ -376,6 +377,7 @@ reads a vendor or model ID to decide what to do.
 | `quirks/fprintd.nix` | `quirks.*.fprintd`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/fprintd.nix` | `hardware.security.fingerprint.primary.{bus,deviceId}` | the fingerprint component entity |
 | `quirks/kernel-fallback.nix` | `quirks.*.affected.kernel.{minimum,maximumBefore}`, `quirks.*.fallbackPackage`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
+| `quirks/pch-pme-sci.nix` | `quirks.*.pchPmeSci.{action,rootPort}`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/runtime-power.nix` | `quirks.*.runtimePower`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `capabilities/orientation.nix` | `hardware.sensors.hub.provides.orientation`, also exposed read-only as `oddc.sensors.orientation.present` | the device model |
 | `capabilities/quick-keys.nix` | `hardware.input.quickKeys.primary.{deviceId,access.mappable,protocol}` | the Quick Keys component entity |
