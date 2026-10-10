@@ -159,6 +159,11 @@
             "preset3": "KEY_MACRO_PRESET3"
           }
         }
+      },
+      "kernel": {
+        "parameters": {
+          "intelHid5ButtonArray": "intel_hid.enable_5_button_array=1"
+        }
       }
     },
     "support": {
@@ -174,5 +179,14 @@
   "metadata": {
     "id": "model/hp/zbook-x2-g4",
     "name": "HP ZBook x2 G4"
+  },
+  "sources": {
+    "intelHid5ButtonArray": {
+      "observedAt": "2026-10-10",
+      "reason": "Volume buttons send nothing: intel-hid enables the 5-button array only for machines in its button_array_table, which lacks this model. With the parameter, the Intel HID 5 button array device sends KEY_VOLUMEUP and KEY_VOLUMEDOWN (tested on kernel 7.2.2).",
+      "reference": "drivers/platform/x86/intel/hid.c button_array_table",
+      "removeWhen": "the kernel in use lists the HP ZBook x2 G4 in button_array_table",
+      "type": "validation"
+    }
   }
 }
