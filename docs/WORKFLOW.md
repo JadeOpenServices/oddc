@@ -125,6 +125,7 @@ For users:
     oddc update [--switch]       # take the newest ODDC of the stage the system follows
     oddc update --stage staging  # follow staging instead; --stage main returns to releases
     oddc quickkeys               # Quick Keys to key presses; the NixOS module runs it
+    oddc tabletmode              # tablet mode switch from a detachable keyboard's presence
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full
@@ -152,6 +153,17 @@ device. The NixOS module names that node and runs it as
 `oddc-quick-keys.service` for a model whose Quick Keys are mappable
 (`oddc.quickKeys.enable`, default on); keys are rebound with
 `oddc.overrides.policy.input.quickKeys.keymap.<preset>.<button>`.
+
+`tabletmode` is for models without a switch that reports tablet mode on
+its own (`capabilities.tabletModeSwitch` false) whose detachable keyboard
+leaves its bus when detached (`detachSignal: bus-presence` on its
+placement). It offers a virtual `SW_TABLET_MODE` switch: on while no such
+keyboard is present or, when the model has `capabilities.kickstandSwitch`,
+while the firmware reports the stand closed; off once neither has held for
+two seconds. It follows the kernel's device events and holds the stand's
+own switch, so the desktop sees only one. The NixOS module names that
+switch `/dev/oddc/kickstand` and runs it as
+`oddc-tablet-mode.service` (`oddc.tabletMode.enable`, default on).
 `status` reports each model (`--device ID`, default the deployed model,
 else all) as `verified`, `changed` or `unverified`. A model is
 `verified` when its newest passing evidence (`runtime-verified` or

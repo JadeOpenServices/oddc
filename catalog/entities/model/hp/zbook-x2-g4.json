@@ -4,6 +4,11 @@
   "data": {
     "capabilities": {
       "chargeThresholds": false,
+      "kickstandSwitch": {
+        "acpiId": "INT33D6",
+        "closedValue": 1,
+        "switch": "SW_TABLET_MODE"
+      },
       "tabletModeSwitch": false
     },
     "class": {
@@ -43,6 +48,7 @@
         "keyboard": {
           "primary": {
             "attachment": "detachable",
+            "detachSignal": "bus-presence",
             "ref": "keyboard/nxp/1fc9-0088"
           }
         },
@@ -215,6 +221,11 @@
     "name": "HP ZBook x2 G4"
   },
   "sources": {
+    "detachSignal": {
+      "observedAt": "2026-10-10",
+      "reason": "Detaching the keyboard removes 1fc9:0088 from USB and attaching adds it back (libinput, kernel log). The embedded controller raises no event for it: with ACPI EC debugging on, a charger unplug raised Query(0x09), a detach raised none. So presence on the bus is the only tablet mode signal.",
+      "type": "validation"
+    },
     "intelHid5ButtonArray": {
       "observedAt": "2026-10-10",
       "reason": "Volume buttons send nothing: intel-hid enables the 5-button array only for machines in its button_array_table, which lacks this model. With the parameter, the Intel HID 5 button array device sends KEY_VOLUMEUP and KEY_VOLUMEDOWN (tested on kernel 7.2.2).",
@@ -222,9 +233,14 @@
       "removeWhen": "the kernel in use lists the HP ZBook x2 G4 in button_array_table",
       "type": "validation"
     },
+    "kickstandSwitch": {
+      "observedAt": "2026-10-10",
+      "reason": "Guided test on the machine: Intel Virtual Switches (INT33D6) sets SW_TABLET_MODE to 0 when the stand opens and 1 when it closes, with the keyboard attached in front. Folding the keyboard behind (only possible with the stand closed) and detaching it change nothing there. The switch flips at one stand angle; opening further changes nothing. A guided test of the combined switch (stand, detach, reattach in both stand positions) gave tablet mode exactly when the stand was closed or the keyboard gone.",
+      "type": "validation"
+    },
     "tabletModeSwitch": {
       "observedAt": "2026-10-10",
-      "reason": "Intel Virtual Switches and HP WMI hotkeys declare SW_TABLET_MODE (HP WMI also SW_DOCK), but detaching the keyboard sends no event and the states read the same detached and attached (tablet mode 0, dock 1), kernel 7.2.2. The keyboard (1fc9:0088) leaving and joining USB is the working signal.",
+      "reason": "No switch reports tablet mode on its own: Intel Virtual Switches follows the kickstand (kickstandSwitch), HP WMI hotkeys never changes, and detaching the keyboard raises no event at all (kernel 7.2.2). Tablet mode is the stand closed or the keyboard gone.",
       "type": "validation"
     }
   }
