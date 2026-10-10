@@ -18,6 +18,18 @@ let
     ] false config.oddc.resolved == true;
 in
 {
+  options.oddc.sensors.orientation.present = lib.mkOption {
+    type = lib.types.bool;
+    readOnly = true;
+    default = hasSensor;
+    defaultText = lib.literalMD "whether the resolved model has an orientation sensor";
+    description = ''
+      Whether the resolved model has an orientation sensor it was proven with.
+      For desktops that turn the screen: gate on this, not on the sensor
+      service, which may run for other sensors.
+    '';
+  };
+
   options.oddc.sensors.orientation.enable = lib.mkOption {
     type = lib.types.bool;
     default = true;
