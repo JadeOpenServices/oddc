@@ -103,19 +103,43 @@ func (d *QuickKeysDecoder) Codes() []uint16 {
 	return codes
 }
 
-// Decode returns the key events one input report causes. Reports of
-// another ID, length or framing are ignored.
-func (d *QuickKeysDecoder) Decode(report []byte) []KeyEvent {
+// valid reports whether a report has the protocol's ID, length and framing.
+func (d *QuickKeysDecoder) valid(report []byte) bool {
 	protocol := d.protocol
 	if len(report) != protocol.ReportLength || int(report[0]) != protocol.ReportID {
-		return nil
+		return false
 	}
 	for name, want := range protocol.Framing {
 		var offset int
 		if _, err := fmt.Sscanf(name, "byte%d", &offset); err != nil ||
 			offset >= len(report) || int(report[offset]) != want {
-			return nil
+			return false
 		}
+	}
+	return true
+}
+
+// Preset names the preset a report shows, or "" when the report is not
+// one of the device's or shows no known preset.
+func (d *QuickKeysDecoder) Preset(report []byte) string {
+	if !d.valid(report) {
+		return ""
+	}
+	raw := int(report[d.protocol.PresetByteOffset])
+	for name, preset := range d.protocol.Presets {
+		if preset.Raw == raw {
+			return name
+		}
+	}
+	return ""
+}
+
+// Decode returns the key events one input report causes. Reports of
+// another ID, length or framing are ignored.
+func (d *QuickKeysDecoder) Decode(report []byte) []KeyEvent {
+	protocol := d.protocol
+	if !d.valid(report) {
+		return nil
 	}
 
 	pressed := int(report[protocol.ButtonByteOffset])
