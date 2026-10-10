@@ -11,9 +11,9 @@ import (
 )
 
 // A model whose detachable keyboard signals tablet mode by leaving its bus
-// is in laptop mode while its own devices are present and in tablet mode
-// once that keyboard is gone; a model with a working tablet mode switch
-// has no such keyboard.
+// is in laptop mode while its own devices are present and its stand is
+// open, and in tablet mode once that keyboard is gone or its stand is
+// closed; a model with a working tablet mode switch has no such keyboard.
 func TestTabletModeFromKeyboardPresence(t *testing.T) {
 	registry, models := fixture.Catalog(t)
 	found := 0
@@ -36,7 +36,7 @@ func TestTabletModeFromKeyboardPresence(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if TabletMode(keyboards, facts.Devices) {
+		if TabletMode(keyboards, facts.Devices, false) {
 			t.Errorf("%s: tablet mode with its keyboard present", model)
 		}
 
@@ -46,8 +46,11 @@ func TestTabletModeFromKeyboardPresence(t *testing.T) {
 				return slices.ContainsFunc(keyboards, func(k DetachableKeyboard) bool { return k.Bus == bus && k.DeviceID == id })
 			})
 		}
-		if !TabletMode(keyboards, detached) {
+		if !TabletMode(keyboards, detached, false) {
 			t.Errorf("%s: laptop mode with its keyboard detached", model)
+		}
+		if _, ok := KickstandSwitch(resolved.Resolved); ok && !TabletMode(keyboards, facts.Devices, true) {
+			t.Errorf("%s: laptop mode with its stand closed", model)
 		}
 	}
 

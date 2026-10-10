@@ -20,9 +20,11 @@ import (
 const attachSettle = 2 * time.Second
 
 // RunTabletMode keeps a virtual SW_TABLET_MODE switch in step with the
-// model's detachable keyboards: on while none is on its bus, off once one
-// has been back for attachSettle. It reads the model from --resolved
-// (default /etc/oddc/resolved.json) and the devices from --sys.
+// model: on while its stand is closed (capabilities.kickstandSwitch) or
+// none of its detachable keyboards is on its bus, off once neither has
+// been true for attachSettle. It holds the stand's own switch, so the
+// desktop sees only this one. It reads the model from --resolved (default
+// /etc/oddc/resolved.json) and the devices from --sys.
 func RunTabletMode(args []string) error {
 	data, err := os.ReadFile(cli.Value(args, "--resolved", "/etc/oddc/resolved.json"))
 	if err != nil {
@@ -44,54 +46,58 @@ func RunTabletMode(args []string) error {
 	}
 	defer syscall.Close(events)
 
+	standClosed, standChanges := false, make(chan bool)
+	if stand, ok := oddc.KickstandSwitch(resolved); ok {
+		switchDevice, err := openKickstand(sys, stand)
+		if err != nil {
+			return err
+		}
+		defer switchDevice.Close()
+		if standClosed, err = switchDevice.Closed(); err != nil {
+			return fmt.Errorf("kickstand: %w", err)
+		}
+		go switchDevice.Watch(standChanges)
+	}
+
 	device, err := newTabletSwitch(cli.Value(args, "--uinput", "/dev/uinput"), "ODDC Tablet Mode Switch")
 	if err != nil {
 		return err
 	}
 	defer device.Close()
 
-	tablet := oddc.TabletMode(keyboards, oddc.ReadDevices(sys))
+	tablet := oddc.TabletMode(keyboards, oddc.ReadDevices(sys), standClosed)
 	if err := device.SetSwitch(swTablet, tablet); err != nil {
 		return err
 	}
 
-	changed := make(chan struct{}, 1)
-	go func() {
-		buffer := make([]byte, 8192)
-		for {
-			n, err := syscall.Read(events, buffer)
-			if err != nil {
-				close(changed)
-				return
-			}
-			if devicesChanged(buffer[:n]) {
-				select {
-				case changed <- struct{}{}:
-				default:
-				}
-			}
-		}
-	}()
+	devicesChanges := make(chan struct{}, 1)
+	go watchUevents(events, devicesChanges)
 
 	var settle <-chan time.Time
 	for {
 		settled := false
 		select {
-		case _, open := <-changed:
+		case _, open := <-devicesChanges:
 			if !open {
 				return errors.New("uevent socket closed")
 			}
+		case closed, open := <-standChanges:
+			if !open {
+				return errors.New("kickstand switch gone")
+			}
+			standClosed = closed
 		case <-settle:
 			settle, settled = nil, true
 		}
 
-		now := oddc.TabletMode(keyboards, oddc.ReadDevices(sys))
+		now := oddc.TabletMode(keyboards, oddc.ReadDevices(sys), standClosed)
 		switch {
 		case now == tablet:
 			settle = nil
 			continue
 		case !now && !settled:
-			// A keyboard came back: switch only if it stays.
+			// Laptop mode only once it holds: keyboards bounce on their
+			// connector, stands on their hinge.
 			if settle == nil {
 				settle = time.After(attachSettle)
 			}
@@ -101,6 +107,26 @@ func RunTabletMode(args []string) error {
 		tablet, settle = now, nil
 		if err := device.SetSwitch(swTablet, tablet); err != nil {
 			return fmt.Errorf("uinput: %w", err)
+		}
+	}
+}
+
+// watchUevents signals every USB or HID device added or removed, and
+// closes changes when the socket fails.
+func watchUevents(events int, changes chan<- struct{}) {
+	defer close(changes)
+
+	buffer := make([]byte, 8192)
+	for {
+		n, err := syscall.Read(events, buffer)
+		if err != nil {
+			return
+		}
+		if devicesChanged(buffer[:n]) {
+			select {
+			case changes <- struct{}{}:
+			default:
+			}
 		}
 	}
 }

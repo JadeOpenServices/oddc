@@ -154,12 +154,15 @@ device. The NixOS module names that node and runs it as
 (`oddc.quickKeys.enable`, default on); keys are rebound with
 `oddc.overrides.policy.input.quickKeys.keymap.<preset>.<button>`.
 
-`tabletmode` is for models without a working tablet mode switch
-(`capabilities.tabletModeSwitch` false) whose detachable keyboard leaves
-its bus when detached (`detachSignal: bus-presence` on its placement). It
-offers a virtual `SW_TABLET_MODE` switch, on while no such keyboard is
-present and off once one has been back for two seconds, and follows the
-kernel's device events. The NixOS module runs it as
+`tabletmode` is for models without a switch that reports tablet mode on
+its own (`capabilities.tabletModeSwitch` false) whose detachable keyboard
+leaves its bus when detached (`detachSignal: bus-presence` on its
+placement). It offers a virtual `SW_TABLET_MODE` switch: on while no such
+keyboard is present or, when the model has `capabilities.kickstandSwitch`,
+while the firmware reports the stand closed; off once neither has held for
+two seconds. It follows the kernel's device events and holds the stand's
+own switch, so the desktop sees only one. The NixOS module names that
+switch `/dev/oddc/kickstand` and runs it as
 `oddc-tablet-mode.service` (`oddc.tabletMode.enable`, default on).
 `status` reports each model (`--device ID`, default the deployed model,
 else all) as `verified`, `changed` or `unverified`. A model is

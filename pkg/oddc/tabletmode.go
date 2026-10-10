@@ -44,9 +44,40 @@ func TabletModeKeyboards(resolved map[string]any) []DetachableKeyboard {
 	return found
 }
 
-// TabletMode reports whether a machine is in tablet mode: none of its
-// detachable keyboards is on its bus. devices are what ReadDevices sees.
-func TabletMode(keyboards []DetachableKeyboard, devices map[string][]string) bool {
+// Kickstand is a firmware switch that reports whether a model's stand is
+// closed (capabilities.kickstandSwitch): the input device of an ACPI
+// device, the switch code it sets, and the value that means closed.
+type Kickstand struct {
+	ACPIID      string `json:"acpiId"`
+	Switch      string `json:"switch"`
+	ClosedValue int    `json:"closedValue"`
+}
+
+// KickstandSwitch reads capabilities.kickstandSwitch of a resolved model.
+func KickstandSwitch(resolved map[string]any) (Kickstand, bool) {
+	value, ok := Lookup(resolved, "capabilities.kickstandSwitch")
+	object, isObject := value.(map[string]any)
+	if !ok || !isObject {
+		return Kickstand{}, false
+	}
+
+	id, _ := object["acpiId"].(string)
+	code, _ := object["switch"].(string)
+	closed, _ := object["closedValue"].(float64)
+	if id == "" || code == "" {
+		return Kickstand{}, false
+	}
+
+	return Kickstand{ACPIID: id, Switch: code, ClosedValue: int(closed)}, true
+}
+
+// TabletMode reports whether a machine is in tablet mode: its stand is
+// closed, or none of its detachable keyboards is on its bus. devices are
+// what ReadDevices sees.
+func TabletMode(keyboards []DetachableKeyboard, devices map[string][]string, standClosed bool) bool {
+	if standClosed {
+		return true
+	}
 	for _, keyboard := range keyboards {
 		if slices.Contains(devices[keyboard.Bus], keyboard.DeviceID) {
 			return false
