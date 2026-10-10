@@ -9,7 +9,12 @@
       "name": "Wacom"
     },
     "driver": "wacom",
-    "technology": "emr"
+    "technology": "emr",
+    "capabilities": {
+      "eraser": true,
+      "pressureLevels": 4096,
+      "tilt": true
+    }
   },
   "kind": "PenComponent",
   "metadata": {
@@ -25,6 +30,11 @@
     "libwacom": {
       "type": "upstream-data",
       "reference": "libwacom 2.18.0 data/wacom-isdv4-016c.tablet (HP ZBook x2 G4, Sensor Type: EMR)"
+    },
+    "guidedTest20261010": {
+      "type": "validation",
+      "observedAt": "2026-10-10",
+      "reason": "Guided pen test on an HP ZBook x2 G4 with a battery-free EMR pen: pressure up to 4095 (4096 levels), tilt on both axes (about -4600..5200), eraser end reported as eraser. Side buttons not tested (the pen had none)."
     }
   }
 }
