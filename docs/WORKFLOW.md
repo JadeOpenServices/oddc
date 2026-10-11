@@ -167,6 +167,8 @@ For contributors:
     oddc workspace --branch verify/<vendor>/<model>   # follow a model's verify branch instead
     oddc scaffold                # draft a model entity for this machine
     oddc evidence record         # add an evidence record for this machine
+    oddc quirk enable QUIRK      # adopt a shared quirk for this machine's model
+    oddc quirk share             # merge quirk entities that hold the same data
     oddc contribute              # check the changes and open a pull request
 
 The workspace is `$XDG_DATA_HOME/oddc`, by default `~/.local/share/oddc` (`--root DIR`);
@@ -175,6 +177,13 @@ that the followed branch now holds unchanged, such as a merged
 contribution. `--branch` switches to `staging` or a verify branch, which
 later updates keep following; git refuses when local changes would be
 lost.
+
+`quirk enable` checks the quirk's `requires` against the model, adds the
+reference (`--device`, `--name` to choose), and prints the evidence step: the
+model is verified again only with `quirks.KEY=pass` from its own machine.
+`quirk share` keeps the first of several quirk entities with the same data,
+points every model at it and lists the models that need new evidence;
+anything it cannot merge itself, it lists for you to fix.
 
 `scaffold` refuses a machine that already matches. Its draft holds the
 DMI vendor, product and board name, the vendor and class entities, and

@@ -425,6 +425,29 @@ The device model references the quirk ID.
 
 It must not copy the implementation or the quirk metadata.
 
+### Shared quirks
+
+A quirk is one behaviour, not one machine. When several models need the
+same behaviour, they reference the same quirk entity; nobody writes a second
+entity with the same data. The quirk holds only what is the same for all of
+them. What differs per machine (which GPU, which port) stays a fact of the
+model or its components, and the implementation reads it from there.
+
+Sharing a quirk shares the definition, never the proof: each model that
+enables it needs its own evidence with `quirks.KEY=pass`. Facts never switch
+a quirk on; only the model's reference does.
+
+A quirk may name the resolved paths it needs:
+
+    "requires": {
+      "hardware.graphics.discrete": true,
+      "hardware.graphics.integrated": true
+    }
+
+`oddc quirk enable QUIRK` refuses a model that lacks one of them, adds the
+reference and prints the evidence step. `oddc quirk share` merges quirk
+entities that hold the same data.
+
 `mkForce` is permitted only where a documented safety or compatibility boundary genuinely requires it.
 
 ---
@@ -648,7 +671,14 @@ If adding one laptop requires six device-specific Nix and JSON files, stop and r
 
 ## 18. Forbidden duplication
 
-CI should eventually reject these patterns:
+`oddc validate`, and so CI, rejects these already:
+
+- two quirk entities with the same data;
+- quirk data written into a model next to its reference;
+- a device (bus and deviceId) described inside a model instead of referenced;
+- two component entities claiming the same bus and deviceId.
+
+CI should eventually reject these patterns too:
 
 - the same PCI or USB component facts copied into multiple models;
 - canonical fan policy copied into a runtime profile;
