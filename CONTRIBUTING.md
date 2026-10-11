@@ -832,3 +832,15 @@ Examples that belong in ODDC:
 The canonical graph describes the hardware-specific condition or policy.
 Reusable Nix modules implement it.
 
+
+## Licence and copyright
+
+ODDC belongs to everyone who works on it. No person or company holds it.
+
+- Every file carries only `SPDX-License-Identifier: GPL-3.0-or-later`. Do not
+  add a personal `Copyright (C) <name>` line, author tag or maintainer list.
+- Where a format needs a copyright line, for example a driver sent to an
+  upstream project, it reads `Copyright (C) <year> The ODDC contributors`.
+- There is no contributor licence agreement. Each contribution stays under
+  GPL-3.0-or-later from its author, so no one can relicense the collection or
+  take it closed on their own.
