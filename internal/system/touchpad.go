@@ -30,9 +30,9 @@ const (
 
 	evAbs = 0x03
 
-	absX, absY, absPressure                 = 0x00, 0x01, 0x18
+	absX, absY                              = 0x00, 0x01
 	absMTSlot, absMTX, absMTY               = 0x2f, 0x35, 0x36
-	absMTTrackingID, absMTPressure          = 0x39, 0x3a
+	absMTTrackingID                         = 0x39
 	btnLeft, btnTouch                       = 0x110, 0x14a
 	btnToolFinger, btnToolQuintTap          = 0x145, 0x148
 	btnToolDoubleTap, btnToolTripleTap      = 0x14d, 0x14e
@@ -353,7 +353,9 @@ func (b bitmap) only(allowed ...int) bool {
 }
 
 // touchpad is a uinput multitouch touchpad (a clickpad: one button under
-// the whole surface).
+// the whole surface). It reports no pressure: libinput takes a pressure
+// axis as its touch threshold, and on the Alps scale (0-127, about 80 for
+// a light touch) light touches then read as hovering and are dropped.
 type touchpad struct {
 	*keyboard
 	slots  []int32
@@ -400,12 +402,10 @@ func newTouchpad(path string, t oddc.AlpsTouchpad) (*touchpad, error) {
 	axes := []uinputAbsSetup{
 		{Code: absX, Maximum: int32(t.XMax), Resl: xRes},
 		{Code: absY, Maximum: int32(t.YMax), Resl: yRes},
-		{Code: absPressure, Maximum: 127},
 		{Code: absMTSlot, Maximum: int32(t.MaxContacts - 1)},
 		{Code: absMTX, Maximum: int32(t.XMax), Resl: xRes},
 		{Code: absMTY, Maximum: int32(t.YMax), Resl: yRes},
 		{Code: absMTTrackingID, Maximum: 65535},
-		{Code: absMTPressure, Maximum: 127},
 	}
 	for _, axis := range axes {
 		if err := k.ioctl(uiSetAbsBit, uintptr(axis.Code)); err != nil {
@@ -458,7 +458,6 @@ func (p *touchpad) Send(frame oddc.TouchFrame) error {
 			}
 			add(evAbs, absMTX, int32(contact.X))
 			add(evAbs, absMTY, int32(contact.Y))
-			add(evAbs, absMTPressure, int32(contact.Pressure))
 		case p.slots[slot] >= 0:
 			add(evAbs, absMTSlot, int32(slot))
 			add(evAbs, absMTTrackingID, -1)
@@ -483,9 +482,6 @@ func (p *touchpad) Send(frame oddc.TouchFrame) error {
 		first := frame.Contacts[0]
 		add(evAbs, absX, int32(first.X))
 		add(evAbs, absY, int32(first.Y))
-		add(evAbs, absPressure, int32(first.Pressure))
-	} else {
-		add(evAbs, absPressure, 0)
 	}
 	add(evKey, btnLeft, press(frame.Button))
 	add(evSyn, synReport, 0)
