@@ -243,30 +243,53 @@ func setAbsolute(device *os.File, t oddc.AlpsTouchpad, length int) error {
 	return setMode(device, t, length, t.AbsoluteMode)
 }
 
-// setMode writes the mode register and reads it back.
+// setMode writes the mode register and reads it back. Right after the
+// mode changed (a restart puts the pad back into mouse mode first) the
+// chip may leave a read unacknowledged, so it reads up to five times and
+// writes a second time before it gives up.
 func setMode(device *os.File, t oddc.AlpsTouchpad, length int, mode byte) error {
-	pause := func() { time.Sleep(10 * time.Millisecond) }
-	if err := feature(device, hidiocSFeature, t.ModeWrite(length, mode)); err != nil {
-		return fmt.Errorf("touchpad mode write: %w", err)
+	var last string
+	for write := 0; write < 2; write++ {
+		if err := feature(device, hidiocSFeature, t.ModeWrite(length, mode)); err != nil {
+			return fmt.Errorf("touchpad mode write: %w", err)
+		}
+		time.Sleep(50 * time.Millisecond)
+		for read := 0; read < 5; read++ {
+			got, ok, err := readMode(device, t, length)
+			switch {
+			case err != nil:
+				last = err.Error()
+			case !ok:
+				last = "no acknowledgement"
+			case got != mode:
+				last = fmt.Sprintf("mode %#x", got)
+			default:
+				return nil
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
 	}
-	time.Sleep(50 * time.Millisecond)
+	return fmt.Errorf("touchpad mode %#x not confirmed: %s", mode, last)
+}
+
+// readMode asks the chip for its mode register; ok is false without the
+// chip's acknowledgement.
+func readMode(device *os.File, t oddc.AlpsTouchpad, length int) (byte, bool, error) {
 	if err := feature(device, hidiocSFeature, t.ModeReadRequest(length)); err != nil {
-		return fmt.Errorf("touchpad mode read: %w", err)
+		return 0, false, err
 	}
-	pause()
+	time.Sleep(10 * time.Millisecond)
 	if err := feature(device, hidiocSFeature, t.ModeReadFetch(length)); err != nil {
-		return fmt.Errorf("touchpad mode read: %w", err)
+		return 0, false, err
 	}
-	pause()
+	time.Sleep(10 * time.Millisecond)
 	reply := make([]byte, length)
 	reply[0] = t.FeatureReport
 	if err := feature(device, hidiocGFeature, reply); err != nil {
-		return fmt.Errorf("touchpad mode read: %w", err)
+		return 0, false, err
 	}
-	if got, ok := oddc.ModeReadValue(reply); !ok || got != mode {
-		return fmt.Errorf("touchpad mode is %#x after writing %#x", got, mode)
-	}
-	return nil
+	got, ok := oddc.ModeReadValue(reply)
+	return got, ok, nil
 }
 
 // grabAbsoluteInputs grabs the input devices the generic HID driver made
