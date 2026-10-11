@@ -126,6 +126,7 @@ For users:
     oddc update --stage staging  # follow staging instead; --stage main returns to releases
     oddc quickkeys               # Quick Keys to key presses; the NixOS module runs it
     oddc tabletmode              # tablet mode switch from a detachable keyboard's presence
+    oddc touchpad                # an Alps keyboard touchpad as a multitouch touchpad (USB, Bluetooth)
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full

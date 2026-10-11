@@ -16,6 +16,31 @@
       "keyboard": true,
       "touchpad": true
     },
+    "touchpad": {
+      "absoluteMode": "0x22",
+      "featureReport": 9,
+      "heightMm": 65,
+      "inputReport": 7,
+      "maxContacts": 5,
+      "modeRegister": "0x00800040",
+      "mouseMode": "0x21",
+      "protocol": "alps-u1-report-passthrough",
+      "transports": {
+        "bluetooth": {
+          "note": "refuses SET_FEATURE; keeps a mode set over USB",
+          "reportLength": 26,
+          "writable": false
+        },
+        "usb": {
+          "reportLength": 48,
+          "writable": true
+        }
+      },
+      "vendor": "Alps",
+      "widthMm": 110,
+      "xMax": 3328,
+      "yMax": 1920
+    },
     "vendor": {
       "name": "NXP Semiconductors"
     }
@@ -29,6 +54,11 @@
     "bluetooth.touchpadTwoFingerScroll": {
       "observedAt": "2026-10-11",
       "reason": "Raw HID capture over Bluetooth (hidraw, report 5 = buttons, X, Y, wheel, AC pan): one finger 904 reports, two-finger vertical swipes 47 reports and two-finger horizontal 3, with 0 wheel and 0 pan reports; over USB the same firmware sends wheel events. Neither the USB nor the Bluetooth descriptor has a precision touchpad collection or a gesture setting; feature report 9 returns 25 random-looking bytes and 0x13 is not answered over Bluetooth.",
+      "type": "validation"
+    },
+    "touchpad": {
+      "observedAt": "2026-10-11",
+      "reason": "Protocol from the Alps HID driver package 8.2206.1717.634 (HP SoftPaq SP112035, ApHidFiltr): report 9 carries I2C-HID SET_REPORT/GET_REPORT to an Alps U1 chip; register 0x800040 is the mode (0x21 mouse, 0x22 absolute); report 7 carries five slots of x, y, pressure; the sensor grid is 27 by 16 lines. On the ZBook x2 G4 over USB: status ready, mode read 0x21, write 0x22 read back 0x22, 1,372 frames with up to 3 contacts in 12 s, x up to 3319 and y up to 1906, mouse reports stopped; mode 0x21 restored. Over Bluetooth every SET_FEATURE is refused (EIO) but a mode set over USB stays and Bluetooth then streams report 7. Touch surface measured 110 by 65 mm.",
       "type": "validation"
     }
   }
