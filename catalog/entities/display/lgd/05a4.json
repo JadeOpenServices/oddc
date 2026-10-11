@@ -1,0 +1,34 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "edid",
+    "deviceId": "lgd:05a4",
+    "interface": "eDP",
+    "refreshHz": 60,
+    "resolution": {
+      "height": 2160,
+      "width": 3840
+    },
+    "selfRefresh": "psr1",
+    "size": {
+      "heightMm": 174,
+      "widthMm": 309
+    },
+    "vendor": {
+      "name": "LG Display"
+    }
+  },
+  "kind": "DisplayComponent",
+  "metadata": {
+    "id": "display/lgd/05a4",
+    "name": "LG Display LGD05A4 14\" 3840x2160 panel"
+  },
+  "sources": {
+    "edid20261011": {
+      "observedAt": "2026-10-11",
+      "reason": "EDID 1.4 of the ZBook x2 G4's built-in panel (eDP-1 on i915): manufacturer LGD, product 0x05A4, year 2017, native 3840x2160 at 533.25 MHz pixel clock (60 Hz), image size 309 x 174 mm. The i915 driver reports PSR1 supported and enabled.",
+      "type": "validation"
+    }
+  }
+}

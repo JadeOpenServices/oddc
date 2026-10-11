@@ -26,6 +26,7 @@ var commands = []struct {
 	{"quickkeys", system.RunQuickKeys},
 	{"tabletmode", system.RunTabletMode},
 	{"touchpad", system.RunTouchpad},
+	{"display", system.RunDisplay},
 	{"validate", catalog.Run},
 	{"list", catalog.Run},
 	{"index", catalog.Run},

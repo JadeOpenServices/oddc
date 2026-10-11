@@ -45,6 +45,14 @@
           }
         }
       },
+      "display": {
+        "internal": {
+          "primary": {
+            "connector": "eDP",
+            "ref": "display/lgd/05a4"
+          }
+        }
+      },
       "graphics": {
         "discrete": {
           "ref": "graphics/nvidia/quadro-m620"
