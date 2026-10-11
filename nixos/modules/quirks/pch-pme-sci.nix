@@ -3,9 +3,9 @@
 # Intel PCH root ports can turn a PME from the device behind them into an
 # ACPI GPE (PMEX, config 0xD8 bit 31; status PMSX, 0xDC bit 31). When the
 # firmware's handler for that GPE never clears PMSX, the level-triggered GPE
-# fires until reboot. A pchPmeSci quirk with action "disable" names such a
-# port by its full PCI identity; this module clears PMSX and then PMEX on
-# exactly those ports, at boot and after every resume. Linux still sees the
+# fires until reboot. A pchPmeSci quirk with action "disable" names such
+# ports under rootPorts, each by its full PCI identity; this module clears
+# PMEX and then PMSX on exactly those ports, at boot and after every resume. Linux still sees the
 # device's wakeups through its own PME polling.
 {
   config,
@@ -23,27 +23,29 @@ let
 
   hex4 = value: builtins.match "[0-9a-f]{4}" value != null;
 
-  validQuirk =
-    quirk:
-    let
-      sci = quirk.pchPmeSci;
-      port = sci.rootPort or { };
-    in
-    (sci.action or "") == "disable"
-    && builtins.all (field: hex4 (port.${field} or "")) [
+  validPort =
+    port:
+    builtins.all (field: hex4 (port.${field} or "")) [
       "vendorId"
       "deviceId"
       "subsystemVendorId"
       "subsystemDeviceId"
     ];
 
-  # "8086 9d12 103c 824c" per port, matched against sysfs.
-  identities = map (
+  validQuirk =
     quirk:
     let
-      port = quirk.pchPmeSci.rootPort;
+      sci = quirk.pchPmeSci;
+      ports = builtins.attrValues (sci.rootPorts or { });
     in
-    "${port.vendorId} ${port.deviceId} ${port.subsystemVendorId} ${port.subsystemDeviceId}"
+    (sci.action or "") == "disable" && ports != [ ] && builtins.all validPort ports;
+
+  # "8086 9d12 103c 824c" per port, matched against sysfs.
+  identities = lib.concatMap (
+    quirk:
+    map (
+      port: "${port.vendorId} ${port.deviceId} ${port.subsystemVendorId} ${port.subsystemDeviceId}"
+    ) (builtins.attrValues (quirk.pchPmeSci.rootPorts or { }))
   ) sciQuirks;
 
   apply = pkgs.writeShellScript "oddc-pch-pme-sci" ''
@@ -77,7 +79,7 @@ in
   config = lib.mkIf (sciQuirks != [ ]) {
     assertions = map (quirk: {
       assertion = validQuirk quirk;
-      message = "ODDC pchPmeSci quirk requires action=disable and a full rootPort identity (vendorId, deviceId, subsystemVendorId, subsystemDeviceId as 4 lowercase hex digits).";
+      message = "ODDC pchPmeSci quirk requires action=disable and at least one rootPorts entry, each a full identity (vendorId, deviceId, subsystemVendorId, subsystemDeviceId as 4 lowercase hex digits).";
     }) sciQuirks;
 
     systemd.services.oddc-pch-pme-sci = {

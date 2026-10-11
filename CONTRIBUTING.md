@@ -382,7 +382,7 @@ reads a vendor or model ID to decide what to do.
 | `quirks/fprintd.nix` | `quirks.*.fprintd`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/fprintd.nix` | `hardware.security.fingerprint.primary.{bus,deviceId}` | the fingerprint component entity |
 | `quirks/kernel-fallback.nix` | `quirks.*.affected.kernel.{minimum,maximumBefore}`, `quirks.*.fallbackPackage`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
-| `quirks/pch-pme-sci.nix` | `quirks.*.pchPmeSci.{action,rootPort}`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
+| `quirks/pch-pme-sci.nix` | `quirks.*.pchPmeSci.{action,rootPorts}`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/runtime-power.nix` | `quirks.*.runtimePower`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `capabilities/alps-touchpad.nix` | `hardware.input.keyboard.primary.{deviceId,bluetooth.deviceId,touchpad}` (`touchpad.protocol` `alps-u1-report-passthrough`) | the keyboard component entity |
 | `capabilities/orientation.nix` | `hardware.sensors.hub.provides.orientation`, also exposed read-only as `oddc.sensors.orientation.present` | the device model |
