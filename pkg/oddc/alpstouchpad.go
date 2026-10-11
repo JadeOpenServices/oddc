@@ -137,6 +137,14 @@ func StatusReady(reply []byte) bool {
 	return len(reply) > 2 && reply[2] == 0xC4
 }
 
+// FingerNotice tells the keyboard a finger is on the touchpad, so it wakes
+// its light as it does for keys; in absolute mode the keyboard no longer
+// sees touchpad use itself. The Alps driver package sends it once when a
+// finger lands and nothing when it lifts.
+func (t AlpsTouchpad) FingerNotice(length int) []byte {
+	return t.report(length, 0x03, 0x02, 0x01, 0x01)
+}
+
 // ModeWrite sets the mode register to value.
 func (t AlpsTouchpad) ModeWrite(length int, value byte) []byte {
 	body := append([]byte{0x01, 0x10}, alpsSetReport...)
