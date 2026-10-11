@@ -67,6 +67,21 @@ func TestAlpsTouchpadCommands(t *testing.T) {
 			t.Errorf("%s: %x, want %x zero padded to 48", c.name, c.got, want)
 		}
 	}
+	if len(touchpad.Init) != 15 || touchpad.Init[0].Register != 0x800051 || touchpad.Init[1].PauseMs != 500 || touchpad.Init[0].Verify || !touchpad.Init[2].Verify {
+		t.Errorf("init table %+v", touchpad.Init)
+	}
+	// The first and last init writes as the driver package sends them.
+	for _, c := range []struct {
+		w    RegisterWrite
+		want string
+	}{
+		{touchpad.Init[0], "09 01 10 05 00 35 03 06 00 0a 00 05 d2 51 00 80 00 c1 73"},
+		{touchpad.Init[14], "09 01 10 05 00 35 03 06 00 0a 00 05 d2 83 00 80 00 20 04"},
+	} {
+		if got, want := touchpad.RegisterSet(48, c.w.Register, c.w.Value), unhex(t, c.want); !bytes.Equal(got[:len(want)], want) {
+			t.Errorf("init write %x, want %x", got[:len(want)], want)
+		}
+	}
 	if got := touchpad.ModeWrite(26, touchpad.AbsoluteMode); len(got) != 26 {
 		t.Errorf("Bluetooth length %d", len(got))
 	}

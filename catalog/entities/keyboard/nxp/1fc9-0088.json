@@ -25,6 +25,84 @@
       "absoluteMode": "0x22",
       "featureReport": 9,
       "heightMm": 65,
+      "init": {
+        "step01": {
+          "register": "0x00800051",
+          "value": "0xc1",
+          "verify": false
+        },
+        "step02": {
+          "pauseMs": 500,
+          "register": "0x008000f1",
+          "value": "0x10",
+          "verify": false
+        },
+        "step03": {
+          "register": "0x00800091",
+          "value": "0x3c",
+          "verify": true
+        },
+        "step04": {
+          "register": "0x0080008e",
+          "value": "0x32",
+          "verify": true
+        },
+        "step05": {
+          "register": "0x0080009a",
+          "value": "0x3c",
+          "verify": true
+        },
+        "step06": {
+          "register": "0x0080008f",
+          "value": "0x02",
+          "verify": true
+        },
+        "step07": {
+          "register": "0x00800090",
+          "value": "0x03",
+          "verify": true
+        },
+        "step08": {
+          "register": "0x00800079",
+          "value": "0x14",
+          "verify": true
+        },
+        "step09": {
+          "register": "0x0080008c",
+          "value": "0xff",
+          "verify": true
+        },
+        "step10": {
+          "register": "0x008000da",
+          "value": "0x01",
+          "verify": true
+        },
+        "step11": {
+          "register": "0x0080009c",
+          "value": "0x09",
+          "verify": true
+        },
+        "step12": {
+          "register": "0x00800070",
+          "value": "0x6f",
+          "verify": true
+        },
+        "step13": {
+          "register": "0x008000dc",
+          "value": "0x18",
+          "verify": true
+        },
+        "step14": {
+          "register": "0x0080008d",
+          "value": "0x28",
+          "verify": true
+        },
+        "step15": {
+          "register": "0x00800083",
+          "value": "0x20",
+          "verify": true
+        }
+      },
       "inputReport": 7,
       "maxContacts": 5,
       "modeRegister": "0x00800040",
@@ -69,6 +147,11 @@
     "touchpad": {
       "observedAt": "2026-10-11",
       "reason": "Protocol from the Alps HID driver package 8.2206.1717.634 (HP SoftPaq SP112035, ApHidFiltr): report 9 carries I2C-HID SET_REPORT/GET_REPORT to an Alps U1 chip; register 0x800040 is the mode (0x21 mouse, 0x22 absolute); report 7 carries five slots of x, y, pressure; the sensor grid is 27 by 16 lines. On the ZBook x2 G4 over USB: status ready, mode read 0x21, write 0x22 read back 0x22, 1,372 frames with up to 3 contacts in 12 s, x up to 3319 and y up to 1906, mouse reports stopped; mode 0x21 restored. Over Bluetooth every SET_FEATURE is refused (EIO) but a mode set over USB stays and Bluetooth then streams report 7. Touch surface measured 110 by 65 mm.",
+      "type": "validation"
+    },
+    "touchpad.init": {
+      "observedAt": "2026-10-11",
+      "reason": "The Alps HID driver package 8.2206.1717.634 (HP SoftPaq SP112035, ApHidFiltr, subtype-1 table selected by Common_ASIC_SUB_TYPE=1 in the keyboard's INF section) writes these 15 registers at start, in this order, reading back all but 0x800051 and 0x8000F1 and waiting 500 ms after 0x8000F1. Sent over USB on the ZBook x2 G4: all confirmed; factory values before were different (e.g. 0x800091 0xC8, 0x80008D 0xC8); finger dropouts in 15 s of three-finger swipes went from 9 (64-200 ms) to 7 (mostly shorter).",
       "type": "validation"
     }
   }

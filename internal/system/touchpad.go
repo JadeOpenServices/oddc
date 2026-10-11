@@ -240,6 +240,9 @@ func setAbsolute(device *os.File, t oddc.AlpsTouchpad, length int) error {
 	if !ready {
 		return errors.New("the touchpad did not report ready")
 	}
+	if err := sendInit(device, t, length); err != nil {
+		return err
+	}
 	return setMode(device, t, length, t.AbsoluteMode)
 }
 
@@ -272,10 +275,42 @@ func setMode(device *os.File, t oddc.AlpsTouchpad, length int, mode byte) error 
 	return fmt.Errorf("touchpad mode %#x not confirmed: %s", mode, last)
 }
 
+// sendInit writes the vendor init table in order, as the vendor driver
+// does: entries marked verify are read back and written up to three
+// times, 100 ms apart; pauseMs waits after an entry.
+func sendInit(device *os.File, t oddc.AlpsTouchpad, length int) error {
+	for _, w := range t.Init {
+		confirmed := !w.Verify
+		for try := 0; try < 3; try++ {
+			if err := feature(device, hidiocSFeature, t.RegisterSet(length, w.Register, w.Value)); err != nil {
+				return fmt.Errorf("touchpad init %#x: %w", w.Register, err)
+			}
+			if !w.Verify {
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+			if got, ok, err := readRegister(device, t, length, w.Register); err == nil && ok && got == w.Value {
+				confirmed = true
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		if !confirmed {
+			return fmt.Errorf("touchpad init %#x=%#x not confirmed", w.Register, w.Value)
+		}
+		time.Sleep(time.Duration(w.PauseMs) * time.Millisecond)
+	}
+	return nil
+}
+
 // readMode asks the chip for its mode register; ok is false without the
 // chip's acknowledgement.
 func readMode(device *os.File, t oddc.AlpsTouchpad, length int) (byte, bool, error) {
-	if err := feature(device, hidiocSFeature, t.ModeReadRequest(length)); err != nil {
+	return readRegister(device, t, length, t.ModeRegister)
+}
+
+func readRegister(device *os.File, t oddc.AlpsTouchpad, length int, register uint32) (byte, bool, error) {
+	if err := feature(device, hidiocSFeature, t.RegisterReadRequest(length, register)); err != nil {
 		return 0, false, err
 	}
 	time.Sleep(10 * time.Millisecond)
