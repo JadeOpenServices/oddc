@@ -252,7 +252,8 @@
       },
       "kernel": {
         "parameters": {
-          "intelHid5ButtonArray": "intel_hid.enable_5_button_array=1"
+          "intelHid5ButtonArray": "intel_hid.enable_5_button_array=1",
+          "memSleepDeep": "mem_sleep_default=deep"
         }
       },
       "secureBoot": {
@@ -282,6 +283,9 @@
         "untouched": {
           "dbx": true
         }
+      },
+      "thermal": {
+        "daemon": "thermald"
       }
     },
     "quirks": {
@@ -322,6 +326,11 @@
       "reason": "Guided test on the machine: Intel Virtual Switches (INT33D6) sets SW_TABLET_MODE to 0 when the stand opens and 1 when it closes, with the keyboard attached in front. Folding the keyboard behind (only possible with the stand closed) and detaching it change nothing there. The switch flips at one stand angle; opening further changes nothing. A guided test of the combined switch (stand, detach, reattach in both stand positions) gave tablet mode exactly when the stand was closed or the keyboard gone.",
       "type": "validation"
     },
+    "memSleepDeep": {
+      "observedAt": "2026-10-11",
+      "reason": "The FADT declares no Low Power S0 support and the DSDT has no LPS0 _DSM, but _S3 is declared: s2idle never reaches S0ix here, so suspend must use S3. The kernel picks deep by itself today (/sys/power/mem_sleep 's2idle [deep]'); the parameter pins it. Overnight in suspend the battery stayed at 86 %.",
+      "type": "validation"
+    },
     "policy.secureBoot": {
       "observedAt": "2026-10-11",
       "reason": "Tested on the ZBook x2 G4, BIOS P72 01.53, 2026-10-10/11: PK equalled PKDefault before ownership; Reset to factory defaults restored the PK and left Setup Mode; Clear Secure Boot Keys emptied PK, KEK, db and dbx and entered Setup Mode; PKDefault, KEKDefault, dbDefault and dbxDefault stay available."
@@ -329,6 +338,11 @@
     "tabletModeSwitch": {
       "observedAt": "2026-10-10",
       "reason": "No switch reports tablet mode on its own: Intel Virtual Switches follows the kickstand (kickstandSwitch), HP WMI hotkeys never changes, and detaching the keyboard raises no event at all (kernel 7.2.2). Tablet mode is the stand closed or the keyboard gone.",
+      "type": "validation"
+    },
+    "thermal": {
+      "observedAt": "2026-10-11",
+      "reason": "The firmware's DPTF tables (SSDT _TRT on SEN1/SEN2 throttling the CPU, PPCC power limits) are only enforced by a DPTF daemon; int3400/int3403 are bound but nothing acts on them without thermald, which reads the adaptive tables with --adaptive.",
       "type": "validation"
     },
     "usbPort": {

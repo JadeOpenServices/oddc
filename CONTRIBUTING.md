@@ -359,6 +359,7 @@ Generic capability modules implement reusable behavior:
     │   ├── hidpi-console.nix
     │   ├── orientation.nix
     │   ├── quick-keys.nix
+    │   ├── thermald.nix
     │   └── tablet-mode.nix
     └── quirks/
         ├── fprintd.nix
@@ -389,6 +390,7 @@ reads a vendor or model ID to decide what to do.
 | `capabilities/orientation.nix` | `hardware.sensors.hub.provides.orientation`, also exposed read-only as `oddc.sensors.orientation.present` | the device model |
 | `capabilities/quick-keys.nix` | `hardware.input.quickKeys.primary.{deviceId,access.mappable,protocol}` | the Quick Keys component entity |
 | `capabilities/quick-keys.nix` | `policy.input.quickKeys.{keymap,presetKeys}` | the device model |
+| `capabilities/thermald.nix` | `policy.thermal.daemon` (`thermald`) | the device model |
 | `capabilities/tablet-mode.nix` | `hardware.input.keyboard.*.{attachment,detachSignal,bus,deviceId}`, `capabilities.{tabletModeSwitch,kickstandSwitch}` | the device model; `bus`, `deviceId` the keyboard component entity |
 | `deployment.nix` | the whole resolved view, written to `/etc/oddc/resolved.json` | each value's own owner |
 
