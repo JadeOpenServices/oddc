@@ -2,6 +2,11 @@
   "$schema": "../../../../schemas/entity.schema.json",
   "apiVersion": "oddc.openjade.de/v2",
   "data": {
+    "backlight": {
+      "control": "keyboard",
+      "levels": 3,
+      "note": "bright, dim, off on the keyboard's own key; no host brightness control"
+    },
     "bluetooth": {
       "bus": "hid",
       "deviceId": "04f2:1573",
@@ -51,6 +56,11 @@
     "name": "HP ZBook x2 detachable keyboard (NXP 1FC9:0088)"
   },
   "sources": {
+    "backlight": {
+      "observedAt": "2026-10-11",
+      "reason": "On the ZBook x2 G4 the keyboard key cycles bright, dim, off. The Alps HID driver package 8.2206.1717.634 (HP SoftPaq SP112035) sends only 09 03 02 01 01 on report 9 when a finger lands in absolute mode (a touch notice that wakes the light) and no brightness or off command; values 0 to 3 sent over USB left the light unchanged.",
+      "type": "validation"
+    },
     "bluetooth.touchpadTwoFingerScroll": {
       "observedAt": "2026-10-11",
       "reason": "In the firmware's default mouse mode: Raw HID capture over Bluetooth (hidraw, report 5 = buttons, X, Y, wheel, AC pan): one finger 904 reports, two-finger vertical swipes 47 reports and two-finger horizontal 3, with 0 wheel and 0 pan reports; over USB the same firmware sends wheel events. Neither the USB nor the Bluetooth descriptor has a precision touchpad collection or a gesture setting; feature report 9 returns 25 random-looking bytes and 0x13 is not answered over Bluetooth. The touchpad's absolute mode (touchpad, ODDC-100) gives two-finger scrolling over Bluetooth through oddc touchpad.",

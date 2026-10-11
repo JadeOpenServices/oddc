@@ -132,6 +132,9 @@ func RunTouchpad(args []string) error {
 
 	lastFix := time.Time{}
 	frames, reported := 0, time.Now()
+	// Frames in a row with a finger down; the notice goes out on the third,
+	// as the Alps driver package does it.
+	touching := 0
 	report := make([]byte, 64)
 	for {
 		n, err := device.Read(report)
@@ -151,6 +154,11 @@ func RunTouchpad(args []string) error {
 		if frame, ok := touchpad.ParseFrame(report[:n]); ok {
 			if err := pad.Send(frame); err != nil {
 				return fmt.Errorf("uinput: %w", err)
+			}
+			if len(frame.Contacts) == 0 {
+				touching = 0
+			} else if touching++; touching == 3 && writable {
+				_ = feature(device, hidiocSFeature, touchpad.FingerNotice(length))
 			}
 			frames++
 			if time.Since(reported) > time.Minute {

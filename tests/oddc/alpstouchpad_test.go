@@ -55,6 +55,7 @@ func TestAlpsTouchpadCommands(t *testing.T) {
 		want string
 	}{
 		{"status", touchpad.StatusRequest(48), "09 03 02 02"},
+		{"finger notice", touchpad.FingerNotice(48), "09 03 02 01 01"},
 		{"read request", touchpad.ModeReadRequest(48), "09 01 10 05 00 35 03 06 00 0a 00 05 d1 40 00 80 00 00 a0"},
 		{"read fetch", touchpad.ModeReadFetch(48), "09 02 06 05 00 35 02 06 00"},
 		{"absolute", touchpad.ModeWrite(48, touchpad.AbsoluteMode), "09 01 10 05 00 35 03 06 00 0a 00 05 d2 40 00 80 00 22 c3"},
