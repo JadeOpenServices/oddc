@@ -90,6 +90,20 @@ func writeSysfsDevices(t *testing.T, sys string, devices map[string][]string) {
 				)
 				files[filepath.Join("bus", "hid", "devices", name, "uevent")] = ""
 
+			case "edid":
+				// A built-in panel: an EDID base block with the PNP
+				// manufacturer and product code, the rest zero.
+				vendor, product, _ := strings.Cut(id, ":")
+				code := 0
+				for _, letter := range vendor {
+					code = code<<5 | int(letter-'a'+1)
+				}
+				var number int
+				fmt.Sscanf(product, "%x", &number)
+				edid := make([]byte, 128)
+				copy(edid, []byte{0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, byte(code >> 8), byte(code), byte(number), byte(number >> 8)})
+				files[filepath.Join("class", "drm", fmt.Sprintf("card%d-eDP-%d", i, i+1), "edid")] = string(edid)
+
 			default:
 				t.Fatalf("no sysfs layout for bus %q", bus)
 			}

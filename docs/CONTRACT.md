@@ -45,8 +45,10 @@ reused for something else. Renaming or removing an ID is a breaking change.
   values, and each component with its bus, device ID and `present`
   (`null` when the facts do not cover that bus). Only DMI fields choose
   the model; components explain it. Facts are
-  `{"identity": {...}, "devices": {"pci": ["vvvv:pppp"], "usb": [...], "hid": [...]}}`
-  with the identity fields of `MachineIdentity`.
+  `{"identity": {...}, "devices": {"pci": ["vvvv:pppp"], "usb": [...], "hid": [...], "edid": ["mmm:pppp"]}}`
+  with the identity fields of `MachineIdentity`. `edid` lists built-in
+  panels (eDP, LVDS, DSI) by PNP manufacturer and product code from their
+  EDID; the EDID serial number is never read.
 - `oddc status --root DIR [--device ID] --json`: per model its `status`
   (`verified`, `changed` or `unverified`), its current `closure`
   (`sha256:` digest of the resolved model) and the `evidence` that
