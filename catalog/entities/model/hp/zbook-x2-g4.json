@@ -60,6 +60,10 @@
             "hdmi": {
               "connector": "DP",
               "note": "the HDMI port: the GPU drives it as dual-mode DisplayPort; HDMI 1.4, 4K at 30 Hz at most"
+            },
+            "usbC": {
+              "connector": "DP",
+              "note": "DisplayPort over the USB-C ports (Thunderbolt 3 DP-in from this GPU)"
             }
           }
         },
