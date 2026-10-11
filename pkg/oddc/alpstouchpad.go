@@ -5,6 +5,7 @@ package oddc
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -21,9 +22,12 @@ type AlpsTouchpad struct {
 	MouseMode     byte
 	AbsoluteMode  byte
 	MaxContacts   int
-	XMax, YMax    int
-	WidthMM       int
-	HeightMM      int
+	// Init is the register table the vendor driver writes at start, in
+	// order, before switching modes.
+	Init       []RegisterWrite
+	XMax, YMax int
+	WidthMM    int
+	HeightMM   int
 	// ReportLength per transport ("usb", "bluetooth").
 	ReportLength map[string]int
 	// Writable per transport: whether the keyboard accepts SET_FEATURE.
@@ -75,6 +79,30 @@ func AlpsTouchpadFrom(resolved map[string]any) (AlpsTouchpad, bool, error) {
 		}
 		t.ReportLength[name] = length
 		t.Writable[name], _ = transport["writable"].(bool)
+	}
+
+	// init is keyed "step01", "step02", ... (catalog data has no lists);
+	// the keys give the order.
+	if steps, ok := touchpad["init"].(map[string]any); ok {
+		keys := make([]string, 0, len(steps))
+		for key := range steps {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, i := range keys {
+			entry, _ := steps[i].(map[string]any)
+			register, e1 := intField(entry, "register")
+			value, e2 := intField(entry, "value")
+			if e1 != nil || e2 != nil || value < 0 || value > 0xFF {
+				return AlpsTouchpad{}, false, fmt.Errorf("touchpad init %s needs register and a byte value", i)
+			}
+			w := RegisterWrite{Register: uint32(register), Value: byte(value)}
+			w.Verify, _ = entry["verify"].(bool)
+			if pause, err := intField(entry, "pauseMs"); err == nil {
+				w.PauseMs = pause
+			}
+			t.Init = append(t.Init, w)
+		}
 	}
 
 	if t.MaxContacts < 1 || t.MaxContacts > 5 || t.XMax <= 0 || t.YMax <= 0 || t.WidthMM <= 0 || t.HeightMM <= 0 {
@@ -143,6 +171,29 @@ func StatusReady(reply []byte) bool {
 // finger lands and nothing when it lifts.
 func (t AlpsTouchpad) FingerNotice(length int) []byte {
 	return t.report(length, 0x03, 0x02, 0x01, 0x01)
+}
+
+// RegisterWrite is one write of the vendor init table: a chip register,
+// the value, whether the vendor driver reads it back, and how long it
+// waits afterwards.
+type RegisterWrite struct {
+	Register uint32
+	Value    byte
+	Verify   bool
+	PauseMs  int
+}
+
+// RegisterSet writes value to a chip register.
+func (t AlpsTouchpad) RegisterSet(length int, register uint32, value byte) []byte {
+	body := append([]byte{0x01, 0x10}, alpsSetReport...)
+	return t.report(length, append(body, u1Packet(0xD2, register, value)...)...)
+}
+
+// RegisterReadRequest asks for a chip register; ModeReadFetch and
+// ModeReadValue fetch and read the reply.
+func (t AlpsTouchpad) RegisterReadRequest(length int, register uint32) []byte {
+	body := append([]byte{0x01, 0x10}, alpsSetReport...)
+	return t.report(length, append(body, u1Packet(0xD1, register, 0)...)...)
 }
 
 // ModeWrite sets the mode register to value.
