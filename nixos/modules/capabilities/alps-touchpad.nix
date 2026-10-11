@@ -38,7 +38,10 @@ let
   # come on the keyboard's fourth interface (the mouse and the vendor
   # reports); over Bluetooth there is one HID device.
   match = {
-    usb = ''SUBSYSTEM=="hidraw", KERNELS=="0003:${usbId}.*", ATTRS{bInterfaceNumber}=="03"'';
+    # KERNELS and ATTRS must match one and the same parent, and the
+    # interface number sits on the USB interface, not the HID device;
+    # usb_id gives the hidraw node ID_USB_INTERFACE_NUM instead.
+    usb = ''SUBSYSTEM=="hidraw", KERNELS=="0003:${usbId}.*", ENV{ID_USB_INTERFACE_NUM}=="03"'';
     bluetooth = ''SUBSYSTEM=="hidraw", KERNELS=="0005:${bluetoothId}.*"'';
   };
 in
