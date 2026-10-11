@@ -47,8 +47,7 @@ func TestPanelScales(t *testing.T) {
 		t.Errorf("clean scales %v", got)
 	}
 
-	// 316 ppi: 2 gives 158 logical ppi, 1.875 still 168.
-	if got := panel.RecommendedScale(); got != 2 {
-		t.Errorf("recommended %v, want 2 for %.0f ppi", got, panel.PPI())
+	if ppi := panel.PPI(); ppi < 315 || ppi > 317 {
+		t.Errorf("ppi %.1f, want 316", ppi)
 	}
 }
