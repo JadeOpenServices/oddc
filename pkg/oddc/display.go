@@ -81,29 +81,6 @@ func (p Panel) Scales() []float64 {
 	return scales
 }
 
-// TargetPPI is the logical pixel density RecommendedScale aims for at
-// most: around a classic 96-dpi desktop seen from laptop distance, in
-// line with what GNOME and KDE pick for high-density panels.
-const TargetPPI = 160
-
-// RecommendedScale is the smallest clean scale that brings the panel's
-// logical density down to TargetPPI or below; 1 for panels already there.
-// Clean scales are the valid ones that are whole eighths, which the
-// Wayland fractional-scale protocol represents exactly, rather than the
-// odd valid values in between (such as 1.983471 on a 3840x2160 panel).
-func (p Panel) RecommendedScale() float64 {
-	clean := p.CleanScales()
-	for _, scale := range clean {
-		if p.PPI()/scale <= TargetPPI {
-			return scale
-		}
-	}
-	if len(clean) == 0 {
-		return 1
-	}
-	return clean[len(clean)-1]
-}
-
 // CleanScales are the valid scales that are whole eighths, the ones worth
 // offering in a settings menu.
 func (p Panel) CleanScales() []float64 {

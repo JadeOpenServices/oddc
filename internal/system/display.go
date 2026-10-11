@@ -13,9 +13,9 @@ import (
 )
 
 // RunDisplay prints the resolved model's built-in panel as JSON: its
-// resolution, size, density, the output scales it accepts and the
-// recommended one, for compositors and monitor tools to use instead of
-// guessing (--resolved, default /etc/oddc/resolved.json).
+// resolution, size, density and the output scales it accepts, for
+// compositors and monitor tools to use instead of guessing; which scale to
+// default to is theirs to choose (--resolved, default /etc/oddc/resolved.json).
 func RunDisplay(args []string) error {
 	data, err := os.ReadFile(cli.Value(args, "--resolved", "/etc/oddc/resolved.json"))
 	if err != nil {
@@ -37,17 +37,16 @@ func RunDisplay(args []string) error {
 
 	connector, _ := oddc.Lookup(resolved, "hardware.display.internal.primary.connector")
 	out := map[string]any{
-		"id":               panel.ID,
-		"connector":        connector,
-		"width":            panel.Width,
-		"height":           panel.Height,
-		"widthMm":          panel.WidthMM,
-		"heightMm":         panel.HeightMM,
-		"refreshHz":        panel.RefreshHz,
-		"ppi":              int(panel.PPI() + 0.5),
-		"scales":           panel.Scales(),
-		"cleanScales":      panel.CleanScales(),
-		"recommendedScale": panel.RecommendedScale(),
+		"id":          panel.ID,
+		"connector":   connector,
+		"width":       panel.Width,
+		"height":      panel.Height,
+		"widthMm":     panel.WidthMM,
+		"heightMm":    panel.HeightMM,
+		"refreshHz":   panel.RefreshHz,
+		"ppi":         int(panel.PPI() + 0.5),
+		"scales":      panel.Scales(),
+		"cleanScales": panel.CleanScales(),
 	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")

@@ -356,7 +356,6 @@ Generic capability modules implement reusable behavior:
     ├── capabilities/
     │   ├── alps-touchpad.nix
     │   ├── fw-fanctrl.nix
-    │   ├── hidpi-console.nix
     │   ├── orientation.nix
     │   ├── quick-keys.nix
     │   ├── thermald.nix
@@ -386,7 +385,6 @@ reads a vendor or model ID to decide what to do.
 | `quirks/pch-pme-sci.nix` | `quirks.*.pchPmeSci.{action,rootPort}`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/runtime-power.nix` | `quirks.*.runtimePower`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `capabilities/alps-touchpad.nix` | `hardware.input.keyboard.primary.{deviceId,bluetooth.deviceId,touchpad}` (`touchpad.protocol` `alps-u1-report-passthrough`) | the keyboard component entity |
-| `capabilities/hidpi-console.nix` | `hardware.display.internal.primary.{resolution,size}`; `policy.boot.consoleMode` | the display component entity; `consoleMode` the device model |
 | `capabilities/orientation.nix` | `hardware.sensors.hub.provides.orientation`, also exposed read-only as `oddc.sensors.orientation.present` | the device model |
 | `capabilities/quick-keys.nix` | `hardware.input.quickKeys.primary.{deviceId,access.mappable,protocol}` | the Quick Keys component entity |
 | `capabilities/quick-keys.nix` | `policy.input.quickKeys.{keymap,presetKeys}` | the device model |
@@ -833,3 +831,4 @@ Examples that belong in ODDC:
 
 The canonical graph describes the hardware-specific condition or policy.
 Reusable Nix modules implement it.
+

@@ -127,7 +127,7 @@ For users:
     oddc quickkeys               # Quick Keys to key presses; the NixOS module runs it
     oddc tabletmode              # tablet mode switch from a detachable keyboard's presence
     oddc touchpad                # an Alps keyboard touchpad as a multitouch touchpad (USB, Bluetooth)
-    oddc display                 # the built-in panel: size, density, valid and recommended scales (JSON)
+    oddc display                 # the built-in panel: size, density and valid scales (JSON)
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full
