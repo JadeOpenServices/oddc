@@ -354,7 +354,11 @@ Generic capability modules implement reusable behavior:
     ├── deployment.nix
     ├── public-interface.nix
     ├── capabilities/
-    │   └── fw-fanctrl.nix
+    │   ├── alps-touchpad.nix
+    │   ├── fw-fanctrl.nix
+    │   ├── orientation.nix
+    │   ├── quick-keys.nix
+    │   └── tablet-mode.nix
     └── quirks/
         ├── fprintd.nix
         ├── kernel-fallback.nix
@@ -379,6 +383,7 @@ reads a vendor or model ID to decide what to do.
 | `quirks/kernel-fallback.nix` | `quirks.*.affected.kernel.{minimum,maximumBefore}`, `quirks.*.fallbackPackage`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/pch-pme-sci.nix` | `quirks.*.pchPmeSci.{action,rootPort}`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/runtime-power.nix` | `quirks.*.runtimePower`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
+| `capabilities/alps-touchpad.nix` | `hardware.input.keyboard.primary.{deviceId,bluetooth.deviceId,touchpad}` (`touchpad.protocol` `alps-u1-report-passthrough`) | the keyboard component entity |
 | `capabilities/orientation.nix` | `hardware.sensors.hub.provides.orientation`, also exposed read-only as `oddc.sensors.orientation.present` | the device model |
 | `capabilities/quick-keys.nix` | `hardware.input.quickKeys.primary.{deviceId,access.mappable,protocol}` | the Quick Keys component entity |
 | `capabilities/quick-keys.nix` | `policy.input.quickKeys.{keymap,presetKeys}` | the device model |
