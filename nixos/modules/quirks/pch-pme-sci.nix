@@ -82,11 +82,22 @@ in
 
     systemd.services.oddc-pch-pme-sci = {
       description = "ODDC: stop the PCH routing PMEs to an unhandled GPE";
+      # At boot, and again after every wake-up: a unit wanted by the sleep
+      # targets and ordered after them runs once the system has resumed
+      # (post-resume.target does not exist on every NixOS).
       wantedBy = [
         "sysinit.target"
-        "post-resume.target"
+        "suspend.target"
+        "hibernate.target"
+        "hybrid-sleep.target"
+        "suspend-then-hibernate.target"
       ];
-      after = [ "post-resume.target" ];
+      after = [
+        "suspend.target"
+        "hibernate.target"
+        "hybrid-sleep.target"
+        "suspend-then-hibernate.target"
+      ];
       before = [ "sysinit.target" ];
       unitConfig = {
         DefaultDependencies = false;
