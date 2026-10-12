@@ -40,20 +40,55 @@ type Verification struct {
 }
 
 // Closure is a digest of a model's resolved catalog data: what a
-// deployment of it is built from.
+// deployment of it is built from. Texts written for people (the summary of
+// a policy section or of a quirk) change nothing on the machine and are
+// left out, so writing one needs no new evidence.
 func (r *Registry) Closure(model string) (string, error) {
 	resolved, err := r.ResolveEntity(model)
 	if err != nil {
 		return "", err
 	}
 
-	data, err := json.Marshal(resolved.Resolved)
+	data, err := json.Marshal(withoutDocumentation(resolved.Resolved))
 	if err != nil {
 		return "", err
 	}
 
 	sum := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(sum[:]), nil
+}
+
+// withoutDocumentation is the resolved view without the `summary` of each
+// policy section and quirk, the only keys that are text for people and
+// nothing else. The view itself is not changed.
+func withoutDocumentation(resolved map[string]any) map[string]any {
+	out := make(map[string]any, len(resolved))
+	for key, value := range resolved {
+		out[key] = value
+	}
+	for _, section := range []string{"policy", "quirks"} {
+		entries, ok := resolved[section].(map[string]any)
+		if !ok {
+			continue
+		}
+		copied := make(map[string]any, len(entries))
+		for name, value := range entries {
+			if entry, ok := value.(map[string]any); ok {
+				if _, has := entry["summary"]; has {
+					stripped := make(map[string]any, len(entry))
+					for k, v := range entry {
+						if k != "summary" {
+							stripped[k] = v
+						}
+					}
+					value = stripped
+				}
+			}
+			copied[name] = value
+		}
+		out[section] = copied
+	}
+	return out
 }
 
 // ModelEvidence reads a model's evidence records, oldest first.
