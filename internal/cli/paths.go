@@ -50,7 +50,7 @@ func WorkspaceDir() string {
 
 // Source finds the catalog: GitHub at --rev or the --channel branch when
 // either is given, else an explicit --root, the local workspace, or GitHub
-// at main. Reading from GitHub downloads only the files a command needs,
+// at stable. Reading from GitHub downloads only the files a command needs,
 // into scratch.
 func Source(args []string, scratch string) (oddc.Source, error) {
 	remote := Has(args, "--rev") || Has(args, "--channel")
@@ -68,7 +68,7 @@ func Source(args []string, scratch string) (oddc.Source, error) {
 	return oddc.NewGitSource(
 		filepath.Join(scratch, "git"),
 		oddc.Remote,
-		Value(args, "--rev", Value(args, "--channel", "main")),
+		Value(args, "--rev", Value(args, "--channel", "stable")),
 	)
 }
 

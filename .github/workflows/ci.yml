@@ -25,7 +25,7 @@ jobs:
       # must be verified by evidence on its new closure (verify/<model>).
       - if: github.event_name == 'pull_request' && github.base_ref == 'staging'
         run: nix run . -- status --root . --since origin/staging
-      # Only proven models reach main: promotion fails unless every model
+      # Only proven models reach stable: promotion fails unless every model
       # is verified on its current closure.
-      - if: (github.event_name == 'pull_request' && github.base_ref == 'main') || github.ref == 'refs/heads/main'
+      - if: (github.event_name == 'pull_request' && github.base_ref == 'stable') || github.ref == 'refs/heads/stable'
         run: nix run . -- status --root . --verified

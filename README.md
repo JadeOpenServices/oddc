@@ -106,7 +106,7 @@ On a deployed system, check and update it:
 
 Contributors can follow `staging` to get merged models before a release:
 
-    oddc update --stage staging --switch
+    oddc update --channel staging --switch
 
 See [docs/WORKFLOW.md](docs/WORKFLOW.md) for every command.
 
@@ -200,7 +200,7 @@ subtree so its installer works offline.
 
 ## Releases
 
-Every merge to `main` is a release; consumers pin it by commit hash. See
+Every merge to `stable` is a release; consumers pin it by commit hash. See
 [docs/RELEASES.md](docs/RELEASES.md).
 
 ## Tracking

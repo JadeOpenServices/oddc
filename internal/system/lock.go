@@ -13,10 +13,12 @@ import (
 	"github.com/JadeOpenServices/oddc/internal/cli"
 )
 
-// Stages a system flake can follow. main holds releases; staging holds
-// what was merged since, contributions included, before it is released.
+// Channels a system flake can follow. stable holds releases and is the
+// default and the source of truth; staging holds what was merged since,
+// contributions included, before it is released. stable is the repository's
+// default branch, so its URL carries no ref.
 var Stages = map[string]string{
-	"main":    cli.Upstream,
+	"stable":  cli.Upstream,
 	"staging": cli.Upstream + "/staging",
 }
 
@@ -34,7 +36,7 @@ type LockedInput struct {
 	} `json:"original"`
 }
 
-// Stage names what the input follows: a stage, a pinned commit, or
+// Stage names what the input follows: a channel, a pinned commit, or
 // another branch of ODDC on GitHub; "" when it is not ODDC on GitHub.
 func (input LockedInput) Stage() string {
 	original := input.Original
@@ -48,7 +50,8 @@ func (input LockedInput) Stage() string {
 	case original.Rev != "":
 		return "commit " + short(original.Rev)
 	case original.Ref == "":
-		return "main"
+		// No ref follows the repository's default branch, which is stable.
+		return "stable"
 	default:
 		return original.Ref
 	}
