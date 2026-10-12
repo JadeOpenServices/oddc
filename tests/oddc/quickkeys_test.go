@@ -226,3 +226,44 @@ func TestQuickKeysKeymapRefused(t *testing.T) {
 		}
 	}
 }
+
+// Every key a model's Quick Keys send by default is one no other key or
+// button sends: no two buttons, presets or preset keys share a key, and
+// none is a key an ordinary keyboard has (all codes from KEY_MACRO1 up,
+// which xkeyboard-config names XF86Macro1-30 and XF86MacroPreset1-3). So
+// people can bind them in any program without stealing another shortcut.
+func TestQuickKeysDefaultKeysAreUnique(t *testing.T) {
+	registry, models := fixture.Catalog(t)
+
+	found := 0
+	for _, model := range models {
+		quickKeys, ok := quickKeysOf(t, registry, model)
+		if !ok {
+			continue
+		}
+		found++
+
+		seen := map[string]string{}
+		claim := func(where, key string) {
+			if other, taken := seen[key]; taken {
+				t.Errorf("%s: %s and %s both send %s", model, other, where, key)
+			}
+			seen[key] = where
+			if KeyCodes[key] < KeyCodes["KEY_MACRO1"] {
+				t.Errorf("%s: %s sends %s, a key ordinary keyboards have", model, where, key)
+			}
+		}
+		for preset, buttons := range quickKeys.Keymap {
+			for button, key := range buttons {
+				claim(preset+"."+button, key)
+			}
+		}
+		for preset, key := range quickKeys.PresetKeys {
+			claim("presetKeys."+preset, key)
+		}
+	}
+
+	if found == 0 {
+		t.Fatal("no model has Quick Keys")
+	}
+}
