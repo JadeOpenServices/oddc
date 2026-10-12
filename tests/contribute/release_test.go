@@ -93,8 +93,10 @@ func TestReleaseCandidate(t *testing.T) {
 	}
 }
 
-// The release notes hold every new device's entry, and each QR code reads
-// back as the pull request's URL.
+// The release notes hold every new device's entry and name its page; the
+// page starts with the device and its release and carries no pull request
+// text; each QR code reads back as the device's page URL, else the pull
+// request's.
 func TestReleaseNotesAndQRCodes(t *testing.T) {
 	zbarimg, err := exec.LookPath("zbarimg")
 	if _, qr := exec.LookPath("qrencode"); err != nil || qr != nil {
@@ -118,27 +120,57 @@ func TestReleaseNotesAndQRCodes(t *testing.T) {
 	}
 	dir := t.TempDir()
 	url := "https://github.com/" + oddc.Repository + "/pull/1"
-	if err := contribute.WriteNotes(dir, url, c); err != nil {
+	page := "https://example.test/devices/{device}"
+	if err := contribute.WriteNotes(dir, url, page, c); err != nil {
 		t.Fatal(err)
 	}
 	text, err := os.ReadFile(filepath.Join(dir, "release-notes.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
+	if c.Date == "" || !strings.Contains(string(text), url) {
+		t.Errorf("release notes lack the pull request url, or the candidate has no date (%q)", c.Date)
+	}
 	for id, notes := range c.Notes {
+		slug := contribute.DeviceSlug(id)
 		title := strings.SplitN(notes, "\n", 2)[0]
-		if !strings.Contains(string(text), strings.TrimLeft(title, "# ")) {
-			t.Errorf("release notes lack %s (%s)", id, title)
+		if !strings.Contains(string(text), strings.TrimLeft(title, "# ")) || !strings.Contains(string(text), slug+".md") {
+			t.Errorf("release notes lack %s (%s) or its page", id, title)
 		}
-		base := filepath.Join(dir, strings.ReplaceAll(strings.TrimPrefix(id, "model/"), "/", "-")+"-qr")
+		// The owner's page: the device's title first, the release it comes
+		// from, and no pull request text.
+		pageText, err := os.ReadFile(filepath.Join(dir, slug+".md"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.HasPrefix(string(pageText), title+"\n\nODDC release "+c.Commit[:12]+", "+c.Date+".\n") {
+			t.Errorf("%s: page does not start with its title and release:\n%.200s", id, pageText)
+		}
+		if strings.Contains(string(pageText), "Pull request") || strings.Contains(string(pageText), "Promotes staging") {
+			t.Errorf("%s: page carries pull request text", id)
+		}
+		base := filepath.Join(dir, slug+"-qr")
 		for _, file := range []string{base + ".png", base + ".svg"} {
 			if _, err := os.Stat(file); err != nil {
 				t.Errorf("%s: %v", id, err)
 			}
 		}
+		want := "https://example.test/devices/" + slug
 		out, err := exec.Command(zbarimg, "--quiet", "--raw", base+".png").Output()
+		if err != nil || strings.TrimSpace(string(out)) != want {
+			t.Errorf("%s: QR code reads %q (%v), want %s", id, out, err, want)
+		}
+	}
+
+	// Without a page URL the code leads to the pull request.
+	plain := t.TempDir()
+	if err := contribute.WriteNotes(plain, url, "", c); err != nil {
+		t.Fatal(err)
+	}
+	for id := range c.Notes {
+		out, err := exec.Command(zbarimg, "--quiet", "--raw", filepath.Join(plain, contribute.DeviceSlug(id)+"-qr.png")).Output()
 		if err != nil || strings.TrimSpace(string(out)) != url {
-			t.Errorf("%s: QR code reads %q (%v), want %s", id, out, err, url)
+			t.Errorf("%s: QR code without a page reads %q (%v), want %s", id, out, err, url)
 		}
 	}
 }

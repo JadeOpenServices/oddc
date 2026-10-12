@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // DeviceNotes is a model's entry for people who own the machine, such as
@@ -57,26 +58,39 @@ func (r *Registry) DeviceNotes(model string) (string, error) {
 		section, rest, _ := strings.Cut(key, ".")
 		switch {
 		case section == "hardware" && value == "pass":
-			works = append(works, partName(data, key))
+			works = append(works, partEntry(data, key))
 		case section == "hardware" && value == "unsupported":
 			reason := unsupported[key].Reason
-			broken = append(broken, fmt.Sprintf("%s: %s", partName(data, key), reason))
+			broken = append(broken, fmt.Sprintf("%s, %s", partEntry(data, key), reason))
 		case section == "capabilities" && value == "pass":
-			works = append(works, words(rest))
+			works = append(works, capitalize(words(rest)))
 		case section == "capabilities" && value == "not-exposed":
-			absent = append(absent, words(rest))
-		case section == "quirks" && value == "pass":
-			name, _ := componentAt(data, key)["name"].(string)
-			if name == "" {
-				name = words(rest)
+			absent = append(absent, capitalize(words(rest)))
+		case section == "policy" && value == "pass":
+			// A policy section says what ODDC makes the machine do; its
+			// summary is that in the owner's words.
+			summary, _ := componentAt(data, key)["summary"].(string)
+			if summary == "" {
+				summary = words(rest) + " policy"
 			}
-			fixed = append(fixed, name)
+			fixed = append(fixed, summary)
+		case section == "quirks" && value == "pass":
+			// A quirk's name says what was wrong; its summary says what the
+			// owner gets.
+			text, _ := componentAt(data, key)["summary"].(string)
+			if text == "" {
+				text, _ = componentAt(data, key)["name"].(string)
+			}
+			if text == "" {
+				text = words(rest)
+			}
+			fixed = append(fixed, text)
 		}
 	}
 	list(&b, "Works", works)
 	list(&b, "Works because of ODDC", fixed)
 	list(&b, "Does not work yet", broken)
-	list(&b, "Not on this machine", absent)
+	list(&b, "Not built into this machine", absent)
 
 	var security []string
 	for _, f := range Findings(data) {
@@ -157,12 +171,62 @@ func list(b *strings.Builder, title string, items []string) {
 	}
 }
 
-// partName is a component's name, else its path in words.
-func partName(data map[string]any, path string) string {
+// partEntry names a part for its owner: what it is for, from where the
+// model places it, then the part itself: "Card reader: Realtek RTS522A".
+func partEntry(data map[string]any, path string) string {
+	label := partLabel(path)
 	if name, _ := componentAt(data, path)["name"].(string); name != "" {
-		return name
+		return label + ": " + name
 	}
-	return words(strings.TrimPrefix(path, "hardware."))
+	return label
+}
+
+// capitalize upper-cases the first letter.
+func capitalize(text string) string {
+	first, size := utf8.DecodeRuneInString(text)
+	return string(unicode.ToUpper(first)) + text[size:]
+}
+
+// partLabel is what a part is for, read from the path the model places it
+// at: "hardware.storage.cardReader.primary" is the card reader,
+// "hardware.camera.front" the front camera. The path is the function; the
+// component's name is the chip.
+func partLabel(path string) string {
+	segments := strings.Split(strings.TrimPrefix(path, "hardware."), ".")
+	// "primary" only numbers a part.
+	if n := len(segments); n > 1 && segments[n-1] == "primary" {
+		segments = segments[:n-1]
+	}
+	// A grouping segment says nothing about the part itself.
+	if len(segments) > 1 {
+		switch segments[0] {
+		case "security", "network", "input", "storage":
+			segments = segments[1:]
+		}
+	}
+	// A trailing qualifier reads better in front: "front camera".
+	if n := len(segments); n > 1 {
+		switch segments[n-1] {
+		case "front", "rear", "internal", "external", "discrete", "integrated", "left", "right":
+			segments = append([]string{segments[n-1]}, segments[:n-1]...)
+		}
+	}
+	parts := make([]string, len(segments))
+	for i, segment := range segments {
+		if spelled, ok := spellings[segment]; ok {
+			parts[i] = spelled
+		} else {
+			parts[i] = words(segment)
+		}
+	}
+	return capitalize(strings.Join(parts, " "))
+}
+
+// spellings are path words that are not written in lower case.
+var spellings = map[string]string{
+	"usb":  "USB",
+	"usbC": "USB-C",
+	"wifi": "Wi-Fi",
 }
 
 // words turns "kickstandSwitch" into "kickstand switch".
