@@ -128,7 +128,7 @@ share scrubbed copies only.
   from the feature, `fix/oddc-<n>-fixNN-<slug>` for fixes. Merge with
   `git merge --no-ff` and a `Refs: ODDC-<n>` trailer. Commit messages are
   "area: summary".
-- `staging` and `main` change only through pull requests with passing CI.
+- `staging` and `stable` change only through pull requests with passing CI.
   Never push to them directly and never bypass branch protection.
 - Evidence is append-only: never edit or delete a record.
 - Before you commit: `gofmt -l .`, `go vet ./...`, `go test ./...`,

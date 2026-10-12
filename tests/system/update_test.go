@@ -53,11 +53,11 @@ func TestSetStage(t *testing.T) {
 		t.Fatalf("not on staging:\n%s", read())
 	}
 
-	if err := system.SetStage(flake, system.Stages["main"]); err != nil {
+	if err := system.SetStage(flake, system.Stages["stable"]); err != nil {
 		t.Fatal(err)
 	}
 	if read() != original {
-		t.Fatalf("main is not the README's input:\n%s", read())
+		t.Fatalf("stable is not the README's input:\n%s", read())
 	}
 
 	fixture.Write(t, filepath.Join(flake, "flake.nix"), []byte(original+"# "+readme+"\n"))
@@ -84,15 +84,15 @@ func TestUpdateStage(t *testing.T) {
 	if _, err := exec.LookPath("nix"); err != nil {
 		t.Skip("no nix")
 	}
-	heads := map[string]string{"main": remoteHead(t, "main"), "staging": remoteHead(t, "staging")}
+	heads := map[string]string{"stable": remoteHead(t, "stable"), "staging": remoteHead(t, "staging")}
 
 	flake, _ := systemFlake(t)
 	if out, err := exec.Command("nix", "flake", "lock", flake).CombinedOutput(); err != nil {
 		t.Fatalf("%v\n%s", err, out)
 	}
 
-	for _, stage := range []string{"main", "staging", "staging", "main"} {
-		if err := system.RunUpdate([]string{"update", "--flake", flake, "--stage", stage}); err != nil {
+	for _, channel := range []string{"stable", "staging", "staging", "stable"} {
+		if err := system.RunUpdate([]string{"update", "--flake", flake, "--channel", channel}); err != nil {
 			t.Fatal(err)
 		}
 
@@ -100,13 +100,13 @@ func TestUpdateStage(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if input.Stage() != stage || input.Locked.Rev != heads[stage] {
-			t.Fatalf("on %s %s, want %s %s", input.Stage(), input.Locked.Rev, stage, heads[stage])
+		if input.Stage() != channel || input.Locked.Rev != heads[channel] {
+			t.Fatalf("on %s %s, want %s %s", input.Stage(), input.Locked.Rev, channel, heads[channel])
 		}
 	}
 
-	if err := system.RunUpdate([]string{"update", "--flake", flake, "--stage", "release"}); err == nil {
-		t.Fatal("took an unknown stage")
+	if err := system.RunUpdate([]string{"update", "--flake", flake, "--channel", "release"}); err == nil {
+		t.Fatal("took an unknown channel")
 	}
 }
 

@@ -17,13 +17,13 @@ import (
 	"github.com/JadeOpenServices/oddc/pkg/oddc"
 )
 
-// Candidate is staging checked as a release: the commit, what main lacks
+// Candidate is staging checked as a release: the commit, what stable lacks
 // of it, and whether it may become a release.
 type Candidate struct {
 	Commit string
 	// Date is the commit's date, as 2006-01-02.
 	Date string
-	// Merges are the subjects of staging's first-parent merges main lacks.
+	// Merges are the subjects of staging's first-parent merges stable lacks.
 	Merges []string
 	// Models maps every model to its verification status.
 	Models map[string]string
@@ -35,7 +35,7 @@ type Candidate struct {
 }
 
 // CheckCandidate checks ref (a commit of the git checkout at root) against
-// base the way CI guards main: the catalog at ref is valid, every model is
+// base the way CI guards stable: the catalog at ref is valid, every model is
 // verified on its closure, and ref holds something base does not.
 func CheckCandidate(root, ref, base string) (Candidate, error) {
 	commit, err := cli.Git(root, "rev-parse", "--verify", ref+"^{commit}")
@@ -136,7 +136,7 @@ func checkout(root, ref string) (string, error) {
 // Body is the release pull request's description.
 func (c Candidate) Body() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Promotes staging (%s) to main.\n\nMerged since the last release:\n\n", c.Commit[:12])
+	fmt.Fprintf(&b, "Promotes staging (%s) to stable.\n\nMerged since the last release:\n\n", c.Commit[:12])
 	for _, merge := range c.Merges {
 		fmt.Fprintf(&b, "- %s\n", merge)
 	}
@@ -166,10 +166,10 @@ var (
 	mergedPR = regexp.MustCompile(`^Merge pull request #(\d+) `)
 )
 
-// RunRelease promotes staging to main for a maintainer: it checks staging
+// RunRelease promotes staging to stable for a maintainer: it checks staging
 // as CI does, opens the release pull request (or reuses the open one),
 // waits for its checks, asks before merging, merges with a merge commit
-// and prints the release commit. It never pushes to main and stops when
+// and prints the release commit. It never pushes to stable and stops when
 // GitHub reports a bypassed rule. --root is a git checkout of the catalog
 // (default the workspace); --check stops after checking staging. --notes
 // DIR writes the release notes and, per new or changed device, its own
@@ -188,10 +188,10 @@ func RunRelease(args []string) error {
 
 	remote := "https://github.com/" + oddc.Repository + ".git"
 	if _, err := cli.GitEnv(root, g.git(), "fetch", "--quiet", remote,
-		"+refs/heads/staging:refs/oddc-release/staging", "+refs/heads/main:refs/oddc-release/main"); err != nil {
+		"+refs/heads/staging:refs/oddc-release/staging", "+refs/heads/stable:refs/oddc-release/stable"); err != nil {
 		return err
 	}
-	c, err := CheckCandidate(root, "refs/oddc-release/staging", "refs/oddc-release/main")
+	c, err := CheckCandidate(root, "refs/oddc-release/staging", "refs/oddc-release/stable")
 	if err != nil {
 		return err
 	}
@@ -215,13 +215,13 @@ func RunRelease(args []string) error {
 		return nil
 	}
 
-	number, err := g.run("pr", "list", "--repo", oddc.Repository, "--base", "main", "--head", "staging",
+	number, err := g.run("pr", "list", "--repo", oddc.Repository, "--base", "stable", "--head", "staging",
 		"--state", "open", "--json", "number", "--jq", ".[0].number // empty")
 	if err != nil {
 		return err
 	}
 	if number == "" {
-		url, err := g.run("pr", "create", "--repo", oddc.Repository, "--base", "main", "--head", "staging",
+		url, err := g.run("pr", "create", "--repo", oddc.Repository, "--base", "stable", "--head", "staging",
 			"--title", "Release: staging "+c.Commit[:12], "--body", c.Body())
 		if err != nil {
 			return err
@@ -271,11 +271,11 @@ func RunRelease(args []string) error {
 			continue
 		}
 		if time.Since(start) > 5*time.Minute {
-			return fmt.Errorf("#%s is %s with no check running; see its page for what main's rules still require", number, state)
+			return fmt.Errorf("#%s is %s with no check running; see its page for what stable's rules still require", number, state)
 		}
 	}
 
-	if !cli.Ask(fmt.Sprintf("Merge #%s into main? This is the release.", number)) {
+	if !cli.Ask(fmt.Sprintf("Merge #%s into stable? This is the release.", number)) {
 		return errors.New("not merged; run oddc release again to continue")
 	}
 	out, err := exec.Command(g.bin, "pr", "merge", number, "--repo", oddc.Repository, "--merge",
@@ -292,11 +292,11 @@ func RunRelease(args []string) error {
 		fmt.Printf("GitHub answered with an error, but #%s is merged\n", number)
 	}
 
-	release, err := g.run("api", "repos/"+oddc.Repository+"/commits/main", "--jq", ".sha")
+	release, err := g.run("api", "repos/"+oddc.Repository+"/commits/stable", "--jq", ".sha")
 	if err != nil {
 		return err
 	}
-	fmt.Printf("released: main is %s; consumers pin this commit\n", release)
+	fmt.Printf("released: stable is %s; consumers pin this commit\n", release)
 	return nil
 }
 

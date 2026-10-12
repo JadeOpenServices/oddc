@@ -26,7 +26,7 @@ How ODDC reaches a machine, how people use it, and how changes get in.
 
 | Branch    | Purpose                                         | Who writes        |
 |-----------|-------------------------------------------------|-------------------|
-| `main`    | Stable. What consumers pull.                    | Promotion only    |
+| `stable`  | Stable. What consumers pull.                     | Promotion only    |
 | `staging` | Integration. Proven changes only.               | Reviewed merges   |
 | `verify/<vendor>/<model>` | One model's change, until it is proven. | Reviewed merges |
 
@@ -42,13 +42,13 @@ How ODDC reaches a machine, how people use it, and how changes get in.
   any pull request into `staging` unless every model whose closure it
   changes is `verified`: `oddc status --since origin/staging`.
 - `staging` only takes reviewed changes that pass CI.
-- A maintainer promotes `staging` to `main` once its changes are tested.
-  Untested or short-lived changes never reach `main`: CI fails a promotion
+- A maintainer promotes `staging` to `stable` once its changes are tested.
+  Untested or short-lived changes never reach `stable`: CI fails a promotion
   unless every model is `verified` on its current closure,
   `oddc status --verified`.
-- Consumers follow `main`: `github:JadeOpenServices/oddc`. Testers may
+- Consumers follow `stable`: `github:JadeOpenServices/oddc`. Testers may
   follow `github:JadeOpenServices/oddc/staging`.
-- Every merge to `main` is a release; consumers pin it by commit hash.
+- Every merge to `stable` is a release; consumers pin it by commit hash.
   See [RELEASES.md](RELEASES.md).
 
 ## Contribution rules
@@ -124,7 +124,7 @@ For users:
     oddc doctor                  # deployed model still matches the hardware?
     oddc status                  # is the deployed model verified by evidence?
     oddc update [--switch]       # take the newest ODDC of the stage the system follows
-    oddc update --stage staging  # follow staging instead; --stage main returns to releases
+    oddc update --channel staging  # follow staging instead; --channel stable returns to releases
     oddc quickkeys               # Quick Keys to key presses; the NixOS module runs it
     oddc tabletmode              # tablet mode switch from a detachable keyboard's presence
     oddc touchpad                # an Alps keyboard touchpad as a multitouch touchpad (USB, Bluetooth)
@@ -135,7 +135,7 @@ For users:
     oddc devices [--json]        # every part of the model: placement, port, support, proof
 
 `detect`, `setup` and `fetch` read the local workspace when present,
-else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full
+else GitHub at `stable`. `--channel staging` or `--rev COMMIT` (the full
 commit ID) always read GitHub, even with a workspace, and cannot be
 combined with `--root`. From GitHub they download only the model files, then only the
 matched model's reference closure and evidence; nothing else of the
@@ -212,7 +212,7 @@ from the one at REV, new models included, and fails unless all are
 the tested one as information only; it never fails on it. `update` defaults to the flake in
 `/etc/nixos` (`--flake DIR`) and rebuilds only with `--switch`. It keeps
 the oddc input on the stage it follows and prints the revision before and
-after. `--stage main` follows releases; `--stage staging` follows what was
+after. `--channel stable` follows releases; `--channel staging` follows what was
 merged since, such as a contributor's own model before its release. It
 switches by rewriting the one `github:JadeOpenServices/oddc` URL in
 `flake.nix`, so an input from elsewhere is only updated. A git flake
@@ -229,7 +229,7 @@ For contributors:
     oddc quirk enable QUIRK      # adopt a shared quirk for this machine's model
     oddc quirk share             # merge quirk entities that hold the same data
     oddc contribute              # check the changes and open a pull request
-    oddc release [--check] [--notes DIR] [--notes-url URL]  # maintainers: promote staging to main (see Maintainers)
+    oddc release [--check] [--notes DIR] [--notes-url URL]  # maintainers: promote staging to stable (see Maintainers)
 
 The workspace is `$XDG_DATA_HOME/oddc`, by default `~/.local/share/oddc` (`--root DIR`);
 `workspace --from URL` clones another source. Updating drops local files
@@ -335,13 +335,13 @@ written into titles or text.
 4. When every child is done, merge the feature into `staging` with
    `--no-ff` and set it Done.
 
-Promoting `staging` to `main` is a release, made with `oddc release` from
+Promoting `staging` to `stable` is a release, made with `oddc release` from
 a checkout of the catalog (`--root DIR`, default the workspace):
 
-1. It fetches `staging` and `main` and checks `staging` as CI does: the
+1. It fetches `staging` and `stable` and checks `staging` as CI does: the
    catalog is valid, every model is verified on its closure, and `staging`
-   holds something `main` lacks. `--check` stops here.
-2. It opens the pull request `staging` -> `main`, titled with the commit and
+   holds something `stable` lacks. `--check` stops here.
+2. It opens the pull request `staging` -> `stable`, titled with the commit and
    listing every pull request merged since the last release and every
    model's status, or reuses the open one.
 3. It waits for the pull request's checks.
@@ -349,7 +349,7 @@ a checkout of the catalog (`--root DIR`, default the workspace):
    a merge commit (never squash or rebase) and prints the release commit
    consumers pin.
 
-It never pushes to `main`. When GitHub reports a bypassed rule it stops.
+It never pushes to `stable`. When GitHub reports a bypassed rule it stops.
 
 The pull request carries the entry of every verified device in the
 release (`oddc notes`, below). `--notes DIR` also writes
