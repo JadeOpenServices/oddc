@@ -3,6 +3,7 @@
 package contribute
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -242,22 +243,30 @@ func sortedIDs(registry *oddc.Registry) []string {
 	return ids
 }
 
-// rewrite edits an entity file in place.
+// rewrite edits an entity file in place, keeping its key order and numbers.
 func rewrite(path string, edit func(document map[string]any)) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 	var document map[string]any
-	if err := json.Unmarshal(data, &document); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	if err := decoder.Decode(&document); err != nil {
+		return fmt.Errorf("%s: %w", path, err)
+	}
+	order, err := keyOrder(data)
+	if err != nil {
 		return fmt.Errorf("%s: %w", path, err)
 	}
 	edit(document)
-	out, err := json.MarshalIndent(document, "", "  ")
-	if err != nil {
+	// The file keeps its key order, so the diff shows only the edit.
+	var out bytes.Buffer
+	if err := encodeOrdered(&out, document, "", order, ""); err != nil {
 		return err
 	}
-	return os.WriteFile(path, append(out, '\n'), 0o644)
+	out.WriteString("\n")
+	return os.WriteFile(path, out.Bytes(), 0o644)
 }
 
 // rewriteChecked edits an entity file and puts the old one back when the

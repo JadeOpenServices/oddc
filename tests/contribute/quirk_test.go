@@ -104,8 +104,28 @@ func TestQuirkEnableAdoptsSharedQuirk(t *testing.T) {
 	}
 	quirk, model := quirkAndModel(t, before, false)
 	args := []string{"quirk", "enable", quirk, "--device", model, "--root", workspace}
+	modelPath := oddc.EntityPath(filepath.Join(workspace, "catalog", "entities"), model)
+	original, err := os.ReadFile(modelPath)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	out := stdout(t, func() error { return contribute.RunQuirk(args) })
+
+	// Only lines are added: every line of the model is still there, in
+	// its order (a line may gain the comma before an added key).
+	edited, _ := os.ReadFile(modelPath)
+	next := strings.Split(string(edited), "\n")
+	at := 0
+	for _, line := range strings.Split(string(original), "\n") {
+		for at < len(next) && strings.TrimSuffix(next[at], ",") != strings.TrimSuffix(line, ",") {
+			at++
+		}
+		if at == len(next) {
+			t.Fatalf("enable reordered or changed %s; lost line %q", model, line)
+		}
+		at++
+	}
 	if !strings.Contains(out, "oddc evidence record") {
 		t.Errorf("no evidence step in %q", out)
 	}
