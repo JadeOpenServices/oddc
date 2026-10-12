@@ -129,6 +129,7 @@ For users:
     oddc tabletmode              # tablet mode switch from a detachable keyboard's presence
     oddc touchpad                # an Alps keyboard touchpad as a multitouch touchpad (USB, Bluetooth)
     oddc display                 # the built-in panel: size, density and valid scales (JSON)
+    oddc rendergpu               # the DRM devices for the compositor, render GPU first
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full
@@ -171,6 +172,15 @@ the firmware reports as `SW_TABLET_MODE` too, it holds that switch, so the
 desktop sees only one. It follows the kernel's device events. The NixOS module names that
 switch `/dev/oddc/kickstand` and runs it as
 `oddc-tablet-mode.service` (`oddc.tabletMode.enable`, default on).
+`rendergpu` prints the DRM devices for the compositor, the one to render
+on first, separated by `:` (aquamarine's `AQ_DRM_DEVICES`). It applies the
+model's enabled `renderGpu` quirk (`quirk/common/render-on-output-gpu`) to
+the screens connected now: the quirk's default GPU while only its screens
+are in use, the other GPU once one of that GPU's screens is connected. It
+matches each `/sys/class/drm/cardN` to a GPU under `hardware.graphics` by
+the driver bound to it. A model without the quirk gets an error, never a
+guess. A compositor keeps its render GPU until it restarts, so the
+session runs it at login; `--explain` writes the reasoning to stderr.
 `status` reports each model (`--device ID`, default the deployed model,
 else all) as `verified`, `changed` or `unverified`. A model is
 `verified` when its newest passing evidence (`runtime-verified` or

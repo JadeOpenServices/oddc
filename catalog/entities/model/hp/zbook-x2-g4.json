@@ -280,6 +280,10 @@
       "pchPmeGpe69Storm": {
         "enabled": true,
         "ref": "quirk/hp/zbook-x2-g4-pch-pme-gpe69"
+      },
+      "renderOnOutputGpu": {
+        "enabled": true,
+        "ref": "quirk/common/render-on-output-gpu"
       }
     },
     "support": {

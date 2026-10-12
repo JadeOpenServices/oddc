@@ -112,12 +112,14 @@ func quirkEnable(args []string) error {
 }
 
 // missingRequirements lists the resolved paths a quirk names under
-// "requires" that the model does not have.
+// "requires" (a keyed object: a name for each requirement, its path as the
+// value) that the model does not have.
 func missingRequirements(quirk map[string]any, resolved map[string]any) []string {
 	requires, _ := quirk["requires"].(map[string]any)
 	var missing []string
-	for path := range requires {
-		if _, found := oddc.Lookup(resolved, path); !found {
+	for _, value := range requires {
+		path, _ := value.(string)
+		if _, found := oddc.Lookup(resolved, path); path == "" || !found {
 			missing = append(missing, path)
 		}
 	}
