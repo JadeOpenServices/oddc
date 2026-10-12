@@ -845,6 +845,28 @@ Consumers must fail closed when the policy is absent.
 This keeps canonical data declarative: it records knowledge that exists rather
 than maintaining duplicated negative capability flags.
 
+## Planned work and tips
+
+A model may say what is planned for it and what an owner should know, in
+plain words for owners, under `support`:
+
+    "support": {
+      "planned": {
+        "fingerprintDriver": {
+          "summary": "An open Linux driver for the fingerprint reader.",
+          "item": "ODDC-96"
+        }
+      },
+      "notes": {
+        "keyboardReconnect": { "summary": "..." }
+      }
+    }
+
+Every entry needs a `summary`; `item` names the work item. Plan only what
+has an open item, and drop the entry when the item is done or dropped.
+`oddc notes` and the release pull request show them next to what the
+evidence proves works and what does not.
+
 ## Security findings
 
 The short how-to is [docs/SECURITY.md](docs/SECURITY.md); this section has

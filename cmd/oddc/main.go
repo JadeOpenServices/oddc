@@ -36,6 +36,7 @@ var commands = []struct {
 	{"resolve", catalog.Run},
 	{"explain", catalog.Run},
 	{"status", catalog.Run},
+	{"notes", catalog.RunNotes},
 	{"changes", catalog.RunChanges},
 	{"workspace", contribute.RunWorkspace},
 	{"scaffold", contribute.RunScaffold},

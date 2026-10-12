@@ -92,3 +92,53 @@ func TestReleaseCandidate(t *testing.T) {
 		t.Errorf("a broken catalog passed: %v", c.Problems)
 	}
 }
+
+// The release notes hold every new device's entry, and each QR code reads
+// back as the pull request's URL.
+func TestReleaseNotesAndQRCodes(t *testing.T) {
+	zbarimg, err := exec.LookPath("zbarimg")
+	if _, qr := exec.LookPath("qrencode"); err != nil || qr != nil {
+		t.Skip("qrencode and zbarimg are not on PATH; the Nix build provides them")
+	}
+	root := fixture.GitCatalog(t)
+	// A release with an empty tree: every model of the catalog is new.
+	empty, err := exec.Command("git", "-C", root, "-c", "user.name=t", "-c", "user.email=t@t",
+		"commit-tree", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", "-m", "nothing released yet").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	git(t, root, "tag", "empty", strings.TrimSpace(string(empty)))
+
+	c, err := contribute.CheckCandidate(root, "HEAD", "empty")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Notes) == 0 {
+		t.Fatal("against an empty release every model is new, but no notes")
+	}
+	dir := t.TempDir()
+	url := "https://github.com/" + oddc.Repository + "/pull/1"
+	if err := contribute.WriteNotes(dir, url, c); err != nil {
+		t.Fatal(err)
+	}
+	text, err := os.ReadFile(filepath.Join(dir, "release-notes.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for id, notes := range c.Notes {
+		title := strings.SplitN(notes, "\n", 2)[0]
+		if !strings.Contains(string(text), strings.TrimLeft(title, "# ")) {
+			t.Errorf("release notes lack %s (%s)", id, title)
+		}
+		base := filepath.Join(dir, strings.ReplaceAll(strings.TrimPrefix(id, "model/"), "/", "-")+"-qr")
+		for _, file := range []string{base + ".png", base + ".svg"} {
+			if _, err := os.Stat(file); err != nil {
+				t.Errorf("%s: %v", id, err)
+			}
+		}
+		out, err := exec.Command(zbarimg, "--quiet", "--raw", base+".png").Output()
+		if err != nil || strings.TrimSpace(string(out)) != url {
+			t.Errorf("%s: QR code reads %q (%v), want %s", id, out, err, url)
+		}
+	}
+}
