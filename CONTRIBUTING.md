@@ -845,6 +845,19 @@ Consumers must fail closed when the policy is absent.
 This keeps canonical data declarative: it records knowledge that exists rather
 than maintaining duplicated negative capability flags.
 
+## USB identity of a part
+
+A USB component may say what tells one unit from another, measured
+read-only on a real unit (`tools/usb-identity-probe.py`, a contributor tool: string descriptors, the
+Microsoft OS string, BOS, HID feature reports; values never recorded):
+
+    "usbIdentity": { "serial": "none", "anchor": "bluetooth-address" }
+
+`serial` is `per-unit`, `placeholder` (a template every unit carries, such
+as `ABCD123456789`) or `none`; `anchor` names a per-unit identity beyond USB.
+Leave it out until it is measured. Trust brokers use it to decide whether a
+changed serial means a swapped part.
+
 ## The toolchain follows the same rules
 
 The `oddc` commands are held to the ideology like the catalog is. This is

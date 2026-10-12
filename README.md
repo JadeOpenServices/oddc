@@ -82,6 +82,7 @@ Use `oddc explain` to inspect the final owner and override history.
                  cli helpers they share
     tests/       Go tests by package, on a shared fixture of this catalog
     docs/        workflow, consumer contract, releases, security findings
+    tools/       contributor tools (debug, read-only), not part of the package
 
 ## Install
 

@@ -2,7 +2,12 @@
 
 package oddc
 
-import "sort"
+import (
+	"fmt"
+	"slices"
+	"sort"
+	"strings"
+)
 
 // Device is one component of a model as consumers need it: where the model
 // places it, what it is, how ODDC matches it, how it is attached, whether it
@@ -30,6 +35,42 @@ type Device struct {
 	// Protocol names the protocol a tool speaks to it, when the component
 	// needs one (an Alps touchpad, a button report layout); empty otherwise.
 	Protocol string `json:"protocol,omitempty"`
+	// USBIdentity says what tells one unit of a USB part from another:
+	// serial "per-unit", "placeholder" (the same on every unit) or "none",
+	// and an anchor beyond USB such as "bluetooth-address". Nil when not
+	// known yet. Where nothing is per-unit, the fixed port is the only anchor.
+	USBIdentity map[string]string `json:"usbIdentity,omitempty"`
+}
+
+// USB identity values a component may name.
+var (
+	usbSerialKinds = []string{"per-unit", "placeholder", "none"}
+	usbAnchors     = []string{"bluetooth-address"}
+)
+
+// usbIdentityErrors checks every component's usbIdentity.
+func (r *Registry) usbIdentityErrors() []string {
+	var errs []string
+	for id, entity := range r.Entities {
+		identity, ok := entity.Data["usbIdentity"].(map[string]any)
+		if !ok {
+			continue
+		}
+		for key, value := range identity {
+			text, _ := value.(string)
+			switch {
+			case key == "serial" && slices.Contains(usbSerialKinds, text):
+			case key == "anchor" && slices.Contains(usbAnchors, text):
+			default:
+				errs = append(errs, fmt.Sprintf("%s: usbIdentity.%s %v: serial is one of %s, anchor one of %s", id, key, value, strings.Join(usbSerialKinds, ", "), strings.Join(usbAnchors, ", ")))
+			}
+		}
+		if _, ok := identity["serial"]; !ok {
+			errs = append(errs, fmt.Sprintf("%s: usbIdentity needs serial", id))
+		}
+	}
+	sort.Strings(errs)
+	return errs
 }
 
 // Devices lists every component of a model with a bus and a device ID,
@@ -71,6 +112,12 @@ func (r *Registry) Devices(model string) ([]Device, error) {
 		d.Protocol = protocolName(object)
 		if port, ok := ports[c.Path]; ok {
 			d.USBPort = &port
+		}
+		if identity, ok := object["usbIdentity"].(map[string]any); ok {
+			d.USBIdentity = map[string]string{}
+			for key, value := range identity {
+				d.USBIdentity[key], _ = value.(string)
+			}
 		}
 		if result, ok := results[c.Path].(string); ok {
 			d.Proven = result
