@@ -35,6 +35,11 @@
       "type": "validation",
       "observedAt": "2026-10-10",
       "reason": "Guided pen test on an HP ZBook x2 G4 with a battery-free EMR pen: pressure up to 4095 (4096 levels), tilt on both axes (about -4600..5200), eraser end reported as eraser. Side buttons not tested (the pen had none)."
+    },
+    "tiltAndCursor20261012": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "On the HP ZBook x2 G4 (kernel 7.2.2, Hyprland 0.55.4), seen by the owner: the pen and eraser draw and hover, but with the pen tilted the hover cursor does not sit under the tip; the tilt axes are reported (capabilities.tilt) but nothing on the way to the cursor corrects the position for them. Switching from the pen back to the touchpad once left a pen cursor drawn bottom left while the touchpad pointer worked; whether the pen's leaving range reached the compositor was not checked yet."
     }
   }
 }
