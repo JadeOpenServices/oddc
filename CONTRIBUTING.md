@@ -948,6 +948,10 @@ The entity holds:
   (it turned out not to hold; it stays so references and history remain
   readable);
 - `reported` and `modified`: dates. Every change updates `modified`;
+- `fwupdHsi`: optional, fwupd host security attributes whose failure
+  confirms the finding, each under a name of its own (the catalog holds no
+  lists). fwupd is the established tool for these checks, so a round
+  confirms the finding with it instead of code of its own;
 - `flags`: named properties the finding takes away, always `false`.
 
 Rules:

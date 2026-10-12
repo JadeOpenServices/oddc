@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Security",
+  "metadata": {
+    "id": "security/firmware/boot-chain-not-verified",
+    "name": "Firmware not verified at boot"
+  },
+  "data": {
+    "summary": "The computer does not check its own firmware when it starts, so changed firmware would still run. Keep the machine physically safe.",
+    "severity": "medium",
+    "status": "open",
+    "reported": "2026-10-12",
+    "modified": "2026-10-12",
+    "details": {
+      "what": "Intel Boot Guard is fused on (its one-time keys are set), but it does not verify the boot chain: the Authenticated Code Module is not checked against the fused keys and the error policy only warns instead of stopping. HP Sure Start, which could check and restore the firmware, is off.",
+      "attack": "Someone who can write the firmware flash (with physical access, or through a flaw that allows flash writes) can put modified firmware on the machine, and it runs at every start, below the operating system.",
+      "fix": "No vendor fix: HP no longer updates this firmware. Turning on Sure Start in the firmware settings, if offered, and Secure Boot with own keys reduce it. An open firmware (ODDC-105) would own the boot chain instead.",
+      "check": "fwupdmgr security: IntelBootguard.Verified, IntelBootguard.Acm and IntelBootguard.Policy not-valid; Hp.Surestart not-enabled",
+      "references": "fwupd HSI attributes (https://fwupd.github.io/libfwupdplugin/hsi.html)"
+    },
+    "fwupdHsi": {
+      "intelBootguardVerified": "org.fwupd.hsi.IntelBootguard.Verified",
+      "intelBootguardAcm": "org.fwupd.hsi.IntelBootguard.Acm",
+      "intelBootguardPolicy": "org.fwupd.hsi.IntelBootguard.Policy",
+      "hpSurestart": "org.fwupd.hsi.Hp.Surestart"
+    },
+    "flags": {
+      "firmwareVerifiedAtBoot": false
+    }
+  },
+  "sources": {
+    "zbookX2G4Fwupd": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "fwupd 2.x HSI on the HP ZBook x2 G4, BIOS P72 01.53: IntelBootguard.Enabled enabled, Otp valid; Verified, Acm, Policy not-valid; Hp.Surestart not-enabled. Matches the earlier read-only check (Boot Guard fuses set per ME HFSTS6, MSR 0x13A reading 0)."
+    }
+  }
+}

@@ -45,6 +45,7 @@ is not a finding yet.
              "check": "The command that shows it on a machine.",
              "references": "Links: CVE, vendor advisory, fwupd HSI attribute, ..."
            },
+           "fwupdHsi": { "iommu": "org.fwupd.hsi.Iommu" },
            "flags": { "thunderboltDmaProtected": false }
          },
          "sources": {
@@ -55,6 +56,10 @@ is not a finding yet.
    - `severity`: `low`, `medium`, `high` or `critical`.
    - `status`: `open`, `mitigated` (the details name the fix) or
      `withdrawn` (it turned out wrong; never delete the file).
+   - `fwupdHsi`: the fwupd host security attributes (`fwupdmgr security`)
+     whose failure confirms the finding, each under a name of its own. A
+     test round then checks the finding with fwupd, with no code for it.
+     Leave it out when fwupd has no attribute for it.
    - `flags`: what the finding takes away, always `false`. Reuse an existing
      flag name if it means the same thing; never rename one.
    - Every later change updates `modified`.

@@ -35,6 +35,11 @@ that consume ODDC, not here. Decline it and say where it belongs.
 - **Shared definitions, separate proof.** Several models may reference one
   quirk or security finding; each still proves it with its own evidence.
 - **Security findings only lower trust.** See [SECURITY.md](SECURITY.md).
+  Only measured weaknesses of hardware or firmware become findings; an
+  unknown (a check that could not run) is not one, and system settings
+  belong to the operating system.
+- **No lists in the catalog.** Collections are keyed objects, each entry
+  under a name of its own, so every value has a stable path.
 - **Decide strictly, ask on gaps.** Decide open questions by these rules
   without offering choices the rules already answer. When a case does not
   fit, ask the maintainer before dropping it, so the rules can be widened
@@ -65,6 +70,14 @@ that consume ODDC, not here. Decline it and say where it belongs.
 - **Read-only first on firmware.** Reading firmware, flash or registers
   comes first. Every write (flash, ownership, settings) is the machine
   owner's explicit decision, with a recovery path ready.
+- **Use the established sources first.** fwupd (`fwupdmgr get-devices`,
+  `fwupdmgr security` for host security attributes), systemd's hwdb,
+  sysfs, the kernel's own reports. Their data is a source of facts for
+  discovery and evidence, never a switch for behaviour or a claim of
+  support: only a model's own evidence proves that.
+- **Identifiers stay local.** Probes may read serials, addresses and
+  keys to learn whether a part has a per-unit identity; they record only
+  that (present, length, placeholder or not), never the value.
 - **Explain security warnings fully:** what it is, what an attacker could do,
   how bad it is, the fix, and when it gets fixed. Never call one harmless
   without saying why.
@@ -81,6 +94,9 @@ proven by evidence, fail closed, debug tools labelled and read-only.
 
 - Test that each part **works**, not only that it is present: a ping, a
   sound heard by the microphone, frames from a camera, a write to the disk.
+- Parts that are built in but not proven on Linux (`proven` other than
+  `pass` in `oddc devices`) are their own class: recorded and identified,
+  not used, until evidence proves them.
 - An automatic round ends with one verdict. A skipped check is not a
   pass; "all tests pass" means nothing failed and nothing was skipped.
 - When a test cannot tell (another interface on the same network, a
