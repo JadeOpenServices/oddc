@@ -27,6 +27,7 @@ var commands = []struct {
 	{"tabletmode", system.RunTabletMode},
 	{"touchpad", system.RunTouchpad},
 	{"display", system.RunDisplay},
+	{"rendergpu", system.RunRenderGPU},
 	{"validate", catalog.Run},
 	{"list", catalog.Run},
 	{"index", catalog.Run},
