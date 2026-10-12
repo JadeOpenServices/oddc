@@ -75,3 +75,5 @@ each one missing and writes nothing until none is.
 If anything fails, record what was tested with `--status detected` and the
 failing results, and fix the catalog before trying again. Any later change
 to the model's closure makes it `changed`, and it must be proven again.
+The one exception is text for people: the `summary` of a policy section or
+a quirk changes nothing on the machine and is not part of the closure.

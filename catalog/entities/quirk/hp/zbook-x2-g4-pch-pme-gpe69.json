@@ -42,7 +42,8 @@
           "vendorId": "8086"
         }
       }
-    }
+    },
+    "summary": "No more interrupt storm from the chipset after the SD card is pulled or a dock is attached; it used to keep a CPU core busy until reboot."
   },
   "sources": {
     "reproduced20261011": {
