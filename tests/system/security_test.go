@@ -49,7 +49,7 @@ func TestSecurityCommand(t *testing.T) {
 				}
 			}
 		}
-		if !strings.Contains(notice, "oddc security --details") || !strings.Contains(notice, "nothing for you to do") {
+		if !strings.Contains(notice, "oddc security --details") || !strings.Contains(notice, "nothing to install") {
 			t.Errorf("%s: the notice does not calm and point to the details:\n%s", model, notice)
 		}
 

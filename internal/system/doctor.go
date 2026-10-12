@@ -57,7 +57,7 @@ func RunDoctor(args []string) error {
 			}
 			for _, finding := range oddc.Findings(resolved.Resolved) {
 				if finding.Active() {
-					report("INFO", "security: %s: %s The ODDC team is on it; nothing for you to do (details: `oddc security --details`)", finding.Name, finding.Summary)
+					report("INFO", "security: %s: %s The ODDC team is working on a fix; nothing to install (details: `oddc security --details`)", finding.Name, finding.Summary)
 				}
 			}
 		}

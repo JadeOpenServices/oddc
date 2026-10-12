@@ -10,7 +10,7 @@ short version.
 ## What users see
 
     $ oddc security
-    Known security findings for this model: 1. The ODDC team is on them; nothing for you to do.
+    Known security findings for this model: 1. The ODDC team is working on fixes; nothing to install. Until then, each line says what to be careful with.
     - Thunderbolt without DMA protection: A Thunderbolt device you approve can read and write all of the computer's memory. ...
     Contributors: `oddc security --details` shows the full account.
 
