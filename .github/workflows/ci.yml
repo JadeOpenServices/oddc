@@ -13,6 +13,9 @@ jobs:
           fetch-depth: 0
       - uses: cachix/install-nix-action@v31
       - run: nix flake check -L
+      # No secret (API keys, tokens, private keys) in any commit of the push
+      # or pull request, history included.
+      - run: nix run nixpkgs#gitleaks -- git --redact --no-banner .
       # Evidence is append-only: a pull request may only add records.
       - if: github.event_name == 'pull_request'
         env:
