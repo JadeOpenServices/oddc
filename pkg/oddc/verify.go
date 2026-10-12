@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -77,13 +78,28 @@ func (r *Registry) ModelEvidence(model string) ([]Evidence, error) {
 		records = append(records, record)
 	}
 
-	// Several records of one day are named DATE, DATE-2, ...; the date
-	// orders them first.
+	// Several records of one day are named DATE, DATE-2, ...: the date
+	// orders them first, then the number (DATE alone is 1). Plain file name
+	// order would put DATE-2 before DATE.
 	sort.SliceStable(records, func(i, j int) bool {
-		return records[i].ObservedAt < records[j].ObservedAt
+		if records[i].ObservedAt != records[j].ObservedAt {
+			return records[i].ObservedAt < records[j].ObservedAt
+		}
+		return sameDayNumber(records[i]) < sameDayNumber(records[j])
 	})
 
 	return records, nil
+}
+
+// sameDayNumber is N of a record named DATE-N, 1 for DATE: the record's
+// id ends in its file name.
+func sameDayNumber(record Evidence) int {
+	_, suffix, _ := strings.Cut(record.ID, record.ObservedAt)
+	n, err := strconv.Atoi(strings.TrimPrefix(suffix, "-"))
+	if err != nil || n < 2 {
+		return 1
+	}
+	return n
 }
 
 // Verify tells whether a model's current closure is proven by evidence.
