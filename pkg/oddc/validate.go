@@ -43,7 +43,8 @@ func Validate(root string) Validation {
 		}
 	}
 
-	result.Valid = true
+	result.Errors = append(result.Errors, registry.Duplication()...)
+	result.Valid = len(result.Errors) == 0
 	result.Entities = len(registry.Entities)
 
 	return result

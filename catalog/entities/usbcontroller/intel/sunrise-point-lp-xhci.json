@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "pci",
+    "deviceId": "8086:9d2f",
+    "driver": "xhci_hcd",
+    "vendor": {
+      "name": "Intel"
+    }
+  },
+  "kind": "UsbControllerComponent",
+  "metadata": {
+    "id": "usbcontroller/intel/sunrise-point-lp-xhci",
+    "name": "Intel Sunrise Point-LP USB 3.0 xHCI controller"
+  }
+}

@@ -45,8 +45,10 @@ reused for something else. Renaming or removing an ID is a breaking change.
   values, and each component with its bus, device ID and `present`
   (`null` when the facts do not cover that bus). Only DMI fields choose
   the model; components explain it. Facts are
-  `{"identity": {...}, "devices": {"pci": ["vvvv:pppp"], "usb": [...], "hid": [...]}}`
-  with the identity fields of `MachineIdentity`.
+  `{"identity": {...}, "devices": {"pci": ["vvvv:pppp"], "usb": [...], "hid": [...], "edid": ["mmm:pppp"]}}`
+  with the identity fields of `MachineIdentity`. `edid` lists built-in
+  panels (eDP, LVDS, DSI) by PNP manufacturer and product code from their
+  EDID; the EDID serial number is never read.
 - `oddc status --root DIR [--device ID] --json`: per model its `status`
   (`verified`, `changed` or `unverified`), its current `closure`
   (`sha256:` digest of the resolved model) and the `evidence` that
@@ -55,10 +57,19 @@ reused for something else. Renaming or removing an ID is a breaking change.
   `schemas/evidence.schema.json` and `schemas/overlay.schema.json`.
 - In Go, package `github.com/JadeOpenServices/oddc/pkg/oddc`: `LoadRegistry`,
   `Validate`, `Registry.Index`, `Registry.ResolveModel`,
-  `Registry.MatchModel`, `Registry.Classify`, `Registry.Verify`, `ReadFacts` and `Fetch`.
+  `Registry.MatchModel`, `Registry.Classify`, `Registry.Verify`, `ReadFacts`,
+  `InternalUSBDevices` and `Fetch`.
 
 Resolved values sit under stable named paths below `hardware`,
 `capabilities` and `policy`; `oddc explain` names the owner of each.
+
+A built-in USB device carries `usbPort` on its placement: `controller`
+(the path of a USB controller component in the same model), `hub`
+(`usb2` or `usb3`), `port` and `connectType` (`hardwired`). IDs and
+serial numbers can be cloned, so trust a USB device as internal only when
+its ID appears on that port of that controller; the same ID anywhere else
+is external. In Go, `InternalUSBDevices` lists them with the controller's
+PCI ID. Bus numbers are not part of it: they change with boot order.
 
 ## Releases
 

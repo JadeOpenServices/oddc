@@ -59,6 +59,7 @@ in
   imports = [
     ./public-interface.nix
     ./deployment.nix
+    ./device-names.nix
   ]
   ++ moduleFiles ./capabilities
   ++ moduleFiles ./quirks;

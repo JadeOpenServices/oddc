@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../../schemas/evidence.schema.json",
+  "schemaVersion": "2.0.0",
+  "id": "zbook-x2-g4-2026-10-10",
+  "deviceId": "model/hp/zbook-x2-g4",
+  "observedAt": "2026-10-10",
+  "status": "runtime-verified",
+  "environment": {
+    "bios": "P72 Ver. 01.53",
+    "kernel": "7.2.2",
+    "oddc": "00b0c40e7b01a6576e0d643405165ecf89cce1bc",
+    "os": "NixOS 26.05"
+  },
+  "results": {
+    "identity": "pass"
+  },
+  "drivers": {
+    "audio/intel/sunrise-point-lp-hda": [
+      "snd_hda_intel"
+    ],
+    "bluetooth/intel/0a2b": [
+      "btusb"
+    ],
+    "camera/chicony/b5e7": [
+      "uvcvideo"
+    ],
+    "camera/realtek/5666": [
+      "uvcvideo"
+    ],
+    "cardreader/realtek/rts522a": [
+      "rtsx_pci"
+    ],
+    "graphics/nvidia/quadro-m620": [
+      "nvidia"
+    ],
+    "keyboard/nxp/1fc9-0088": [
+      "hid-generic"
+    ],
+    "pen/wacom/056a-016c": [
+      "wacom"
+    ],
+    "quickkeys/hp/03f0-0a56": [
+      "hid-generic"
+    ],
+    "sensorhub/intel/sunrise-point-lp-ish": [
+      "intel_ish_ipc"
+    ],
+    "touchscreen/03eb-8abb": [
+      "hid-multitouch"
+    ],
+    "wifi/intel/8265": [
+      "iwlwifi"
+    ]
+  },
+  "closure": "sha256:78baea4ab54b55c447b1097bd0524931476b36c41955785075e403513c8e3983"
+}

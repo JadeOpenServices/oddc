@@ -1,0 +1,163 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "backlight": {
+      "control": "keyboard",
+      "levels": 3,
+      "note": "bright, dim, off on the keyboard's own key; no host brightness control"
+    },
+    "bluetooth": {
+      "bus": "hid",
+      "deviceId": "04f2:1573",
+      "driver": "hid-generic",
+      "note": "the same keyboard, detached and paired; HID bus type 0005 (Bluetooth)",
+      "touchpadTwoFingerScroll": false
+    },
+    "bus": "hid",
+    "deviceId": "1fc9:0088",
+    "driver": "hid-generic",
+    "functions": {
+      "keyboard": true,
+      "touchpad": true
+    },
+    "touchpad": {
+      "absoluteMode": "0x22",
+      "featureReport": 9,
+      "heightMm": 65,
+      "init": {
+        "step01": {
+          "register": "0x00800051",
+          "value": "0xc1",
+          "verify": false
+        },
+        "step02": {
+          "pauseMs": 500,
+          "register": "0x008000f1",
+          "value": "0x10",
+          "verify": false
+        },
+        "step03": {
+          "register": "0x00800091",
+          "value": "0x3c",
+          "verify": true
+        },
+        "step04": {
+          "register": "0x0080008e",
+          "value": "0x32",
+          "verify": true
+        },
+        "step05": {
+          "register": "0x0080009a",
+          "value": "0x3c",
+          "verify": true
+        },
+        "step06": {
+          "register": "0x0080008f",
+          "value": "0x02",
+          "verify": true
+        },
+        "step07": {
+          "register": "0x00800090",
+          "value": "0x03",
+          "verify": true
+        },
+        "step08": {
+          "register": "0x00800079",
+          "value": "0x14",
+          "verify": true
+        },
+        "step09": {
+          "register": "0x0080008c",
+          "value": "0xff",
+          "verify": true
+        },
+        "step10": {
+          "register": "0x008000da",
+          "value": "0x01",
+          "verify": true
+        },
+        "step11": {
+          "register": "0x0080009c",
+          "value": "0x09",
+          "verify": true
+        },
+        "step12": {
+          "register": "0x00800070",
+          "value": "0x6f",
+          "verify": true
+        },
+        "step13": {
+          "register": "0x008000dc",
+          "value": "0x18",
+          "verify": true
+        },
+        "step14": {
+          "register": "0x0080008d",
+          "value": "0x28",
+          "verify": true
+        },
+        "step15": {
+          "register": "0x00800083",
+          "value": "0x20",
+          "verify": true
+        }
+      },
+      "inputReport": 7,
+      "maxContacts": 5,
+      "modeRegister": "0x00800040",
+      "mouseMode": "0x21",
+      "protocol": "alps-u1-report-passthrough",
+      "transports": {
+        "bluetooth": {
+          "note": "refuses SET_FEATURE; keeps a mode set over USB",
+          "reportLength": 26,
+          "writable": false
+        },
+        "usb": {
+          "reportLength": 48,
+          "writable": true
+        }
+      },
+      "vendor": "Alps",
+      "widthMm": 110,
+      "xMax": 3328,
+      "yMax": 1920
+    },
+    "vendor": {
+      "name": "NXP Semiconductors"
+    }
+  },
+  "kind": "KeyboardComponent",
+  "metadata": {
+    "id": "keyboard/nxp/1fc9-0088",
+    "name": "HP ZBook x2 detachable keyboard (NXP 1FC9:0088)"
+  },
+  "sources": {
+    "backlight": {
+      "observedAt": "2026-10-11",
+      "reason": "On the ZBook x2 G4 the keyboard key cycles bright, dim, off. The Alps HID driver package 8.2206.1717.634 (HP SoftPaq SP112035) sends only 09 03 02 01 01 on report 9 when a finger lands in absolute mode (a touch notice that wakes the light) and no brightness or off command; values 0 to 3 sent over USB left the light unchanged.",
+      "type": "validation"
+    },
+    "bluetooth.touchpadTwoFingerScroll": {
+      "observedAt": "2026-10-11",
+      "reason": "In the firmware's default mouse mode: Raw HID capture over Bluetooth (hidraw, report 5 = buttons, X, Y, wheel, AC pan): one finger 904 reports, two-finger vertical swipes 47 reports and two-finger horizontal 3, with 0 wheel and 0 pan reports; over USB the same firmware sends wheel events. Neither the USB nor the Bluetooth descriptor has a precision touchpad collection or a gesture setting; feature report 9 returns 25 random-looking bytes and 0x13 is not answered over Bluetooth. The touchpad's absolute mode (touchpad, ODDC-100) gives two-finger scrolling over Bluetooth through oddc touchpad.",
+      "type": "validation"
+    },
+    "touchpad": {
+      "observedAt": "2026-10-11",
+      "reason": "Protocol from the Alps HID driver package 8.2206.1717.634 (HP SoftPaq SP112035, ApHidFiltr): report 9 carries I2C-HID SET_REPORT/GET_REPORT to an Alps U1 chip; register 0x800040 is the mode (0x21 mouse, 0x22 absolute); report 7 carries five slots of x, y, pressure; the sensor grid is 27 by 16 lines. On the ZBook x2 G4 over USB: status ready, mode read 0x21, write 0x22 read back 0x22, 1,372 frames with up to 3 contacts in 12 s, x up to 3319 and y up to 1906, mouse reports stopped; mode 0x21 restored. Over Bluetooth every SET_FEATURE is refused (EIO) but a mode set over USB stays and Bluetooth then streams report 7. Touch surface measured 110 by 65 mm.",
+      "type": "validation"
+    },
+    "touchpad.init": {
+      "observedAt": "2026-10-11",
+      "reason": "The Alps HID driver package 8.2206.1717.634 (HP SoftPaq SP112035, ApHidFiltr, subtype-1 table selected by Common_ASIC_SUB_TYPE=1 in the keyboard's INF section) writes these 15 registers at start, in this order, reading back all but 0x800051 and 0x8000F1 and waiting 500 ms after 0x8000F1. Sent over USB on the ZBook x2 G4: all confirmed; factory values before were different (e.g. 0x800091 0xC8, 0x80008D 0xC8); finger dropouts in 15 s of three-finger swipes went from 9 (64-200 ms) to 7 (mostly shorter).",
+      "type": "validation"
+    },
+    "touchpadSwipes20261012": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Light three-finger swipes on the ZBook x2 G4 over USB, with the 15 init registers written and no pressure axis on the virtual touchpad: the chip lost a finger mid-touch 0 times in 10 s of normal swipes and twice (94 ms each) in 10 s of light ones; in 11 of 14 light touches three fingers were seen in 71-99% of frames, fingers land within about 5 frames of each other. libinput turned them into 16 swipe gestures of 330 to 1,830 units dx (unaccelerated 125 to 790) each, far above what a compositor needs to switch workspace. Two-finger scrolling: 2 finger-count drops in 8 s. So light swipes reach the desktop intact; a swipe that feels heavy is not lost in the chip, the driver or libinput."
+    }
+  }
+}
