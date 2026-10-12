@@ -44,6 +44,9 @@ func Validate(root string) Validation {
 	}
 
 	result.Errors = append(result.Errors, registry.Duplication()...)
+	result.Errors = append(result.Errors, registry.securityErrors()...)
+	result.Errors = append(result.Errors, registry.supportErrors()...)
+	result.Errors = append(result.Errors, registry.usbIdentityErrors()...)
 	result.Valid = len(result.Errors) == 0
 	result.Entities = len(registry.Entities)
 

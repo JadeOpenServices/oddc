@@ -10,12 +10,18 @@ Its central rule is:
 See [CONTRIBUTING.md](CONTRIBUTING.md) before changing catalog data and
 [docs/WORKFLOW.md](docs/WORKFLOW.md) for channels, contribution rules and
 the `oddc` command. [docs/CONTRACT.md](docs/CONTRACT.md) says what
-consumers outside Nix can rely on.
+consumers outside Nix can rely on. [docs/SECURITY.md](docs/SECURITY.md)
+shows how to report a security finding.
+
+AI use is encouraged for contributions: point your assistant (Claude Code,
+Codex or your own) at [docs/AI.md](docs/AI.md). Contributions whose AI drifted
+from those rules will most likely be rejected and have to be redone.
 
 ## Canonical storage
 
 Canonical entities live under `catalog/entities/`. The registry contains
-reusable classes, vendors, families, components, models, and quirks. Every
+reusable classes, vendors, families, components, models, quirks, and
+security findings. Every
 entity has stable metadata and a `data` object; references inside `data` compose
 the hardware graph. Device models reference reusable entities instead of
 copying their facts.
@@ -75,7 +81,8 @@ Use `oddc explain` to inspect the final owner and override history.
     internal/    the commands by use: system, catalog, contribute, and the
                  cli helpers they share
     tests/       Go tests by package, on a shared fixture of this catalog
-    docs/        workflow, consumer contract, releases
+    docs/        workflow, consumer contract, releases, security findings
+    tools/       contributor tools (debug, read-only), not part of the package
 
 ## Install
 

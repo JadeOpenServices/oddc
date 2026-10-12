@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Security",
+  "metadata": {
+    "id": "security/firmware/intel-me-flagged-version",
+    "name": "Intel ME firmware with known vulnerabilities"
+  },
+  "data": {
+    "summary": "The Intel Management Engine firmware is a version with known security flaws, and HP no longer ships updates for it. Install software only from sources you trust.",
+    "severity": "medium",
+    "status": "open",
+    "reported": "2026-10-12",
+    "modified": "2026-10-12",
+    "details": {
+      "what": "The Converged Security and Management Engine (Intel ME) runs version 11.8.65.3590, which fwupd marks as affected by the critical CSME vulnerabilities it tracks. HP's last firmware for this model ships this version.",
+      "attack": "Depending on the flaw, a local administrator or someone with physical access can run code inside the ME, which sits below the operating system and can reach memory and the network.",
+      "fix": "No vendor update. Keep local administrator access restricted. An open firmware (ODDC-105) could reduce the ME's role; Intel advisories name the fixed versions.",
+      "check": "fwupdmgr security: Mei.Version not-valid; fwupdmgr get-devices shows the ME version",
+      "references": "fwupd HSI org.fwupd.hsi.Mei.Version (https://fwupd.github.io/libfwupdplugin/hsi.html); Intel security advisories (https://www.intel.com/content/www/us/en/security-center/default.html)"
+    },
+    "fwupdHsi": {
+      "meiVersion": "org.fwupd.hsi.Mei.Version"
+    },
+    "flags": {
+      "managementFirmwareCurrent": false
+    }
+  },
+  "sources": {
+    "zbookX2G4Fwupd": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "fwupd 2.x on the HP ZBook x2 G4, BIOS P72 01.53: ME 11.8.65.3590, Mei.Version not-valid."
+    }
+  }
+}

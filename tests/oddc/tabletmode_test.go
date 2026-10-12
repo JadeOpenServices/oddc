@@ -86,3 +86,31 @@ func TestTabletModeIgnoresBluetoothKeyboard(t *testing.T) {
 		t.Fatal("no detachable keyboard records a Bluetooth identity")
 	}
 }
+
+// Without its policy a model gets no tablet mode from its keyboard, even
+// with a detachable keyboard that signals it: facts switch nothing on.
+func TestTabletModeNeedsPolicy(t *testing.T) {
+	registry, err := LoadRegistry(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked := 0
+	for _, id := range modelIDs(registry) {
+		resolved, err := registry.ResolveEntity(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(TabletModeKeyboards(resolved.Resolved)) == 0 {
+			continue
+		}
+		checked++
+		policy := resolved.Resolved["policy"].(map[string]any)["input"].(map[string]any)
+		delete(policy, "tabletMode")
+		if got := TabletModeKeyboards(resolved.Resolved); len(got) != 0 {
+			t.Errorf("%s without policy.input.tabletMode: %v, want none", id, got)
+		}
+	}
+	if checked == 0 {
+		t.Fatal("no model provides tablet mode from its keyboard")
+	}
+}

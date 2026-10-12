@@ -1,1 +1,12 @@
 /result
+
+# Never commit credentials, AI tool state or raw machine data.
+.claude/
+.codex/
+.env
+.env.*
+*.pem
+*.key
+.credentials.json
+*.pcap
+*.pcapng

@@ -55,6 +55,11 @@ func RunDoctor(args []string) error {
 			for _, part := range oddc.UnsupportedComponents(resolved.Resolved) {
 				report("INFO", "%s (%s) cannot be used on Linux: %s", part.Name, part.Path, part.Reason)
 			}
+			for _, finding := range oddc.Findings(resolved.Resolved) {
+				if finding.Active() {
+					report("INFO", "security: %s: %s The ODDC team is working on a fix; nothing to install (details: `oddc security --details`)", finding.Name, finding.Summary)
+				}
+			}
 		}
 
 		verification(registry, model, oddc.ReadBIOS(cli.Value(args, "--sys", "/sys")), report)

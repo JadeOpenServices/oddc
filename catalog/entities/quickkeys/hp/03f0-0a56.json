@@ -66,6 +66,9 @@
     },
     "vendor": {
       "name": "HP"
+    },
+    "usbIdentity": {
+      "serial": "none"
     }
   },
   "kind": "QuickKeysComponent",
@@ -78,6 +81,11 @@
       "implementation": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/quickkeys.go",
       "tests": "internal/hardware/deviceprobe/devices/hp/zbookx2g4/quickkeys_test.go",
       "type": "validated-implementation"
+    },
+    "usbIdentityProbe": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Read-only USB identity probe on the HP ZBook x2 G4 (every string descriptor, Microsoft OS string, BOS descriptor, HID feature reports; values not recorded). No USB serial string (iSerial 0), no HID feature reports; the only strings are manufacturer, product and the Microsoft OS string."
     }
   }
 }

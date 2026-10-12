@@ -264,12 +264,20 @@
             "preset2": "KEY_MACRO_PRESET2",
             "preset3": "KEY_MACRO_PRESET3"
           }
+        },
+        "tabletMode": {
+          "from": "keyboard-presence"
         }
       },
       "kernel": {
         "parameters": {
           "intelHid5ButtonArray": "intel_hid.enable_5_button_array=1",
           "memSleepDeep": "mem_sleep_default=deep"
+        }
+      },
+      "sensors": {
+        "orientation": {
+          "service": "iio-sensor-proxy"
         }
       },
       "thermal": {
@@ -286,9 +294,53 @@
         "ref": "quirk/common/render-on-output-gpu"
       }
     },
+    "security": {
+      "firmwareBootChain": {
+        "ref": "security/firmware/boot-chain-not-verified"
+      },
+      "intelAmt": {
+        "ref": "security/firmware/intel-amt-unprovisioned"
+      },
+      "intelMe": {
+        "ref": "security/firmware/intel-me-flagged-version"
+      },
+      "thunderboltDma": {
+        "ref": "security/thunderbolt/no-kernel-dma-protection"
+      }
+    },
     "support": {
       "lifecycle": {
         "status": "experimental"
+      },
+      "planned": {
+        "activePens": {
+          "summary": "Testing active pens that have a battery; battery-free Wacom pens already work.",
+          "item": "ODDC-91"
+        },
+        "fingerprintDriver": {
+          "summary": "An open Linux driver for the fingerprint reader.",
+          "item": "ODDC-96"
+        },
+        "leftQuickKeys": {
+          "summary": "Testing the second set of Quick Keys on the left side.",
+          "item": "ODDC-84"
+        },
+        "openFirmware": {
+          "summary": "An open firmware to fix firmware bugs HP no longer fixes. Research and read-only steps come first; nothing is written to the machine without the owner's decision.",
+          "item": "ODDC-105"
+        },
+        "secureBoot": {
+          "summary": "Secure Boot with the owner's own keys.",
+          "item": "ODDC-85"
+        },
+        "thunderboltDmaProtection": {
+          "summary": "Turning on DMA protection for the Thunderbolt port, after a test on the machine.",
+          "item": "ODDC-106"
+        },
+        "volumeButtons": {
+          "summary": "Volume buttons that react faster when held or pressed quickly, and support in the Linux kernel itself so no setting is needed.",
+          "item": "ODDC-90, ODDC-80"
+        }
       }
     },
     "vendor": {

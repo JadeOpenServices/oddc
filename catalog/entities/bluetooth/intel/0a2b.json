@@ -7,11 +7,22 @@
     "driver": "btusb",
     "vendor": {
       "name": "Intel"
+    },
+    "usbIdentity": {
+      "serial": "none",
+      "anchor": "bluetooth-address"
     }
   },
   "kind": "BluetoothComponent",
   "metadata": {
     "id": "bluetooth/intel/0a2b",
     "name": "Intel 0a2b Bluetooth"
+  },
+  "sources": {
+    "usbIdentityProbe": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Read-only USB identity probe on the HP ZBook x2 G4 (every string descriptor, Microsoft OS string, BOS descriptor, HID feature reports; values not recorded). No USB serial string (iSerial 0). The controller's Bluetooth address, read over HCI once the driver is bound, is unique per unit."
+    }
   }
 }

@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Security",
+  "metadata": {
+    "id": "security/thunderbolt/no-kernel-dma-protection",
+    "name": "Thunderbolt without DMA protection"
+  },
+  "data": {
+    "summary": "A Thunderbolt device you approve can read and write all of the computer's memory. Only approve Thunderbolt devices you trust. USB-C hubs and screens are not affected.",
+    "severity": "medium",
+    "status": "open",
+    "reported": "2026-10-12",
+    "modified": "2026-10-12",
+    "details": {
+      "what": "The firmware does not ask the kernel for Kernel DMA Protection (no DMAR platform opt-in), and the kernel does not turn the IOMMU on by itself (CONFIG_INTEL_IOMMU_DEFAULT_ON unset, no intel_iommu=on). So the IOMMU stays off: /sys/class/iommu is empty, there are no IOMMU groups, and the Thunderbolt domain reports iommu_dma_protection=0.",
+      "attack": "A Thunderbolt PCIe device that gets approved, or one that copies the identity of an approved device (the Thunderspy class), can read and write all memory by DMA: passwords, disk keys, the running kernel. It needs physical access to a USB-C port. The domain's security level still makes a new device wait for approval first.",
+      "fix": "Turn the IOMMU on with the kernel option intel_iommu=on, as a per-model quirk proven by its own evidence (it can affect the discrete GPU driver, suspend and other PCIe devices). Until then, approve only trusted Thunderbolt devices.",
+      "when": "Testing intel_iommu=on needs a reboot of each affected model.",
+      "check": "cat /sys/bus/thunderbolt/devices/domain0/iommu_dma_protection (the controller may need a device plugged in or force_power to appear); ls /sys/class/iommu",
+      "references": "fwupd HSI attributes org.fwupd.hsi.Iommu and pre-boot DMA protection (https://fwupd.github.io/libfwupdplugin/hsi.html); Thunderspy (https://thunderspy.io); kernel Thunderbolt security levels (https://docs.kernel.org/admin-guide/thunderbolt.html)"
+    },
+    "fwupdHsi": {
+      "iommu": "org.fwupd.hsi.Iommu",
+      "prebootDma": "org.fwupd.hsi.PrebootDma"
+    },
+    "flags": {
+      "thunderboltDmaProtected": false
+    }
+  },
+  "sources": {
+    "zbookX2G4Measured": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Measured on the HP ZBook x2 G4 (BIOS P72 01.53, kernel 7.2.2, JHL6540 Alpine Ridge): with force_power on, domain0 security=secure, iommu_dma_protection=0, no boot_acl; no iommu option on the command line, /sys/class/iommu empty, 0 IOMMU groups."
+    },
+    "zbookX2G4Fwupd": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "fwupd 2.x HSI on the HP ZBook x2 G4 agrees: Iommu not-found, PrebootDma not-enabled."
+    }
+  }
+}
