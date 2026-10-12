@@ -41,6 +41,9 @@ type Finding struct {
 	Summary  string            `json:"summary"`
 	Details  map[string]string `json:"details"`
 	Flags    map[string]bool   `json:"flags"`
+	// FwupdHsi are fwupd host security attributes whose failure confirms the
+	// finding, so a test round can check it with fwupd and no device code.
+	FwupdHsi []string `json:"fwupdHsi,omitempty"`
 }
 
 // Findings lists every security entity a resolved model references, at
@@ -86,6 +89,13 @@ func findingFrom(path string, object map[string]any) Finding {
 	for key, value := range flags {
 		f.Flags[key], _ = value.(bool)
 	}
+	hsi, _ := object["fwupdHsi"].(map[string]any)
+	for _, value := range hsi {
+		if text, ok := value.(string); ok {
+			f.FwupdHsi = append(f.FwupdHsi, text)
+		}
+	}
+	sort.Strings(f.FwupdHsi)
 	return f
 }
 
@@ -154,6 +164,17 @@ func (r *Registry) securityErrors() []string {
 		}
 		if f.Reported == "" || f.Modified == "" || f.Modified < f.Reported {
 			errs = append(errs, fmt.Sprintf("%s: data.reported and data.modified are dates, modified not before reported", id))
+		}
+		if raw, present := entity.Data["fwupdHsi"]; present {
+			named, _ := raw.(map[string]any)
+			if len(named) == 0 {
+				errs = append(errs, fmt.Sprintf("%s: data.fwupdHsi names fwupd HSI attributes, each under a name of its own", id))
+			}
+			for _, value := range named {
+				if text, _ := value.(string); !strings.HasPrefix(text, "org.fwupd.hsi.") {
+					errs = append(errs, fmt.Sprintf("%s: data.fwupdHsi %v is not an org.fwupd.hsi. attribute", id, value))
+				}
+			}
 		}
 		flags, _ := entity.Data["flags"].(map[string]any)
 		for key, value := range flags {

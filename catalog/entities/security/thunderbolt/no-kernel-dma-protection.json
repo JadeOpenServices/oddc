@@ -20,6 +20,10 @@
       "check": "cat /sys/bus/thunderbolt/devices/domain0/iommu_dma_protection (the controller may need a device plugged in or force_power to appear); ls /sys/class/iommu",
       "references": "fwupd HSI attributes org.fwupd.hsi.Iommu and pre-boot DMA protection (https://fwupd.github.io/libfwupdplugin/hsi.html); Thunderspy (https://thunderspy.io); kernel Thunderbolt security levels (https://docs.kernel.org/admin-guide/thunderbolt.html)"
     },
+    "fwupdHsi": {
+      "iommu": "org.fwupd.hsi.Iommu",
+      "prebootDma": "org.fwupd.hsi.PrebootDma"
+    },
     "flags": {
       "thunderboltDmaProtected": false
     }
@@ -29,6 +33,11 @@
       "type": "validation",
       "observedAt": "2026-10-12",
       "reason": "Measured on the HP ZBook x2 G4 (BIOS P72 01.53, kernel 7.2.2, JHL6540 Alpine Ridge): with force_power on, domain0 security=secure, iommu_dma_protection=0, no boot_acl; no iommu option on the command line, /sys/class/iommu empty, 0 IOMMU groups."
+    },
+    "zbookX2G4Fwupd": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "fwupd 2.x HSI on the HP ZBook x2 G4 agrees: Iommu not-found, PrebootDma not-enabled."
     }
   }
 }

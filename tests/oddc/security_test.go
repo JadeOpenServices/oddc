@@ -114,6 +114,12 @@ func TestSecurityEntityRules(t *testing.T) {
 		"modified before reported": {func(data map[string]any) {
 			data["modified"] = "2000-01-01"
 		}, "modified not before reported"},
+		"a fwupd attribute that is not one": {func(data map[string]any) {
+			data["fwupdHsi"] = map[string]any{"guess": "IOMMU is off"}
+		}, "not an org.fwupd.hsi. attribute"},
+		"fwupd attributes as a list": {func(data map[string]any) {
+			data["fwupdHsi"] = map[string]any{}
+		}, "names fwupd HSI attributes"},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {

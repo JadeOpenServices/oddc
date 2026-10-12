@@ -287,6 +287,15 @@
       }
     },
     "security": {
+      "firmwareBootChain": {
+        "ref": "security/firmware/boot-chain-not-verified"
+      },
+      "intelAmt": {
+        "ref": "security/firmware/intel-amt-unprovisioned"
+      },
+      "intelMe": {
+        "ref": "security/firmware/intel-me-flagged-version"
+      },
       "thunderboltDma": {
         "ref": "security/thunderbolt/no-kernel-dma-protection"
       }
