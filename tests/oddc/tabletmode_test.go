@@ -36,7 +36,7 @@ func TestTabletModeFromKeyboardPresence(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if TabletMode(keyboards, facts.Devices, false) {
+		if TabletMode(keyboards, facts.Devices) {
 			t.Errorf("%s: tablet mode with its keyboard present", model)
 		}
 
@@ -46,11 +46,8 @@ func TestTabletModeFromKeyboardPresence(t *testing.T) {
 				return slices.ContainsFunc(keyboards, func(k DetachableKeyboard) bool { return k.Bus == bus && k.DeviceID == id })
 			})
 		}
-		if !TabletMode(keyboards, detached, false) {
+		if !TabletMode(keyboards, detached) {
 			t.Errorf("%s: laptop mode with its keyboard detached", model)
-		}
-		if _, ok := KickstandSwitch(resolved.Resolved); ok && !TabletMode(keyboards, facts.Devices, true) {
-			t.Errorf("%s: laptop mode with its stand closed", model)
 		}
 	}
 
@@ -79,7 +76,7 @@ func TestTabletModeIgnoresBluetoothKeyboard(t *testing.T) {
 			found++
 
 			devices := map[string][]string{"hid": {wireless.(string)}}
-			if !TabletMode([]DetachableKeyboard{keyboard}, devices, false) {
+			if !TabletMode([]DetachableKeyboard{keyboard}, devices) {
 				t.Errorf("%s: laptop mode with only the Bluetooth keyboard %s", model, wireless)
 			}
 		}

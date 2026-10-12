@@ -71,13 +71,11 @@ func KickstandSwitch(resolved map[string]any) (Kickstand, bool) {
 	return Kickstand{ACPIID: id, Switch: code, ClosedValue: int(closed)}, true
 }
 
-// TabletMode reports whether a machine is in tablet mode: its stand is
-// closed, or none of its detachable keyboards is on its bus. devices are
-// what ReadDevices sees.
-func TabletMode(keyboards []DetachableKeyboard, devices map[string][]string, standClosed bool) bool {
-	if standClosed {
-		return true
-	}
+// TabletMode reports whether a machine is in tablet mode: none of its
+// detachable keyboards is on its bus. The stand plays no part: with the
+// keyboard attached it is a laptop whether the stand is open or not.
+// devices are what ReadDevices sees.
+func TabletMode(keyboards []DetachableKeyboard, devices map[string][]string) bool {
 	for _, keyboard := range keyboards {
 		if slices.Contains(devices[keyboard.Bus], keyboard.DeviceID) {
 			return false
