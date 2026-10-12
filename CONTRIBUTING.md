@@ -450,11 +450,13 @@ Sharing a quirk shares the definition, never the proof: each model that
 enables it needs its own evidence with `quirks.KEY=pass`. Facts never switch
 a quirk on; only the model's reference does.
 
-A quirk may name the resolved paths it needs:
+A quirk may name the resolved paths it needs, each under a name of its
+own (paths are values, never keys: a key with dots would read as a path of
+the model once the quirk is enabled):
 
     "requires": {
-      "hardware.graphics.discrete": true,
-      "hardware.graphics.integrated": true
+      "discreteDriver": "hardware.graphics.discrete.driver",
+      "integratedDriver": "hardware.graphics.integrated.driver"
     }
 
 `oddc quirk enable QUIRK` refuses a model that lacks one of them, adds the
