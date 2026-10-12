@@ -333,6 +333,16 @@
       "observedAt": "2026-10-10",
       "reason": "Read on the machine from sysfs: each built-in USB device sits on the PCH xHCI 0000:00:14.0 (8086:9d2f), port/connect_type hardwired, removable fixed; USB 2 root hub ports 2, 4, 7, 8, 9 and USB 3 root hub port 2. A USB stick on a USB-C port showed up on the Thunderbolt controller as hotplug, removable.",
       "type": "validation"
+    },
+    "graphicsRender": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Measured on the machine (Hyprland 0.55, NVIDIA 580.173.02, kernel 7.2.2): the eDP panel is driven only by the Intel HD 620, HDMI (DP-3) and USB-C (DP-4) only by the Quadro M620. A compositor renders all screens on one GPU and copies each frame to screens of the other one. Rendering on the Quadro with only the panel in use: Hyprland about 29% CPU at idle, the Quadro held in P0 at 1019 MHz, cursor choppy. Rendering on Intel: Hyprland about 1%, the Quadro in P8 at 135 MHz, cursor smooth, but a 4K HDMI screen on the Quadro (30 Hz at that mode) lags. So the cheap choice is the GPU that owns the screens in use."
+    },
+    "thermalSensors": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Read on the machine at light load: x86_pkg_temp and coretemp 61 C, B0D4 (processor participant) 63 C, pch_skylake 44 C, iwlwifi 51 C, acpitz zones 32-51 C, SEN1 39 C, SEN2 44 C, NVMe 36 C. The package sensor sits on the cores and moves by about 15 C within a second on short load bursts (seen as 47, 63, 56, 47 in a desktop bar); the PCH and acpitz zones move slowly. A display that wants a steady value should average the package sensor over a few seconds or show a slow zone."
     }
   }
 }
