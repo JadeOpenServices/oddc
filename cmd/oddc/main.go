@@ -28,6 +28,7 @@ var commands = []struct {
 	{"touchpad", system.RunTouchpad},
 	{"display", system.RunDisplay},
 	{"rendergpu", system.RunRenderGPU},
+	{"security", system.RunSecurity},
 	{"validate", catalog.Run},
 	{"list", catalog.Run},
 	{"index", catalog.Run},

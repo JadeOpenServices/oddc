@@ -837,6 +837,67 @@ Consumers must fail closed when the policy is absent.
 This keeps canonical data declarative: it records knowledge that exists rather
 than maintaining duplicated negative capability flags.
 
+## Security findings
+
+A security weakness of hardware or its firmware is a `Security` entity
+below `catalog/entities/security/<area>/<name>.json`. It is the one owner of
+everything known about that weakness. A model or component references it
+under its own `security` section and holds nothing about it itself:
+
+    "security": {
+      "thunderboltDma": {
+        "ref": "security/thunderbolt/no-kernel-dma-protection"
+      }
+    }
+
+Put the reference where the weakness lives. A weakness of a chip goes on
+that chip's component entity, so every model that uses the chip carries it
+with one edit. A weakness of one firmware goes on the model. Facts never
+attach a finding; only a reference does. Below `security/`, only `Security`
+entities live.
+
+The entity holds:
+
+- `summary`: one or two plain sentences for users, at most 240 characters:
+  what it means for them and what to be careful about. A contributor who
+  reports a finding writes it, and review checks that it informs without
+  frightening;
+- `details`: `what`, `attack` and `fix` are required, plus `when`, `check`
+  and `references` where known. This is the full account for contributors;
+- `severity`: `low`, `medium`, `high` or `critical`;
+- `status`: `open`, `mitigated` (the details name the fix) or `withdrawn`
+  (it turned out not to hold; it stays so references and history remain
+  readable);
+- `reported` and `modified`: dates. Every change updates `modified`;
+- `flags`: named properties the finding takes away, always `false`.
+
+Rules:
+
+- **Findings only lower trust.** A flag is false as soon as one active
+  finding says so. A flag no finding names is unknown, and consumers treat
+  unknown as unprotected. A claim that something is protected needs its
+  own per-model policy and evidence, never a finding.
+- **They take effect at once.** A reported finding reaches every install that
+  follows the catalog with its next update, without waiting for a release of
+  the operating system that consumes it.
+- **The proof is per model.** A finding changes the model's closure, so the
+  model shows as changed until its owner records evidence with
+  `security.<key>=confirmed` (by the reference's path), checked on the
+  machine with the finding's `check`.
+- **No override touches a finding.** A project or host override that sets,
+  changes or deletes one, or deletes a node that holds one, is refused:
+  findings change only in the catalog, by reviewed pull request.
+- **Live facts only lower trust too.** When a consumer can read a flag live
+  (for example the kernel's `iommu_dma_protection`) and the live value is
+  worse than the catalog's, it shows the worse one and reports the
+  contradiction as a bug against the model. A live fact never grants
+  protection on its own.
+
+`oddc security` gives users a calm notice: each summary, and that the ODDC
+team knows and nothing needs doing. `oddc security --details` is the full
+account for contributors, and `oddc security --json` is for programs (the
+findings and the combined flags). `oddc doctor` shows the same notice.
+
 ## ODDC versus operating-system policy
 
 ODDC must not become a dumping ground for general GjallarOS laptop behavior.

@@ -44,6 +44,7 @@ func Validate(root string) Validation {
 	}
 
 	result.Errors = append(result.Errors, registry.Duplication()...)
+	result.Errors = append(result.Errors, registry.securityErrors()...)
 	result.Valid = len(result.Errors) == 0
 	result.Entities = len(registry.Entities)
 
