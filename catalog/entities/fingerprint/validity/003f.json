@@ -26,6 +26,11 @@
     "libfprint": {
       "type": "upstream-hwdb",
       "reference": "libfprint 1.94.10, 60-autosuspend-libfprint-2.hwdb, section 'Known unsupported devices': usb:v138Ap003F"
+    },
+    "windowsCapture20261012": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "On the HP ZBook x2 G4 (BIOS P72 01.53), HP's only driver for this sensor (SoftPaq SP96234, Synaptics WBF 4.5.701.0) was run in a Windows 11 VM with only the sensor passed through and its USB traffic recorded on the host. Findings: the firmware patches the driver loads at every start are byte for byte in that SoftPaq (vcsAPIFORWBF.dll), so a Linux driver could take them from HP's package instead of shipping them; at its first start the driver pairs the sensor to the Windows installation, and removing the fingerprint or uninstalling the driver sends nothing to the sensor, so the pairing stays; the BIOS has no fingerprint reset option. Windows enrollment fails on this unit: after some swipes (21 in one run, 31 in another) the sensor stops reporting a finger at all, after the driver re-armed it exactly as before; earlier it stopped noticing the finger leaving, so swipes ran to a capture cap and were rejected. Windows logs nothing at that point. Not a VM effect: the same failure was seen on bare-metal Windows. The protocol notes are kept with the driver work, outside the catalog."
     }
   }
 }
