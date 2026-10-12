@@ -41,6 +41,7 @@ var commands = []struct {
 	{"scaffold", contribute.RunScaffold},
 	{"evidence", contribute.RunEvidence},
 	{"contribute", contribute.RunContribute},
+	{"release", contribute.RunRelease},
 	{"quirk", contribute.RunQuirk},
 }
 

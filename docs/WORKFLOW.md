@@ -221,6 +221,7 @@ For contributors:
     oddc quirk enable QUIRK      # adopt a shared quirk for this machine's model
     oddc quirk share             # merge quirk entities that hold the same data
     oddc contribute              # check the changes and open a pull request
+    oddc release [--check]       # maintainers: promote staging to main (see Maintainers)
 
 The workspace is `$XDG_DATA_HOME/oddc`, by default `~/.local/share/oddc` (`--root DIR`);
 `workspace --from URL` clones another source. Updating drops local files
@@ -326,8 +327,21 @@ written into titles or text.
 4. When every child is done, merge the feature into `staging` with
    `--no-ff` and set it Done.
 
-Promoting `staging` to `main` is `git merge --no-ff staging` on `main`,
-once `oddc status --verified` passes on `staging`.
+Promoting `staging` to `main` is a release, made with `oddc release` from
+a checkout of the catalog (`--root DIR`, default the workspace):
+
+1. It fetches `staging` and `main` and checks `staging` as CI does: the
+   catalog is valid, every model is verified on its closure, and `staging`
+   holds something `main` lacks. `--check` stops here.
+2. It opens the pull request `staging` -> `main`, titled with the commit and
+   listing every pull request merged since the last release and every
+   model's status, or reuses the open one.
+3. It waits for the pull request's checks.
+4. It asks before merging, since the merge is the release, then merges with
+   a merge commit (never squash or rebase) and prints the release commit
+   consumers pin.
+
+It never pushes to `main`. When GitHub reports a bypassed rule it stops.
 
 Each commit ends with a trailer naming its item, and merge messages
 follow git's defaults with the merged item's trailer:
