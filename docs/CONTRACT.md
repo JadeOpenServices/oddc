@@ -77,10 +77,13 @@ its ID appears on that port of that controller; the same ID anywhere else
 is external. In Go, `InternalUSBDevices` lists them with the controller's
 PCI ID, the component's `attachment` (`internal`, or `detachable` for a
 part on its own connector) and `supported` (false when the entity marks it
-unusable on Linux); `oddc usb --json` prints the same list from
-`/etc/oddc/resolved.json` (`--resolved FILE`). Read built-in devices only
-from there: a device's `bus` (`usb` or `hid`) says how ODDC matches it,
-not whether it is built in. Bus numbers are not part of it: they change with boot order.
+unusable on Linux). `oddc devices --json [--root DIR] [--device ID]`
+prints every part of the model: `path`, `id`, `name`, `bus`, `deviceId`,
+`attachment`, `usbPort` (only for built-in USB devices), `supported`,
+`proven` (`pass`, `unsupported` or `untested`, from the evidence the
+model's status rests on) and `protocol`. Take built-in USB devices from
+there, as the devices with a `usbPort`: a device's `bus` (`usb` or `hid`)
+says how ODDC matches it, not whether it is built in. Bus numbers are not part of it: they change with boot order.
 
 ## Releases
 

@@ -108,3 +108,52 @@ func TestInternalUSBDevicesAttachmentAndSupport(t *testing.T) {
 		t.Fatal("no model has built-in USB devices")
 	}
 }
+
+// The device inventory holds every component of every model, each with
+// the result its evidence gives, and a USB port exactly for the built-in
+// USB devices.
+func TestDevicesInventory(t *testing.T) {
+	registry, err := LoadRegistry(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range modelIDs(registry) {
+		devices, err := registry.Devices(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resolved, err := registry.ResolveEntity(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		internal, err := InternalUSBDevices(resolved.Resolved)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ported := map[string]bool{}
+		for _, d := range internal {
+			ported[d.Path] = true
+		}
+		status, err := registry.Verify(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(devices) == 0 {
+			t.Errorf("%s: no devices", id)
+		}
+		for _, d := range devices {
+			if (d.USBPort != nil) != ported[d.Path] {
+				t.Errorf("%s %s: usbPort %v, built-in USB %v", id, d.Path, d.USBPort, ported[d.Path])
+			}
+			want := "untested"
+			if status.Evidence != nil {
+				if result, ok := status.Evidence.Results[d.Path].(string); ok {
+					want = result
+				}
+			}
+			if d.Proven != want {
+				t.Errorf("%s %s: proven %q, evidence %q", id, d.Path, d.Proven, want)
+			}
+		}
+	}
+}
