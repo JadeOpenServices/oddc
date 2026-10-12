@@ -153,7 +153,8 @@ func (r *Registry) Verify(model string) (Verification, error) {
 // "capabilities.usb4". Each must be "pass", except a capability the model
 // does not have, which must be "not-exposed", and a component its entity
 // marks as unusable on Linux, which must be "unsupported": present, and
-// not working.
+// not working. Each active security finding the model references, by its
+// path, must be "confirmed": the tester checked that it holds here.
 func (r *Registry) Requirements(model string) (map[string]string, error) {
 	resolved, err := r.ResolveEntity(model)
 	if err != nil {
@@ -166,6 +167,11 @@ func (r *Registry) Requirements(model string) (map[string]string, error) {
 	}
 	for _, component := range UnsupportedComponents(resolved.Resolved) {
 		required[component.Path] = "unsupported"
+	}
+	for _, finding := range Findings(resolved.Resolved) {
+		if finding.Active() {
+			required[finding.Path] = "confirmed"
+		}
 	}
 	for _, section := range []string{"capabilities", "quirks", "policy"} {
 		values, _ := resolved.Resolved[section].(map[string]any)

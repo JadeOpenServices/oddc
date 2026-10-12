@@ -286,6 +286,11 @@
         "ref": "quirk/common/render-on-output-gpu"
       }
     },
+    "security": {
+      "thunderboltDma": {
+        "ref": "security/thunderbolt/no-kernel-dma-protection"
+      }
+    },
     "support": {
       "lifecycle": {
         "status": "experimental"

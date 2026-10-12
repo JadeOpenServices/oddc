@@ -130,6 +130,7 @@ For users:
     oddc touchpad                # an Alps keyboard touchpad as a multitouch touchpad (USB, Bluetooth)
     oddc display                 # the built-in panel: size, density and valid scales (JSON)
     oddc rendergpu               # the DRM devices for the compositor, render GPU first
+    oddc security                # known security findings for this model (--details, --json)
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full
@@ -181,6 +182,15 @@ matches each `/sys/class/drm/cardN` to a GPU under `hardware.graphics` by
 the driver bound to it. A model without the quirk gets an error, never a
 guess. A compositor keeps its render GPU until it restarts, so the
 session runs it at login; `--explain` writes the reasoning to stderr.
+`security` reads the deployed model's security findings
+([CONTRIBUTING.md](../CONTRIBUTING.md#security-findings)). Plain, it is the
+notice for users: each finding's summary, and that the ODDC team knows and
+nothing needs doing. `--details` gives contributors what, attack, severity
+and fix. `--json` gives programs the findings and the combined flags; a flag
+it does not name is unknown, which a consumer treats as unprotected. A
+consumer such as an operating system's device approval reads its flags from
+here and never keeps its own per-model copy, so a new finding reaches users
+with the next ODDC update.
 `status` reports each model (`--device ID`, default the deployed model,
 else all) as `verified`, `changed` or `unverified`. A model is
 `verified` when its newest passing evidence (`runtime-verified` or
