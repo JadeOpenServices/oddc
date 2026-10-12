@@ -40,9 +40,21 @@ if [ "$BASE" = main ] && [ "$HEAD_REPO/$HEAD_REF" = "$REPO/staging" ]; then
 fi
 
 
+# A member is anyone who may write to the repository. author_association
+# alone misses members who keep their organisation membership private, so
+# the author's permission on the repository counts too.
 member=false
 case "$ASSOCIATION" in
   OWNER | MEMBER | COLLABORATOR) member=true ;;
+  *)
+    case "$(gh api "repos/$REPO/collaborators/$AUTHOR/permission" --jq .permission 2>/dev/null || true)" in
+      admin | maintain | write) member=true ;;
+    esac
+    ;;
+esac
+
+case "$member" in
+  true) ;;
   *)
     # One open pull request per contributor; the oldest one stays.
     older=$(gh pr list --repo "$REPO" --author "$AUTHOR" --state open --json number \

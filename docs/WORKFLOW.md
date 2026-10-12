@@ -69,7 +69,8 @@ Anyone may open a pull request. Only maintainers merge.
 - **Only maintainers and collaborators verify.** Anyone may add
   `documented` or `detected` evidence; `runtime-verified` and
   `hardware-validated` evidence comes only from maintainers and repository
-  collaborators ([VERIFY.md](VERIFY.md)).
+  collaborators ([VERIFY.md](VERIFY.md)). Write access to the repository
+  is what counts, so members may keep their organisation membership private.
 - A bot enforces these rules on every pull request and explains any
   rejection in a comment: `.github/workflows/pr-rules.yml`. A pull request
   with a second device or passing evidence from anyone else fails its
