@@ -887,6 +887,10 @@ Rules:
 - **No override touches a finding.** A project or host override that sets,
   changes or deletes one, or deletes a node that holds one, is refused:
   findings change only in the catalog, by reviewed pull request.
+- **Flag names are an interface.** Consumers act on them, so a flag is never
+  renamed or reused for another meaning; a new meaning gets a new name. A
+  consumer that no longer finds a flag treats it as unknown, so a lost flag
+  fails closed, never open.
 - **Live facts only lower trust too.** When a consumer can read a flag live
   (for example the kernel's `iommu_dma_protection`) and the live value is
   worse than the catalog's, it shows the worse one and reports the
