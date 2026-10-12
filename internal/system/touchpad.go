@@ -220,6 +220,9 @@ func feature(device *os.File, request uintptr, buffer []byte) error {
 	return nil
 }
 
+// initConfirm is how long one init entry may take to be confirmed.
+const initConfirm = 15 * time.Second
+
 // setAbsolute waits for the touchpad to report ready (up to 5 tries, a
 // second apart) and switches it to absolute mode.
 func setAbsolute(device *os.File, t oddc.AlpsTouchpad, length int) error {
@@ -276,12 +279,17 @@ func setMode(device *os.File, t oddc.AlpsTouchpad, length int, mode byte) error 
 }
 
 // sendInit writes the vendor init table in order, as the vendor driver
-// does: entries marked verify are read back and written up to three
-// times, 100 ms apart; pauseMs waits after an entry.
+// does: entries marked verify are read back and written again, 100 ms
+// apart, for up to initConfirm; pauseMs waits after an entry. Right after
+// the keyboard is attached the chip reports ready but needs up to about 15 s
+// more before it keeps register writes, so a short retry here saves a
+// service restart, which would start the whole table over.
 func sendInit(device *os.File, t oddc.AlpsTouchpad, length int) error {
 	for _, w := range t.Init {
 		confirmed := !w.Verify
-		for try := 0; try < 3; try++ {
+		last := "no read"
+		deadline := time.Now().Add(initConfirm)
+		for {
 			if err := feature(device, hidiocSFeature, t.RegisterSet(length, w.Register, w.Value)); err != nil {
 				return fmt.Errorf("touchpad init %#x: %w", w.Register, err)
 			}
@@ -289,14 +297,24 @@ func sendInit(device *os.File, t oddc.AlpsTouchpad, length int) error {
 				break
 			}
 			time.Sleep(20 * time.Millisecond)
-			if got, ok, err := readRegister(device, t, length, w.Register); err == nil && ok && got == w.Value {
+			got, ok, err := readRegister(device, t, length, w.Register)
+			switch {
+			case err != nil:
+				last = err.Error()
+			case !ok:
+				last = "no acknowledgement"
+			case got != w.Value:
+				last = fmt.Sprintf("read %#x", got)
+			default:
 				confirmed = true
+			}
+			if confirmed || time.Now().After(deadline) {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 		if !confirmed {
-			return fmt.Errorf("touchpad init %#x=%#x not confirmed", w.Register, w.Value)
+			return fmt.Errorf("touchpad init %#x=%#x not confirmed: %s", w.Register, w.Value, last)
 		}
 		time.Sleep(time.Duration(w.PauseMs) * time.Millisecond)
 	}
