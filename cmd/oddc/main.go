@@ -29,6 +29,7 @@ var commands = []struct {
 	{"display", system.RunDisplay},
 	{"rendergpu", system.RunRenderGPU},
 	{"security", system.RunSecurity},
+	{"usb", system.RunUSB},
 	{"validate", catalog.Run},
 	{"list", catalog.Run},
 	{"index", catalog.Run},
