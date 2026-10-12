@@ -20,10 +20,10 @@ import (
 const attachSettle = 2 * time.Second
 
 // RunTabletMode keeps a virtual SW_TABLET_MODE switch in step with the
-// model: on while its stand is closed (capabilities.kickstandSwitch) or
-// none of its detachable keyboards is on its bus, off once neither has
-// been true for attachSettle. It holds the stand's own switch, so the
-// desktop sees only this one. It reads the model from --resolved (default
+// model: on while none of its detachable keyboards is on its bus, off once
+// one has been back for attachSettle. It holds the stand's own switch
+// (capabilities.kickstandSwitch), which the firmware reports as
+// SW_TABLET_MODE, so the desktop sees only this one. It reads the model from --resolved (default
 // /etc/oddc/resolved.json), the devices from --sys and the stand's switch
 // from --kickstand (default: found under --sys).
 func RunTabletMode(args []string) error {
@@ -47,17 +47,12 @@ func RunTabletMode(args []string) error {
 	}
 	defer syscall.Close(events)
 
-	standClosed, standChanges := false, make(chan bool)
 	if stand, ok := oddc.KickstandSwitch(resolved); ok {
 		switchDevice, err := openKickstand(sys, stand, cli.Value(args, "--kickstand", ""))
 		if err != nil {
 			return err
 		}
 		defer switchDevice.Close()
-		if standClosed, err = switchDevice.Closed(); err != nil {
-			return fmt.Errorf("kickstand: %w", err)
-		}
-		go switchDevice.Watch(standChanges)
 	}
 
 	device, err := newTabletSwitch(cli.Value(args, "--uinput", "/dev/uinput"), "ODDC Tablet Mode Switch")
@@ -66,7 +61,7 @@ func RunTabletMode(args []string) error {
 	}
 	defer device.Close()
 
-	tablet := oddc.TabletMode(keyboards, oddc.ReadDevices(sys), standClosed)
+	tablet := oddc.TabletMode(keyboards, oddc.ReadDevices(sys))
 	if err := device.SetSwitch(swTablet, tablet); err != nil {
 		return err
 	}
@@ -82,23 +77,18 @@ func RunTabletMode(args []string) error {
 			if !open {
 				return errors.New("uevent socket closed")
 			}
-		case closed, open := <-standChanges:
-			if !open {
-				return errors.New("kickstand switch gone")
-			}
-			standClosed = closed
 		case <-settle:
 			settle, settled = nil, true
 		}
 
-		now := oddc.TabletMode(keyboards, oddc.ReadDevices(sys), standClosed)
+		now := oddc.TabletMode(keyboards, oddc.ReadDevices(sys))
 		switch {
 		case now == tablet:
 			settle = nil
 			continue
 		case !now && !settled:
 			// Laptop mode only once it holds: keyboards bounce on their
-			// connector, stands on their hinge.
+			// connector.
 			if settle == nil {
 				settle = time.After(attachSettle)
 			}

@@ -163,10 +163,11 @@ device. The NixOS module names that node and runs it as
 its own (`capabilities.tabletModeSwitch` false) whose detachable keyboard
 leaves its bus when detached (`detachSignal: bus-presence` on its
 placement). It offers a virtual `SW_TABLET_MODE` switch: on while no such
-keyboard is present or, when the model has `capabilities.kickstandSwitch`,
-while the firmware reports the stand closed; off once neither has held for
-two seconds. It follows the kernel's device events and holds the stand's
-own switch, so the desktop sees only one. The NixOS module names that
+keyboard is present, off once one has been back for two seconds. The stand
+plays no part: with the keyboard attached the machine is a laptop, stand
+open or closed. When the model has `capabilities.kickstandSwitch`, which
+the firmware reports as `SW_TABLET_MODE` too, it holds that switch, so the
+desktop sees only one. It follows the kernel's device events. The NixOS module names that
 switch `/dev/oddc/kickstand` and runs it as
 `oddc-tablet-mode.service` (`oddc.tabletMode.enable`, default on).
 `status` reports each model (`--device ID`, default the deployed model,
