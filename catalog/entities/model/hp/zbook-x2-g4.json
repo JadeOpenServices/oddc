@@ -264,12 +264,20 @@
             "preset2": "KEY_MACRO_PRESET2",
             "preset3": "KEY_MACRO_PRESET3"
           }
+        },
+        "tabletMode": {
+          "from": "keyboard-presence"
         }
       },
       "kernel": {
         "parameters": {
           "intelHid5ButtonArray": "intel_hid.enable_5_button_array=1",
           "memSleepDeep": "mem_sleep_default=deep"
+        }
+      },
+      "sensors": {
+        "orientation": {
+          "service": "iio-sensor-proxy"
         }
       },
       "thermal": {

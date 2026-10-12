@@ -26,12 +26,17 @@ let
   kickstand = lib.attrByPath [ "capabilities" "kickstandSwitch" ] null resolved;
   hasKickstand = builtins.isAttrs kickstand && (kickstand.acpiId or "") != "";
 
-  enabled = signalling != { } && !switchWorks && config.oddc.tabletMode.enable;
+  # The model's policy provides tablet mode from the keyboard's presence;
+  # the keyboard and switch facts alone switch nothing on.
+  from = lib.attrByPath [ "policy" "input" "tabletMode" "from" ] null resolved;
+
+  enabled = from != null && config.oddc.tabletMode.enable;
 
   # Only what `oddc tabletmode` reads, in resolved layout.
   tabletModeView = pkgs.writeText "oddc-tablet-mode.json" (
     builtins.toJSON {
       hardware.input.keyboard = keyboards;
+      policy.input.tabletMode.from = from;
       capabilities = {
         tabletModeSwitch = switchWorks;
       }
@@ -45,11 +50,18 @@ in
     default = true;
     description = ''
       Provide a tablet mode switch from the presence of the model's detachable
-      keyboard, for models without a working one. Has no effect elsewhere.
+      keyboard, for models whose policy says so (policy.input.tabletMode.from
+      = "keyboard-presence"). Has no effect elsewhere.
     '';
   };
 
   config = lib.mkIf enabled {
+    assertions = [
+      {
+        assertion = from == "keyboard-presence" && signalling != { } && !switchWorks;
+        message = "oddc: policy.input.tabletMode.from is ${toString from}; only keyboard-presence is known, and it needs a detachable keyboard with detachSignal bus-presence on a model without a working tablet mode switch";
+      }
+    ];
     boot.kernelModules = [ "uinput" ];
 
     # The stand's input device, by the ACPI device it belongs to.

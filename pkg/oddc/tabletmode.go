@@ -17,10 +17,14 @@ type DetachableKeyboard struct {
 }
 
 // TabletModeKeyboards lists the detachable keyboards of a resolved model
-// whose presence signals tablet mode. A model with a working tablet mode
-// switch (capabilities.tabletModeSwitch true) has none: the switch is the
-// signal there.
+// whose presence signals tablet mode. Only a model whose policy says so
+// (policy.input.tabletMode.from "keyboard-presence") has any: the keyboard
+// facts alone switch nothing on. A model with a working tablet mode switch
+// (capabilities.tabletModeSwitch true) has none: the switch is the signal.
 func TabletModeKeyboards(resolved map[string]any) []DetachableKeyboard {
+	if from, _ := Lookup(resolved, "policy.input.tabletMode.from"); from != "keyboard-presence" {
+		return nil
+	}
 	if working, _ := Lookup(resolved, "capabilities.tabletModeSwitch"); working == true {
 		return nil
 	}

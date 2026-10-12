@@ -7,6 +7,11 @@
 }:
 
 let
+  # The model's policy runs the orientation sensor service; the sensor
+  # alone switches nothing on.
+  policy = lib.attrByPath [ "policy" "sensors" "orientation" ] null config.oddc.resolved;
+  service = if builtins.isAttrs policy then policy.service or null else null;
+
   # The model has an orientation sensor it was proven with.
   hasSensor =
     lib.attrByPath [
@@ -34,13 +39,19 @@ in
     type = lib.types.bool;
     default = true;
     description = ''
-      Run the orientation sensor service (iio-sensor-proxy) for a model that has
-      an orientation sensor. Turning the screen is left to the desktop. Has no
-      effect on a model without one.
+      Run the orientation sensor service (iio-sensor-proxy) for a model whose
+      policy names it (policy.sensors.orientation.service). Turning the screen
+      is left to the desktop. Has no effect on other models.
     '';
   };
 
-  config = lib.mkIf (hasSensor && config.oddc.sensors.orientation.enable) {
+  config = lib.mkIf (service != null && config.oddc.sensors.orientation.enable) {
+    assertions = [
+      {
+        assertion = service == "iio-sensor-proxy" && hasSensor;
+        message = "oddc: policy.sensors.orientation names service ${toString service}, but only iio-sensor-proxy on a model whose sensor hub provides orientation is known";
+      }
+    ];
     hardware.sensor.iio.enable = lib.mkDefault true;
   };
 }
