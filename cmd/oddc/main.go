@@ -39,6 +39,7 @@ var commands = []struct {
 	{"scaffold", contribute.RunScaffold},
 	{"evidence", contribute.RunEvidence},
 	{"contribute", contribute.RunContribute},
+	{"quirk", contribute.RunQuirk},
 }
 
 func run(args []string) error {
