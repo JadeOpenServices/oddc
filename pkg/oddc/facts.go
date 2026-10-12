@@ -3,6 +3,7 @@
 package oddc
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -48,8 +49,9 @@ func ReadFacts(sysRoot string) Facts {
 	}
 }
 
-// ReadDevices lists the PCI, USB and HID device IDs below sysRoot. Buses
-// without a sysfs directory are left out.
+// ReadDevices lists the PCI, USB and HID device IDs below sysRoot, and
+// the built-in panels' EDID IDs as bus "edid". Buses without a sysfs
+// directory are left out.
 func ReadDevices(sysRoot string) map[string][]string {
 	devices := map[string][]string{}
 
@@ -74,7 +76,51 @@ func ReadDevices(sysRoot string) map[string][]string {
 		devices[bus] = list
 	}
 
+	if panels := ReadPanelIDs(sysRoot); len(panels) != 0 {
+		devices["edid"] = panels
+	}
+
 	return devices
+}
+
+// ReadPanelIDs reads the EDID of each built-in panel (DRM connectors
+// eDP, LVDS and DSI) below sysRoot and returns their IDs, "mmm:pppp": the
+// PNP manufacturer code and product code in lowercase hex. The serial
+// number in the EDID is never read.
+func ReadPanelIDs(sysRoot string) []string {
+	var ids []string
+	for _, pattern := range []string{"card*-eDP-*", "card*-LVDS-*", "card*-DSI-*"} {
+		connectors, _ := filepath.Glob(filepath.Join(sysRoot, "class", "drm", pattern))
+		for _, connector := range connectors {
+			edid, err := os.ReadFile(filepath.Join(connector, "edid"))
+			if err != nil {
+				continue
+			}
+			if id := EDIDPanelID(edid); id != "" && !slices.Contains(ids, id) {
+				ids = append(ids, id)
+			}
+		}
+	}
+	sort.Strings(ids)
+	return ids
+}
+
+// EDIDPanelID is the panel ID of an EDID base block: the three-letter
+// PNP manufacturer code (bytes 8-9) and the product code (bytes 10-11,
+// little endian), as "lgd:05a4". It is "" for a short or headerless EDID.
+func EDIDPanelID(edid []byte) string {
+	header := []byte{0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00}
+	if len(edid) < 128 || string(edid[:8]) != string(header) {
+		return ""
+	}
+	code := uint16(edid[8])<<8 | uint16(edid[9])
+	manufacturer := []byte{
+		byte(code>>10&0x1f) + 'a' - 1,
+		byte(code>>5&0x1f) + 'a' - 1,
+		byte(code&0x1f) + 'a' - 1,
+	}
+	product := uint16(edid[10]) | uint16(edid[11])<<8
+	return string(manufacturer) + ":" + fmt.Sprintf("%04x", product)
 }
 
 // ReadDrivers lists the kernel drivers bound to each device ID below

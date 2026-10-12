@@ -1,0 +1,49 @@
+{
+  "identity": {
+    "formFactor": "laptop",
+    "systemVendor": "SAMSUNG ELECTRONICS CO., LTD.",
+    "productName": "Galaxy Book 12 LTE",
+    "productVersion": "P04HAC",
+    "boardVendor": "SAMSUNG ELECTRONICS CO., LTD.",
+    "boardName": "SM-W728NZKADBT",
+    "boardVersion": "SGL8766A6C-C01-G001-S0002+10.0.16299"
+  },
+  "devices": {
+    "hid": [
+      "04e8:a00a",
+      "06cb:5810",
+      "2d1f:000b"
+    ],
+    "pci": [
+      "168c:003e",
+      "8086:1903",
+      "8086:1919",
+      "8086:5904",
+      "8086:5916",
+      "8086:9d03",
+      "8086:9d12",
+      "8086:9d21",
+      "8086:9d23",
+      "8086:9d27",
+      "8086:9d2d",
+      "8086:9d2f",
+      "8086:9d31",
+      "8086:9d32",
+      "8086:9d3a",
+      "8086:9d4e",
+      "8086:9d60",
+      "8086:9d61",
+      "8086:9d62",
+      "8086:9d63",
+      "8086:9d66",
+      "8086:9d71"
+    ],
+    "usb": [
+      "04e8:a00a",
+      "0bda:8156",
+      "0cf3:e300",
+      "1d6b:0002",
+      "1d6b:0003"
+    ]
+  }
+}

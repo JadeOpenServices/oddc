@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Quirk",
+  "metadata": {
+    "id": "quirk/common/render-on-output-gpu",
+    "name": "Render on the GPU that drives the screens in use"
+  },
+  "data": {
+    "renderGpu": {
+      "default": "integrated"
+    },
+    "requires": {
+      "discreteDriver": "hardware.graphics.discrete.driver",
+      "integratedDriver": "hardware.graphics.integrated.driver"
+    }
+  },
+  "sources": {
+    "zbookX2G4Measured": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "On hybrid machines whose screens hang off different GPUs, a compositor renders every screen on one GPU and copies each frame to screens of the other. Measured on the HP ZBook x2 G4 (Hyprland 0.55, panel on Intel HD 620, HDMI and USB-C on the Quadro M620): rendering on the Quadro with only the panel in use cost Hyprland about 29% CPU at idle, held the Quadro in P0 and made the cursor choppy; rendering on Intel cost about 1% and kept the Quadro in P8, but an external screen on the Quadro lagged. So render on the default (integrated) GPU while only its screens are in use, and on the other GPU when one of its screens is connected; the choice holds until the compositor restarts. Each model that enables this proves it with its own evidence."
+    }
+  }
+}

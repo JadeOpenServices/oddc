@@ -23,6 +23,11 @@ var commands = []struct {
 	{"fetch", system.RunFetch},
 	{"doctor", system.RunDoctor},
 	{"update", system.RunUpdate},
+	{"quickkeys", system.RunQuickKeys},
+	{"tabletmode", system.RunTabletMode},
+	{"touchpad", system.RunTouchpad},
+	{"display", system.RunDisplay},
+	{"rendergpu", system.RunRenderGPU},
 	{"validate", catalog.Run},
 	{"list", catalog.Run},
 	{"index", catalog.Run},
@@ -35,6 +40,7 @@ var commands = []struct {
 	{"scaffold", contribute.RunScaffold},
 	{"evidence", contribute.RunEvidence},
 	{"contribute", contribute.RunContribute},
+	{"quirk", contribute.RunQuirk},
 }
 
 func run(args []string) error {

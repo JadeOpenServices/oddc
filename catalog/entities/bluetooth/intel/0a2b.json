@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "usb",
+    "deviceId": "8087:0a2b",
+    "driver": "btusb",
+    "vendor": {
+      "name": "Intel"
+    }
+  },
+  "kind": "BluetoothComponent",
+  "metadata": {
+    "id": "bluetooth/intel/0a2b",
+    "name": "Intel 0a2b Bluetooth"
+  }
+}

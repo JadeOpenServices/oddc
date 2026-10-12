@@ -43,8 +43,6 @@
         }
       },
       "framing": {
-        "byte1": 0,
-        "byte2": 0,
         "byte5": 1
       },
       "presetByteOffset": 4,

@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "identification": {
+      "hdaVendorId": "14f1:2008"
+    },
+    "model": {
+      "name": "CX8200"
+    },
+    "vendor": {
+      "name": "Conexant"
+    }
+  },
+  "kind": "AudioCodecComponent",
+  "metadata": {
+    "id": "audio/conexant/cx8200",
+    "name": "Conexant CX8200"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "pci",
+    "deviceId": "8086:15d4",
+    "driver": "xhci_hcd",
+    "model": {
+      "name": "JHL6540 (Alpine Ridge 4C)"
+    },
+    "vendor": {
+      "name": "Intel"
+    },
+    "presence": "The USB controller appears only while a device is attached to a USB-C port."
+  },
+  "kind": "ThunderboltComponent",
+  "metadata": {
+    "id": "thunderbolt/intel/jhl6540",
+    "name": "Intel JHL6540 Thunderbolt 3 USB controller"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "pci",
+    "deviceId": "8086:24fd",
+    "driver": "iwlwifi",
+    "model": {
+      "name": "Dual Band Wireless-AC 8265"
+    },
+    "vendor": {
+      "name": "Intel"
+    }
+  },
+  "kind": "WifiComponent",
+  "metadata": {
+    "id": "wifi/intel/8265",
+    "name": "Intel Dual Band Wireless-AC 8265"
+  }
+}

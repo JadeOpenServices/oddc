@@ -354,10 +354,16 @@ Generic capability modules implement reusable behavior:
     ├── deployment.nix
     ├── public-interface.nix
     ├── capabilities/
-    │   └── fw-fanctrl.nix
+    │   ├── alps-touchpad.nix
+    │   ├── fw-fanctrl.nix
+    │   ├── orientation.nix
+    │   ├── quick-keys.nix
+    │   ├── thermald.nix
+    │   └── tablet-mode.nix
     └── quirks/
         ├── fprintd.nix
         ├── kernel-fallback.nix
+        ├── pch-pme-sci.nix
         └── runtime-power.nix
 
 The catalog determines which capabilities and quirks apply.
@@ -376,7 +382,14 @@ reads a vendor or model ID to decide what to do.
 | `quirks/fprintd.nix` | `quirks.*.fprintd`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/fprintd.nix` | `hardware.security.fingerprint.primary.{bus,deviceId}` | the fingerprint component entity |
 | `quirks/kernel-fallback.nix` | `quirks.*.affected.kernel.{minimum,maximumBefore}`, `quirks.*.fallbackPackage`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
+| `quirks/pch-pme-sci.nix` | `quirks.*.pchPmeSci.{action,rootPorts}`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/runtime-power.nix` | `quirks.*.runtimePower`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
+| `capabilities/alps-touchpad.nix` | `hardware.input.keyboard.primary.{deviceId,bluetooth.deviceId,touchpad}` (`touchpad.protocol` `alps-u1-report-passthrough`) | the keyboard component entity |
+| `capabilities/orientation.nix` | `hardware.sensors.hub.provides.orientation`, also exposed read-only as `oddc.sensors.orientation.present` | the device model |
+| `capabilities/quick-keys.nix` | `hardware.input.quickKeys.primary.{deviceId,access.mappable,protocol}` | the Quick Keys component entity |
+| `capabilities/quick-keys.nix` | `policy.input.quickKeys.{keymap,presetKeys}` | the device model |
+| `capabilities/thermald.nix` | `policy.thermal.daemon` (`thermald`) | the device model |
+| `capabilities/tablet-mode.nix` | `hardware.input.keyboard.*.{attachment,detachSignal,bus,deviceId}`, `capabilities.{tabletModeSwitch,kickstandSwitch}` | the device model; `bus`, `deviceId` the keyboard component entity |
 | `deployment.nix` | the whole resolved view, written to `/etc/oddc/resolved.json` | each value's own owner |
 
 Policy no module here reads, such as `vendor.policy.secureBoot` or
@@ -424,6 +437,31 @@ quirk of the same kind needs no new Nix.
 The device model references the quirk ID.
 
 It must not copy the implementation or the quirk metadata.
+
+### Shared quirks
+
+A quirk is one behaviour, not one machine. When several models need the
+same behaviour, they reference the same quirk entity; nobody writes a second
+entity with the same data. The quirk holds only what is the same for all of
+them. What differs per machine (which GPU, which port) stays a fact of the
+model or its components, and the implementation reads it from there.
+
+Sharing a quirk shares the definition, never the proof: each model that
+enables it needs its own evidence with `quirks.KEY=pass`. Facts never switch
+a quirk on; only the model's reference does.
+
+A quirk may name the resolved paths it needs, each under a name of its
+own (paths are values, never keys: a key with dots would read as a path of
+the model once the quirk is enabled):
+
+    "requires": {
+      "discreteDriver": "hardware.graphics.discrete.driver",
+      "integratedDriver": "hardware.graphics.integrated.driver"
+    }
+
+`oddc quirk enable QUIRK` refuses a model that lacks one of them, adds the
+reference and prints the evidence step. `oddc quirk share` merges quirk
+entities that hold the same data.
 
 `mkForce` is permitted only where a documented safety or compatibility boundary genuinely requires it.
 
@@ -648,7 +686,14 @@ If adding one laptop requires six device-specific Nix and JSON files, stop and r
 
 ## 18. Forbidden duplication
 
-CI should eventually reject these patterns:
+`oddc validate`, and so CI, rejects these already:
+
+- two quirk entities with the same data;
+- quirk data written into a model next to its reference;
+- a device (bus and deviceId) described inside a model instead of referenced;
+- two component entities claiming the same bus and deviceId.
+
+CI should eventually reject these patterns too:
 
 - the same PCI or USB component facts copied into multiple models;
 - canonical fan policy copied into a runtime profile;
@@ -818,3 +863,16 @@ Examples that belong in ODDC:
 
 The canonical graph describes the hardware-specific condition or policy.
 Reusable Nix modules implement it.
+
+
+## Licence and copyright
+
+ODDC belongs to everyone who works on it. No person or company holds it.
+
+- Every file carries only `SPDX-License-Identifier: GPL-3.0-or-later`. Do not
+  add a personal `Copyright (C) <name>` line, author tag or maintainer list.
+- Where a format needs a copyright line, for example a driver sent to an
+  upstream project, it reads `Copyright (C) <year> The ODDC contributors`.
+- There is no contributor licence agreement. Each contribution stays under
+  GPL-3.0-or-later from its author, so no one can relicense the collection or
+  take it closed on their own.

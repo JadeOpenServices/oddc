@@ -69,7 +69,8 @@ Anyone may open a pull request. Only maintainers merge.
 - **Only maintainers and collaborators verify.** Anyone may add
   `documented` or `detected` evidence; `runtime-verified` and
   `hardware-validated` evidence comes only from maintainers and repository
-  collaborators ([VERIFY.md](VERIFY.md)).
+  collaborators ([VERIFY.md](VERIFY.md)). Write access to the repository
+  is what counts, so members may keep their organisation membership private.
 - A bot enforces these rules on every pull request and explains any
   rejection in a comment: `.github/workflows/pr-rules.yml`. A pull request
   with a second device or passing evidence from anyone else fails its
@@ -124,6 +125,11 @@ For users:
     oddc status                  # is the deployed model verified by evidence?
     oddc update [--switch]       # take the newest ODDC of the stage the system follows
     oddc update --stage staging  # follow staging instead; --stage main returns to releases
+    oddc quickkeys               # Quick Keys to key presses; the NixOS module runs it
+    oddc tabletmode              # tablet mode switch from a detachable keyboard's presence
+    oddc touchpad                # an Alps keyboard touchpad as a multitouch touchpad (USB, Bluetooth)
+    oddc display                 # the built-in panel: size, density and valid scales (JSON)
+    oddc rendergpu               # the DRM devices for the compositor, render GPU first
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full
@@ -139,7 +145,42 @@ fetches a named model instead.
 `classify` reads the local catalog (`--root`, `/etc/oddc` on a deployed
 system) and this machine's DMI and PCI/USB/HID IDs from `/sys`
 (`--sys DIR`), or facts from `--facts FILE`; it exits non-zero unless
-exactly one model matches. `doctor` works offline on `/etc/oddc`.
+exactly one model matches. `doctor` works offline on `/etc/oddc`. It names every component of the deployed model
+that cannot be used on Linux (`support.linux` on its entity), with the
+reason, as `INFO`; that never fails it.
+`quickkeys` reads a model's Quick Keys from their hidraw node (`--device`,
+default `/dev/oddc/quickkeys`) and sends the key that
+`policy.input.quickKeys.keymap` names for the active preset on a virtual
+keyboard (`/dev/uinput`); the preset switch sends the key
+`policy.input.quickKeys.presetKeys` names for the preset it selects. The
+service writes the active preset's name to `/run/oddc/quick-keys/preset`
+whenever a report shows it changed; the file is absent until the first
+key press after boot. It refuses any node that is not the model's
+device. The NixOS module names that node and runs it as
+`oddc-quick-keys.service` for a model whose Quick Keys are mappable
+(`oddc.quickKeys.enable`, default on); keys are rebound with
+`oddc.overrides.policy.input.quickKeys.keymap.<preset>.<button>`.
+
+`tabletmode` is for models without a switch that reports tablet mode on
+its own (`capabilities.tabletModeSwitch` false) whose detachable keyboard
+leaves its bus when detached (`detachSignal: bus-presence` on its
+placement). It offers a virtual `SW_TABLET_MODE` switch: on while no such
+keyboard is present, off once one has been back for two seconds. The stand
+plays no part: with the keyboard attached the machine is a laptop, stand
+open or closed. When the model has `capabilities.kickstandSwitch`, which
+the firmware reports as `SW_TABLET_MODE` too, it holds that switch, so the
+desktop sees only one. It follows the kernel's device events. The NixOS module names that
+switch `/dev/oddc/kickstand` and runs it as
+`oddc-tablet-mode.service` (`oddc.tabletMode.enable`, default on).
+`rendergpu` prints the DRM devices for the compositor, the one to render
+on first, separated by `:` (aquamarine's `AQ_DRM_DEVICES`). It applies the
+model's enabled `renderGpu` quirk (`quirk/common/render-on-output-gpu`) to
+the screens connected now: the quirk's default GPU while only its screens
+are in use, the other GPU once one of that GPU's screens is connected. It
+matches each `/sys/class/drm/cardN` to a GPU under `hardware.graphics` by
+the driver bound to it. A model without the quirk gets an error, never a
+guess. A compositor keeps its render GPU until it restarts, so the
+session runs it at login; `--explain` writes the reasoning to stderr.
 `status` reports each model (`--device ID`, default the deployed model,
 else all) as `verified`, `changed` or `unverified`. A model is
 `verified` when its newest passing evidence (`runtime-verified` or
@@ -167,6 +208,8 @@ For contributors:
     oddc workspace --branch verify/<vendor>/<model>   # follow a model's verify branch instead
     oddc scaffold                # draft a model entity for this machine
     oddc evidence record         # add an evidence record for this machine
+    oddc quirk enable QUIRK      # adopt a shared quirk for this machine's model
+    oddc quirk share             # merge quirk entities that hold the same data
     oddc contribute              # check the changes and open a pull request
 
 The workspace is `$XDG_DATA_HOME/oddc`, by default `~/.local/share/oddc` (`--root DIR`);
@@ -175,6 +218,13 @@ that the followed branch now holds unchanged, such as a merged
 contribution. `--branch` switches to `staging` or a verify branch, which
 later updates keep following; git refuses when local changes would be
 lost.
+
+`quirk enable` checks the quirk's `requires` against the model, adds the
+reference (`--device`, `--name` to choose), and prints the evidence step: the
+model is verified again only with `quirks.KEY=pass` from its own machine.
+`quirk share` keeps the first of several quirk entities with the same data,
+points every model at it and lists the models that need new evidence;
+anything it cannot merge itself, it lists for you to fix.
 
 `scaffold` refuses a machine that already matches. Its draft holds the
 DMI vendor, product and board name, the vendor and class entities, and

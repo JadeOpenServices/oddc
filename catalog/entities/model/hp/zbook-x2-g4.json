@@ -2,22 +2,98 @@
   "$schema": "../../../../schemas/entity.schema.json",
   "apiVersion": "oddc.openjade.de/v2",
   "data": {
+    "capabilities": {
+      "chargeThresholds": false,
+      "kickstandSwitch": {
+        "acpiId": "INT33D6",
+        "closedValue": 1,
+        "switch": "SW_TABLET_MODE"
+      },
+      "tabletModeSwitch": false
+    },
     "class": {
       "ref": "class/laptop"
     },
     "hardware": {
+      "audio": {
+        "codec": {
+          "ref": "audio/conexant/cx8200"
+        },
+        "controller": {
+          "ref": "audio/intel/sunrise-point-lp-hda"
+        }
+      },
+      "camera": {
+        "front": {
+          "attachment": "internal",
+          "ref": "camera/chicony/b5e7",
+          "usbPort": {
+            "connectType": "hardwired",
+            "controller": "hardware.usb.controller",
+            "hub": "usb2",
+            "port": 9
+          }
+        },
+        "rear": {
+          "attachment": "internal",
+          "ref": "camera/realtek/5666",
+          "usbPort": {
+            "connectType": "hardwired",
+            "controller": "hardware.usb.controller",
+            "hub": "usb3",
+            "port": 2
+          }
+        }
+      },
+      "display": {
+        "internal": {
+          "primary": {
+            "connector": "eDP",
+            "ref": "display/lgd/05a4"
+          }
+        }
+      },
       "graphics": {
         "discrete": {
-          "ref": "graphics/nvidia/quadro-m620"
+          "ref": "graphics/nvidia/quadro-m620",
+          "outputs": {
+            "hdmi": {
+              "connector": "DP",
+              "note": "the HDMI port: the GPU drives it as dual-mode DisplayPort; HDMI 1.4, 4K at 30 Hz at most"
+            },
+            "usbC": {
+              "connector": "DP",
+              "note": "DisplayPort over the USB-C ports (Thunderbolt 3 DP-in from this GPU)"
+            }
+          }
         },
         "integrated": {
           "driver": "i915",
           "vendor": {
             "name": "Intel"
+          },
+          "outputs": {
+            "internal": {
+              "connector": "eDP",
+              "display": "hardware.display.internal.primary"
+            }
           }
         }
       },
       "input": {
+        "keyboard": {
+          "primary": {
+            "attachment": "detachable",
+            "detachSignal": "bus-presence",
+            "ref": "keyboard/nxp/1fc9-0088",
+            "usbPort": {
+              "connectType": "hardwired",
+              "controller": "hardware.usb.controller",
+              "hub": "usb2",
+              "port": 4
+            }
+          }
+        },
         "pen": {
           "primary": {
             "ref": "pen/wacom/056a-016c"
@@ -25,13 +101,117 @@
         },
         "quickKeys": {
           "primary": {
-            "ref": "quickkeys/hp/03f0-0a56"
+            "attachment": "internal",
+            "layout": {
+              "button1": {
+                "edge": "right",
+                "fromTop": 1
+              },
+              "button2": {
+                "edge": "right",
+                "fromTop": 2
+              },
+              "button3": {
+                "edge": "right",
+                "fromTop": 3
+              },
+              "button4": {
+                "edge": "right",
+                "fromTop": 4
+              },
+              "button5": {
+                "edge": "right",
+                "fromTop": 5
+              },
+              "button6": {
+                "edge": "right",
+                "fromTop": 6
+              }
+            },
+            "ref": "quickkeys/hp/03f0-0a56",
+            "usbPort": {
+              "connectType": "hardwired",
+              "controller": "hardware.usb.controller",
+              "hub": "usb2",
+              "port": 2
+            }
           }
         },
         "touchscreen": {
           "primary": {
             "ref": "touchscreen/03eb-8abb"
           }
+        }
+      },
+      "network": {
+        "bluetooth": {
+          "primary": {
+            "attachment": "internal",
+            "ref": "bluetooth/intel/0a2b",
+            "usbPort": {
+              "connectType": "hardwired",
+              "controller": "hardware.usb.controller",
+              "hub": "usb2",
+              "port": 7
+            }
+          }
+        },
+        "wifi": {
+          "primary": {
+            "ref": "wifi/intel/8265"
+          }
+        }
+      },
+      "security": {
+        "fingerprint": {
+          "primary": {
+            "attachment": "internal",
+            "ref": "fingerprint/validity/003f",
+            "usbPort": {
+              "connectType": "hardwired",
+              "controller": "hardware.usb.controller",
+              "hub": "usb2",
+              "port": 8
+            }
+          }
+        }
+      },
+      "sensors": {
+        "hub": {
+          "imu": {
+            "model": {
+              "name": "LSM9DS1"
+            },
+            "vendor": {
+              "name": "STMicroelectronics"
+            }
+          },
+          "provides": {
+            "accelerometer": true,
+            "gyroscope": true,
+            "inclinometer": true,
+            "magnetometer": true,
+            "orientation": true
+          },
+          "ref": "sensorhub/intel/sunrise-point-lp-ish"
+        }
+      },
+      "storage": {
+        "cardReader": {
+          "primary": {
+            "ref": "cardreader/realtek/rts522a"
+          }
+        }
+      },
+      "usb": {
+        "controller": {
+          "attachment": "internal",
+          "ref": "usbcontroller/intel/sunrise-point-lp-xhci"
+        }
+      },
+      "usbC": {
+        "thunderbolt": {
+          "ref": "thunderbolt/intel/jhl6540"
         }
       }
     },
@@ -53,6 +233,57 @@
         "discrete": {
           "driverBranch": "legacy_580"
         }
+      },
+      "input": {
+        "quickKeys": {
+          "keymap": {
+            "preset1": {
+              "button1": "KEY_MACRO1",
+              "button2": "KEY_MACRO2",
+              "button4": "KEY_MACRO3",
+              "button5": "KEY_MACRO4",
+              "button6": "KEY_MACRO5"
+            },
+            "preset2": {
+              "button1": "KEY_MACRO6",
+              "button2": "KEY_MACRO7",
+              "button4": "KEY_MACRO8",
+              "button5": "KEY_MACRO9",
+              "button6": "KEY_MACRO10"
+            },
+            "preset3": {
+              "button1": "KEY_MACRO11",
+              "button2": "KEY_MACRO12",
+              "button4": "KEY_MACRO13",
+              "button5": "KEY_MACRO14",
+              "button6": "KEY_MACRO15"
+            }
+          },
+          "presetKeys": {
+            "preset1": "KEY_MACRO_PRESET1",
+            "preset2": "KEY_MACRO_PRESET2",
+            "preset3": "KEY_MACRO_PRESET3"
+          }
+        }
+      },
+      "kernel": {
+        "parameters": {
+          "intelHid5ButtonArray": "intel_hid.enable_5_button_array=1",
+          "memSleepDeep": "mem_sleep_default=deep"
+        }
+      },
+      "thermal": {
+        "daemon": "thermald"
+      }
+    },
+    "quirks": {
+      "pchPmeGpe69Storm": {
+        "enabled": true,
+        "ref": "quirk/hp/zbook-x2-g4-pch-pme-gpe69"
+      },
+      "renderOnOutputGpu": {
+        "enabled": true,
+        "ref": "quirk/common/render-on-output-gpu"
       }
     },
     "support": {
@@ -68,5 +299,59 @@
   "metadata": {
     "id": "model/hp/zbook-x2-g4",
     "name": "HP ZBook x2 G4"
+  },
+  "sources": {
+    "detachSignal": {
+      "observedAt": "2026-10-10",
+      "reason": "Detaching the keyboard removes 1fc9:0088 from USB and attaching adds it back (libinput, kernel log). The embedded controller raises no event for it: with ACPI EC debugging on, a charger unplug raised Query(0x09), a detach raised none. So presence on the bus is the only tablet mode signal.",
+      "type": "validation"
+    },
+    "intelHid5ButtonArray": {
+      "observedAt": "2026-10-10",
+      "reason": "Volume buttons send nothing: intel-hid enables the 5-button array only for machines in its button_array_table, which lacks this model. With the parameter, the Intel HID 5 button array device sends KEY_VOLUMEUP and KEY_VOLUMEDOWN (tested on kernel 7.2.2).",
+      "reference": "drivers/platform/x86/intel/hid.c button_array_table",
+      "removeWhen": "the kernel in use lists the HP ZBook x2 G4 in button_array_table",
+      "type": "validation"
+    },
+    "kickstandSwitch": {
+      "observedAt": "2026-10-10",
+      "reason": "Guided test on the machine: Intel Virtual Switches (INT33D6) sets SW_TABLET_MODE to 0 when the stand opens and 1 when it closes, with the keyboard attached in front. Folding the keyboard behind (only possible with the stand closed) and detaching it change nothing there. The switch flips at one stand angle; opening further changes nothing. A guided test of the combined switch (stand, detach, reattach in both stand positions) gave tablet mode exactly when the stand was closed or the keyboard gone.",
+      "type": "validation"
+    },
+    "memSleepDeep": {
+      "observedAt": "2026-10-11",
+      "reason": "The FADT declares no Low Power S0 support and the DSDT has no LPS0 _DSM, but _S3 is declared: s2idle never reaches S0ix here, so suspend must use S3. The kernel picks deep by itself today (/sys/power/mem_sleep 's2idle [deep]'); the parameter pins it. Overnight in suspend the battery stayed at 86 %.",
+      "type": "validation"
+    },
+    "tabletModeSwitch": {
+      "observedAt": "2026-10-10",
+      "reason": "No switch reports tablet mode on its own: Intel Virtual Switches follows the kickstand (kickstandSwitch), HP WMI hotkeys never changes, and detaching the keyboard raises no event at all (kernel 7.2.2). Tablet mode is the stand closed or the keyboard gone.",
+      "type": "validation"
+    },
+    "thermal": {
+      "observedAt": "2026-10-11",
+      "reason": "The firmware's DPTF tables (SSDT _TRT on SEN1/SEN2 throttling the CPU, PPCC power limits) are only enforced by a DPTF daemon; int3400/int3403 are bound but nothing acts on them without thermald, which reads the adaptive tables with --adaptive.",
+      "type": "validation"
+    },
+    "usbPort": {
+      "observedAt": "2026-10-10",
+      "reason": "Read on the machine from sysfs: each built-in USB device sits on the PCH xHCI 0000:00:14.0 (8086:9d2f), port/connect_type hardwired, removable fixed; USB 2 root hub ports 2, 4, 7, 8, 9 and USB 3 root hub port 2. A USB stick on a USB-C port showed up on the Thunderbolt controller as hotplug, removable.",
+      "type": "validation"
+    },
+    "graphicsRender": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Measured on the machine (Hyprland 0.55, NVIDIA 580.173.02, kernel 7.2.2): the eDP panel is driven only by the Intel HD 620, HDMI (DP-3) and USB-C (DP-4) only by the Quadro M620. A compositor renders all screens on one GPU and copies each frame to screens of the other one. Rendering on the Quadro with only the panel in use: Hyprland about 29% CPU at idle, the Quadro held in P0 at 1019 MHz, cursor choppy. Rendering on Intel: Hyprland about 1%, the Quadro in P8 at 135 MHz, cursor smooth, but a 4K HDMI screen on the Quadro (30 Hz at that mode) lags. So the cheap choice is the GPU that owns the screens in use."
+    },
+    "thermalSensors": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Read on the machine at light load: x86_pkg_temp and coretemp 61 C, B0D4 (processor participant) 63 C, pch_skylake 44 C, iwlwifi 51 C, acpitz zones 32-51 C, SEN1 39 C, SEN2 44 C, NVMe 36 C. The package sensor sits on the cores and moves by about 15 C within a second on short load bursts (seen as 47, 63, 56, 47 in a desktop bar); the PCH and acpitz zones move slowly. A display that wants a steady value should average the package sensor over a few seconds or show a slow zone."
+    },
+    "postures20261012": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Guided test in six postures (ODDC 85814de), every tablet-mode source read at once: Intel Virtual Switches (INT33D6, the stand) is 1 exactly when the stand is closed; hp-wmi's sysfs tablet mirrors it; hp-wmi's dock reads 1 in every posture, keyboard detached too; the HP WMI hotkeys input device has SW_TABLET_MODE but it stayed 0 in all six (hp-wmi updates it only on dock events, which never came). Keyboard folded behind the screen reads exactly like keyboard in front with the stand closed on every source, so no sensor tells the two apart. ODDC's tablet mode switch was 1 exactly when the keyboard was off USB. The HP WMI device also carries HP's hotkeys, so holding its switch would swallow those; it is left alone, as it never changes."
+    }
   }
 }
