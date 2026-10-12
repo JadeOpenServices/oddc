@@ -13,6 +13,10 @@ the `oddc` command. [docs/CONTRACT.md](docs/CONTRACT.md) says what
 consumers outside Nix can rely on. [docs/SECURITY.md](docs/SECURITY.md)
 shows how to report a security finding.
 
+AI use is encouraged for contributions: point your assistant (Claude Code,
+Codex or your own) at [docs/AI.md](docs/AI.md). Contributions whose AI drifted
+from those rules will most likely be rejected and have to be redone.
+
 ## Canonical storage
 
 Canonical entities live under `catalog/entities/`. The registry contains

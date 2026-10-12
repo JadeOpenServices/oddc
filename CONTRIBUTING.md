@@ -14,6 +14,14 @@ This document defines how ODDC data is structured, how contributors add hardware
 
 ---
 
+## Using AI
+
+AI use is encouraged. Point your assistant (Claude Code, Codex or your own)
+at [docs/AI.md](docs/AI.md): it holds the rules the maintainers' own
+assistant works by, and `CLAUDE.md` and `AGENTS.md` load it automatically
+for the tools that read them. A contribution whose AI drifted from these
+rules and principles will most likely be rejected and has to be redone.
+
 ## 1. Mental model
 
 ODDC separates four different kinds of information:
