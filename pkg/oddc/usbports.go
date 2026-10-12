@@ -12,14 +12,20 @@ import (
 // InternalUSBDevice is a built-in USB device and the port it is wired to:
 // its controller (by PCI ID), the root hub (usb2 or usb3), the port number
 // and how the port is connected. Consumers trust a device ID as internal
-// only on that port; the same ID anywhere else is external.
+// only on that port; the same ID anywhere else is external. Attachment is
+// the component's placement ("internal", or "detachable" for a part such
+// as a keyboard on its own connector); Supported is false when the
+// component's entity marks it unusable on Linux.
 type InternalUSBDevice struct {
 	Path        string `json:"path"`
+	Name        string `json:"name"`
 	DeviceID    string `json:"deviceId"`
 	Controller  string `json:"controller"`
 	Hub         string `json:"hub"`
 	Port        int    `json:"port"`
 	ConnectType string `json:"connectType"`
+	Attachment  string `json:"attachment"`
+	Supported   bool   `json:"supported"`
 }
 
 // InternalUSBDevices lists the components of a resolved model that have a
@@ -55,9 +61,13 @@ func InternalUSBDevices(resolved map[string]any) ([]InternalUSBDevice, error) {
 			return nil, fmt.Errorf("%s: usbPort.connectType %q, want hardwired or hotplug", component.Path, connect)
 		}
 
+		name, _ := object["name"].(string)
+		attachment, _ := object["attachment"].(string)
+		status, _ := Lookup(object, "support.linux.status")
 		found = append(found, InternalUSBDevice{
-			Path: component.Path, DeviceID: strings.ToLower(component.DeviceID),
+			Path: component.Path, Name: name, DeviceID: strings.ToLower(component.DeviceID),
 			Controller: controllerID, Hub: hub, Port: number, ConnectType: connect,
+			Attachment: attachment, Supported: status != "unsupported",
 		})
 	}
 

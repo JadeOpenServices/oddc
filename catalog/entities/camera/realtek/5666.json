@@ -12,11 +12,21 @@
     },
     "vendor": {
       "name": "Realtek"
+    },
+    "usbIdentity": {
+      "serial": "placeholder"
     }
   },
   "kind": "CameraComponent",
   "metadata": {
     "id": "camera/realtek/5666",
     "name": "HP 8MP Camera (Realtek 0BDA:5666)"
+  },
+  "sources": {
+    "usbIdentityProbe": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Read-only USB identity probe on the HP ZBook x2 G4 (every string descriptor, Microsoft OS string, BOS descriptor, HID feature reports; values not recorded). The USB serial is a 6-character placeholder; the other strings are the configuration and interface names. No per-unit identity found over USB."
+    }
   }
 }

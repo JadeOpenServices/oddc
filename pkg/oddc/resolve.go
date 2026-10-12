@@ -4,7 +4,9 @@ package oddc
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
+	"strings"
 )
 
 const SchemaVersion = "2.0.0"
@@ -139,5 +141,38 @@ func (r *Registry) ResolveModel(
 		)
 	}
 
+	// A security finding only lowers trust; an override that touches,
+	// removes or changes one would make the machine look safer than it is.
+	findings := Findings(expanded.Resolved)
+	for _, overlay := range append(append([]Overlay{}, project...), host...) {
+		for _, path := range overridePaths(overlay.Overrides, "") {
+			for _, finding := range findings {
+				if path == finding.Path || strings.HasPrefix(path, finding.Path+".") {
+					return Resolved{}, fmt.Errorf("override %q touches the security finding at %s; findings change only in the catalog", overlay.ID, finding.Path)
+				}
+			}
+		}
+	}
+	if !reflect.DeepEqual(findings, Findings(result.Resolved)) {
+		return Resolved{}, fmt.Errorf("an override of %s removes or changes a security finding; findings change only in the catalog", modelID)
+	}
+
 	return result, nil
+}
+
+// overridePaths lists the paths an override sets or deletes.
+func overridePaths(value any, prefix string) []string {
+	object, ok := value.(map[string]any)
+	if !ok || deleteMarker(value) {
+		return []string{prefix}
+	}
+	var paths []string
+	for key, child := range object {
+		next := key
+		if prefix != "" {
+			next = prefix + "." + key
+		}
+		paths = append(paths, overridePaths(child, next)...)
+	}
+	return paths
 }

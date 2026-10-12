@@ -130,6 +130,9 @@ For users:
     oddc touchpad                # an Alps keyboard touchpad as a multitouch touchpad (USB, Bluetooth)
     oddc display                 # the built-in panel: size, density and valid scales (JSON)
     oddc rendergpu               # the DRM devices for the compositor, render GPU first
+    oddc security                # known security findings for this model (--details, --json)
+    oddc notes                   # this model's entry for owners: works, not yet, planned
+    oddc devices [--json]        # every part of the model: placement, port, support, proof
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full
@@ -181,6 +184,21 @@ matches each `/sys/class/drm/cardN` to a GPU under `hardware.graphics` by
 the driver bound to it. A model without the quirk gets an error, never a
 guess. A compositor keeps its render GPU until it restarts, so the
 session runs it at login; `--explain` writes the reasoning to stderr.
+`notes` prints a model's entry for the people who own the machine
+(`--device ID`, default the deployed one; `--root DIR`): what works and
+what works because of ODDC (from its newest passing evidence), what does
+not work yet and why, what the machine does not have, security findings,
+planned work and tips. Everything comes from the catalog and evidence; the
+plans and tips are the model's `support.planned` and `support.notes`.
+`security` reads the deployed model's security findings
+([CONTRIBUTING.md](../CONTRIBUTING.md#security-findings)). Plain, it is the
+notice for users: each finding's summary, and that the ODDC team knows and
+nothing needs doing. `--details` gives contributors what, attack, severity
+and fix. `--json` gives programs the findings and the combined flags; a flag
+it does not name is unknown, which a consumer treats as unprotected. A
+consumer such as an operating system's device approval reads its flags from
+here and never keeps its own per-model copy, so a new finding reaches users
+with the next ODDC update.
 `status` reports each model (`--device ID`, default the deployed model,
 else all) as `verified`, `changed` or `unverified`. A model is
 `verified` when its newest passing evidence (`runtime-verified` or
@@ -211,6 +229,7 @@ For contributors:
     oddc quirk enable QUIRK      # adopt a shared quirk for this machine's model
     oddc quirk share             # merge quirk entities that hold the same data
     oddc contribute              # check the changes and open a pull request
+    oddc release [--check] [--notes DIR]  # maintainers: promote staging to main (see Maintainers)
 
 The workspace is `$XDG_DATA_HOME/oddc`, by default `~/.local/share/oddc` (`--root DIR`);
 `workspace --from URL` clones another source. Updating drops local files
@@ -316,8 +335,27 @@ written into titles or text.
 4. When every child is done, merge the feature into `staging` with
    `--no-ff` and set it Done.
 
-Promoting `staging` to `main` is `git merge --no-ff staging` on `main`,
-once `oddc status --verified` passes on `staging`.
+Promoting `staging` to `main` is a release, made with `oddc release` from
+a checkout of the catalog (`--root DIR`, default the workspace):
+
+1. It fetches `staging` and `main` and checks `staging` as CI does: the
+   catalog is valid, every model is verified on its closure, and `staging`
+   holds something `main` lacks. `--check` stops here.
+2. It opens the pull request `staging` -> `main`, titled with the commit and
+   listing every pull request merged since the last release and every
+   model's status, or reuses the open one.
+3. It waits for the pull request's checks.
+4. It asks before merging, since the merge is the release, then merges with
+   a merge commit (never squash or rebase) and prints the release commit
+   consumers pin.
+
+It never pushes to `main`. When GitHub reports a bypassed rule it stops.
+
+The pull request carries the entry of every device that is new or changed
+in the release (`oddc notes`, below). `--notes DIR` also writes
+`DIR/release-notes.md` and, per such device, a QR code that leads to the
+pull request (`<vendor>-<model>-qr.svg` and `.png`), to print for the
+people who gave or lent the machine.
 
 Each commit ends with a trailer naming its item, and merge messages
 follow git's defaults with the merged item's trailer:

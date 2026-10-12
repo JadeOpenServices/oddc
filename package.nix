@@ -5,6 +5,8 @@
   buildGoModule,
   git,
   makeWrapper,
+  qrencode,
+  zbar,
 }:
 buildGoModule {
   pname = "oddc";
@@ -33,12 +35,23 @@ buildGoModule {
     go test ./...
     runHook postCheck
   '';
-  # validate --since compares revisions with git.
-  nativeCheckInputs = [ git ];
-  # detect, setup and fetch read GitHub with git.
+  # validate --since compares revisions with git; the release notes test
+  # draws QR codes with qrencode and reads them back with zbarimg.
+  nativeCheckInputs = [
+    git
+    qrencode
+    zbar
+  ];
+  # detect, setup and fetch read GitHub with git; release --notes draws QR
+  # codes with qrencode.
   nativeBuildInputs = [ makeWrapper ];
   postInstall = ''
-    wrapProgram $out/bin/oddc --suffix PATH : ${lib.makeBinPath [ git ]}
+    wrapProgram $out/bin/oddc --suffix PATH : ${
+      lib.makeBinPath [
+        git
+        qrencode
+      ]
+    }
   '';
   meta = {
     description = "Validate, resolve and explain ODDC hardware entities";

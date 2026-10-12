@@ -34,7 +34,8 @@ func overlay(kind, modelID string, overrides map[string]any) Overlay {
 }
 
 // Host overrides win over project overrides, which win over the catalog,
-// and history keeps all three in order.
+// and history keeps all three in order; a security finding refuses every
+// override.
 func TestCatalogOverridePrecedence(t *testing.T) {
 	registry := catalog(t)
 
@@ -64,6 +65,12 @@ func TestCatalogOverridePrecedence(t *testing.T) {
 				[]Overlay{overlay("project", id, nest(path, project))},
 				[]Overlay{overlay("host", id, nest(path, host))},
 			)
+			if insideFinding(canonical.Resolved, path) {
+				if err == nil || !strings.Contains(err.Error(), "security finding") {
+					t.Errorf("%s: overriding %s: %v, want a refusal", id, path, err)
+				}
+				continue
+			}
 			if err != nil {
 				t.Fatalf("%s %s: %v", id, path, err)
 			}
@@ -108,8 +115,20 @@ func referencedNodes(resolved Resolved, modelID string) []string {
 	return paths
 }
 
-// A host overlay can delete every node a model references, with a
-// tombstone in history and the canonical history kept.
+// insideFinding tells whether path is a security finding or lies in one:
+// no override may touch those.
+func insideFinding(resolved map[string]any, path string) bool {
+	for _, finding := range Findings(resolved) {
+		if path == finding.Path || strings.HasPrefix(path, finding.Path+".") {
+			return true
+		}
+	}
+	return false
+}
+
+// A host overlay can delete every node a model references, except a
+// security finding, with a tombstone in history and the canonical history
+// kept.
 func TestCatalogHostDeletesEveryReferencedNode(t *testing.T) {
 	registry := catalog(t)
 
@@ -123,6 +142,12 @@ func TestCatalogHostDeletesEveryReferencedNode(t *testing.T) {
 			host := overlay("host", id, nest(node, map[string]any{"$delete": true}))
 
 			resolved, err := registry.ResolveModel(id, nil, []Overlay{host})
+			if insideFinding(canonical.Resolved, node) {
+				if err == nil || !strings.Contains(err.Error(), "security finding") {
+					t.Errorf("%s: deleting %s: %v, want a refusal", id, node, err)
+				}
+				continue
+			}
 			if err != nil {
 				t.Fatalf("%s %s: %v", id, node, err)
 			}
