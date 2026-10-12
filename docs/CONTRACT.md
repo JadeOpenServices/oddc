@@ -53,6 +53,12 @@ reused for something else. Renaming or removing an ID is a breaking change.
   (`verified`, `changed` or `unverified`), its current `closure`
   (`sha256:` digest of the resolved model) and the `evidence` that
   decided it. Only `verified` means the model was proven on this closure.
+- `oddc security --json [--resolved FILE]`: the security findings of the
+  deployed model (default `/etc/oddc/resolved.json`) and the combined
+  `flags`. A flag is `false` once any finding says so; a flag not in the
+  map is unknown, which you must treat as unprotected. Flag names never
+  change meaning. Read your security flags from here instead of keeping a
+  per-model copy; see [SECURITY.md](SECURITY.md).
 - The files themselves, described by `schemas/entity.schema.json`,
   `schemas/evidence.schema.json` and `schemas/overlay.schema.json`.
 - In Go, package `github.com/JadeOpenServices/oddc/pkg/oddc`: `LoadRegistry`,

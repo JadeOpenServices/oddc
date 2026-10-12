@@ -839,6 +839,9 @@ than maintaining duplicated negative capability flags.
 
 ## Security findings
 
+The short how-to is [docs/SECURITY.md](docs/SECURITY.md); this section has
+the rules.
+
 A security weakness of hardware or its firmware is a `Security` entity
 below `catalog/entities/security/<area>/<name>.json`. It is the one owner of
 everything known about that weakness. A model or component references it
