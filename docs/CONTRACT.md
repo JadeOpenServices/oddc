@@ -81,7 +81,11 @@ unusable on Linux). `oddc devices --json [--root DIR] [--device ID]`
 prints every part of the model: `path`, `id`, `name`, `bus`, `deviceId`,
 `attachment`, `usbPort` (only for built-in USB devices), `supported`,
 `proven` (`pass`, `unsupported` or `untested`, from the evidence the
-model's status rests on) and `protocol`. Take built-in USB devices from
+model's status rests on), `protocol` and `usbIdentity`: what tells one
+unit from another, `serial` `per-unit`, `placeholder` (the same on every
+unit) or `none`, and an `anchor` beyond USB such as `bluetooth-address`.
+Never treat a placeholder serial as identity; where nothing is per-unit,
+the fixed port is the only anchor. Take built-in USB devices from
 there, as the devices with a `usbPort`: a device's `bus` (`usb` or `hid`)
 says how ODDC matches it, not whether it is built in. Bus numbers are not part of it: they change with boot order.
 

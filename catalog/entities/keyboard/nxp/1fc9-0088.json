@@ -126,6 +126,9 @@
     },
     "vendor": {
       "name": "NXP Semiconductors"
+    },
+    "usbIdentity": {
+      "serial": "placeholder"
     }
   },
   "kind": "KeyboardComponent",
@@ -158,6 +161,11 @@
       "type": "validation",
       "observedAt": "2026-10-12",
       "reason": "Light three-finger swipes on the ZBook x2 G4 over USB, with the 15 init registers written and no pressure axis on the virtual touchpad: the chip lost a finger mid-touch 0 times in 10 s of normal swipes and twice (94 ms each) in 10 s of light ones; in 11 of 14 light touches three fingers were seen in 71-99% of frames, fingers land within about 5 frames of each other. libinput turned them into 16 swipe gestures of 330 to 1,830 units dx (unaccelerated 125 to 790) each, far above what a compositor needs to switch workspace. Two-finger scrolling: 2 finger-count drops in 8 s. So light swipes reach the desktop intact; a swipe that feels heavy is not lost in the chip, the driver or libinput."
+    },
+    "usbIdentityProbe": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Read-only USB identity probe on the HP ZBook x2 G4 (every string descriptor, Microsoft OS string, BOS descriptor, HID feature reports; values not recorded). The USB serial is the NXP LPC template ABCD123456789; the other strings are an interface name and the Microsoft OS string. Whether its Bluetooth radio's address is readable over USB is open."
     }
   }
 }

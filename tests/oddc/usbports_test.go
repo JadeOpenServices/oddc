@@ -5,6 +5,7 @@ package oddc_test
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	. "github.com/JadeOpenServices/oddc/pkg/oddc"
@@ -155,5 +156,26 @@ func TestDevicesInventory(t *testing.T) {
 				t.Errorf("%s %s: proven %q, evidence %q", id, d.Path, d.Proven, want)
 			}
 		}
+	}
+}
+
+// A usbIdentity names its serial kind from a fixed set; anything else is
+// refused.
+func TestUSBIdentityValues(t *testing.T) {
+	for name, identity := range map[string]map[string]any{
+		"unknown serial kind": {"serial": "unique"},
+		"unknown anchor":      {"serial": "none", "anchor": "mac"},
+		"no serial":           {"anchor": "bluetooth-address"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := copyCatalog(t)
+			editEntity(t, entityPath(t, root, "quickkeys/hp/03f0-0a56"), func(document map[string]any) {
+				document["data"].(map[string]any)["usbIdentity"] = identity
+			})
+			result := Validate(root)
+			if result.Valid || !strings.Contains(strings.Join(result.Errors, "\n"), "usbIdentity") {
+				t.Errorf("valid %v, errors %v", result.Valid, result.Errors)
+			}
+		})
 	}
 }

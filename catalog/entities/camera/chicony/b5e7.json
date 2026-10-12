@@ -20,6 +20,9 @@
     },
     "vendor": {
       "name": "Chicony"
+    },
+    "usbIdentity": {
+      "serial": "placeholder"
     }
   },
   "kind": "CameraComponent",
@@ -32,6 +35,11 @@
       "observedAt": "2026-10-11",
       "reason": "On the ZBook x2 G4 the V4L2 node named \"HP IR Camera\" offers YUYV 340x340 at 30 fps only. 30 captured frames alternate lit (mean 72-94, max 255) and dark (mean about 5): the IR emitter pulses on its own every other frame, without any extension-unit control set (unit 4 {1229a78c-47b4-4094-b0ce-db07386fb938}, 2 controls, left untouched).",
       "type": "validation"
+    },
+    "usbIdentityProbe": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Read-only USB identity probe on the HP ZBook x2 G4 (every string descriptor, Microsoft OS string, BOS descriptor, HID feature reports; values not recorded). The USB serial is a 4-character placeholder; the other strings are the configuration and interface names. No per-unit identity found over USB."
     }
   }
 }
