@@ -21,6 +21,8 @@ import (
 // of it, and whether it may become a release.
 type Candidate struct {
 	Commit string
+	// Date is the commit's date, as 2006-01-02.
+	Date string
 	// Merges are the subjects of staging's first-parent merges main lacks.
 	Merges []string
 	// Models maps every model to its verification status.
@@ -41,6 +43,9 @@ func CheckCandidate(root, ref, base string) (Candidate, error) {
 		return Candidate{}, err
 	}
 	c := Candidate{Commit: commit, Models: map[string]string{}, Notes: map[string]string{}}
+	if c.Date, err = cli.Git(root, "log", "-1", "--format=%cs", commit); err != nil {
+		return Candidate{}, err
+	}
 
 	ahead, err := cli.Git(root, "rev-list", "--count", base+".."+commit)
 	if err != nil {
@@ -173,11 +178,13 @@ var (
 // and prints the release commit. It never pushes to main and stops when
 // GitHub reports a bypassed rule. --root is a git checkout of the catalog
 // (default the workspace); --check stops after checking staging. --notes
-// DIR writes the release notes and, per new or changed device, a QR code
-// (SVG and PNG) that leads to the release pull request, for the people who
-// gave or lent the machine.
+// DIR writes the release notes and, per new or changed device, its own
+// page and a QR code (SVG and PNG) for the people who gave or lent the
+// machine; the code leads to --notes-url (with {device} standing for
+// vendor-model), else to the release pull request.
 func RunRelease(args []string) error {
 	root := cli.Value(args, "--root", cli.WorkspaceDir())
+	page := cli.Value(args, "--notes-url", "")
 
 	g, err := findGh()
 	if err != nil {
@@ -236,7 +243,7 @@ func RunRelease(args []string) error {
 	}
 	if dir := cli.Value(args, "--notes", ""); dir != "" {
 		url := "https://github.com/" + oddc.Repository + "/pull/" + number
-		if err := WriteNotes(dir, url, c); err != nil {
+		if err := WriteNotes(dir, url, page, c); err != nil {
 			return err
 		}
 	}
@@ -299,24 +306,13 @@ func RunRelease(args []string) error {
 	return nil
 }
 
-// WriteNotes writes dir/release-notes.md and, per device in the notes,
-// dir/<vendor>-<model>-qr.svg and .png leading to url.
-func WriteNotes(dir, url string, c Candidate) error {
+// WriteNotes writes dir/release-notes.md (for maintainers: the pull
+// request url and its text) and, per device in the notes, the page for the
+// machine's owner, dir/<vendor>-<model>.md, with dir/<vendor>-<model>-qr.svg
+// and .png. The code leads to page, a URL in which {device} stands for
+// vendor-model; empty, it leads to url.
+func WriteNotes(dir, url, page string, c Candidate) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
-	}
-	text := fmt.Sprintf("# ODDC release %s\n\nPull request: %s\n\n%s", c.Commit[:12], url, c.Body())
-	file := filepath.Join(dir, "release-notes.md")
-	if err := os.WriteFile(file, []byte(text), 0o644); err != nil {
-		return err
-	}
-	fmt.Println("wrote", file)
-	if len(c.Notes) == 0 {
-		return nil
-	}
-
-	qrencode, err := tool("qrencode", "qrencode")
-	if err != nil {
 		return err
 	}
 	ids := make([]string, 0, len(c.Notes))
@@ -324,17 +320,62 @@ func WriteNotes(dir, url string, c Candidate) error {
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "# ODDC release %s\n\nPull request: %s\n\n%s", c.Commit[:12], url, c.Body())
+	if len(ids) > 0 {
+		b.WriteString("\nDevice pages in this directory:\n\n")
+		for _, id := range ids {
+			fmt.Fprintf(&b, "- %s.md\n", DeviceSlug(id))
+		}
+	}
+	file := filepath.Join(dir, "release-notes.md")
+	if err := os.WriteFile(file, []byte(b.String()), 0o644); err != nil {
+		return err
+	}
+	fmt.Println("wrote", file)
+	if len(ids) == 0 {
+		return nil
+	}
+
+	qrencode, err := tool("qrencode", "qrencode")
+	if err != nil {
+		return err
+	}
 	for _, id := range ids {
-		base := filepath.Join(dir, strings.ReplaceAll(strings.TrimPrefix(id, "model/"), "/", "-")+"-qr")
+		slug := DeviceSlug(id)
+		file := filepath.Join(dir, slug+".md")
+		if err := os.WriteFile(file, []byte(DevicePage(c.Notes[id], c.Commit, c.Date)), 0o644); err != nil {
+			return err
+		}
+		fmt.Println("wrote", file)
+
+		target := url
+		if page != "" {
+			target = strings.ReplaceAll(page, "{device}", slug)
+		}
+		base := filepath.Join(dir, slug+"-qr")
 		for _, kind := range []string{"SVG", "PNG"} {
 			out := base + "." + strings.ToLower(kind)
-			if err := cli.Command(qrencode, "-t", kind, "-s", "10", "-m", "2", "-o", out, url); err != nil {
+			if err := cli.Command(qrencode, "-t", kind, "-s", "10", "-m", "2", "-o", out, target); err != nil {
 				return fmt.Errorf("qrencode %s: %w", out, err)
 			}
 			fmt.Println("wrote", out)
 		}
 	}
 	return nil
+}
+
+// DeviceSlug is a model's file name: "model/hp/zbook-x2-g4" is hp-zbook-x2-g4.
+func DeviceSlug(id string) string {
+	return strings.ReplaceAll(strings.TrimPrefix(id, "model/"), "/", "-")
+}
+
+// DevicePage is a device's notes as the page its owner reads: the title,
+// the release it comes from, then the notes.
+func DevicePage(notes, commit, date string) string {
+	title, rest, _ := strings.Cut(notes, "\n")
+	return fmt.Sprintf("%s\n\nODDC release %s, %s.\n%s", title, commit[:12], date, rest)
 }
 
 // tool finds name on PATH, else builds the nixpkgs attribute for this run

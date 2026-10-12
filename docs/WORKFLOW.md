@@ -229,7 +229,7 @@ For contributors:
     oddc quirk enable QUIRK      # adopt a shared quirk for this machine's model
     oddc quirk share             # merge quirk entities that hold the same data
     oddc contribute              # check the changes and open a pull request
-    oddc release [--check] [--notes DIR]  # maintainers: promote staging to main (see Maintainers)
+    oddc release [--check] [--notes DIR] [--notes-url URL]  # maintainers: promote staging to main (see Maintainers)
 
 The workspace is `$XDG_DATA_HOME/oddc`, by default `~/.local/share/oddc` (`--root DIR`);
 `workspace --from URL` clones another source. Updating drops local files
@@ -353,9 +353,10 @@ It never pushes to `main`. When GitHub reports a bypassed rule it stops.
 
 The pull request carries the entry of every device that is new or changed
 in the release (`oddc notes`, below). `--notes DIR` also writes
-`DIR/release-notes.md` and, per such device, a QR code that leads to the
-pull request (`<vendor>-<model>-qr.svg` and `.png`), to print for the
-people who gave or lent the machine.
+`DIR/release-notes.md` for maintainers and, per such device, the page for
+its owner `DIR/<vendor>-<model>.md` with a QR code (`-qr.svg`, `-qr.png`)
+that leads to `--notes-url` (`{device}` = `<vendor>-<model>`), else to the
+pull request. See [RELEASES.md](RELEASES.md).
 
 Each commit ends with a trailer naming its item, and merge messages
 follow git's defaults with the merged item's trailer:
