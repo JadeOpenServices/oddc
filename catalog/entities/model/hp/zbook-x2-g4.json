@@ -343,6 +343,11 @@
       "type": "validation",
       "observedAt": "2026-10-12",
       "reason": "Read on the machine at light load: x86_pkg_temp and coretemp 61 C, B0D4 (processor participant) 63 C, pch_skylake 44 C, iwlwifi 51 C, acpitz zones 32-51 C, SEN1 39 C, SEN2 44 C, NVMe 36 C. The package sensor sits on the cores and moves by about 15 C within a second on short load bursts (seen as 47, 63, 56, 47 in a desktop bar); the PCH and acpitz zones move slowly. A display that wants a steady value should average the package sensor over a few seconds or show a slow zone."
+    },
+    "postures20261012": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Guided test in six postures (ODDC 85814de), every tablet-mode source read at once: Intel Virtual Switches (INT33D6, the stand) is 1 exactly when the stand is closed; hp-wmi's sysfs tablet mirrors it; hp-wmi's dock reads 1 in every posture, keyboard detached too; the HP WMI hotkeys input device has SW_TABLET_MODE but it stayed 0 in all six (hp-wmi updates it only on dock events, which never came). Keyboard folded behind the screen reads exactly like keyboard in front with the stand closed on every source, so no sensor tells the two apart. ODDC's tablet mode switch was 1 exactly when the keyboard was off USB. The HP WMI device also carries HP's hotkeys, so holding its switch would swallow those; it is left alone, as it never changes."
     }
   }
 }
