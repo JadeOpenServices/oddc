@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -26,6 +27,9 @@ type Candidate struct {
 	Models map[string]string
 	// Problems say why the candidate may not be released; empty when it may.
 	Problems []string
+	// Notes are the device entries (oddc notes) of the models that are new
+	// or whose closure changed since base.
+	Notes map[string]string
 }
 
 // CheckCandidate checks ref (a commit of the git checkout at root) against
@@ -36,7 +40,7 @@ func CheckCandidate(root, ref, base string) (Candidate, error) {
 	if err != nil {
 		return Candidate{}, err
 	}
-	c := Candidate{Commit: commit, Models: map[string]string{}}
+	c := Candidate{Commit: commit, Models: map[string]string{}, Notes: map[string]string{}}
 
 	ahead, err := cli.Git(root, "rev-list", "--count", base+".."+commit)
 	if err != nil {
@@ -56,15 +60,17 @@ func CheckCandidate(root, ref, base string) (Candidate, error) {
 		}
 	}
 
-	dir, err := os.MkdirTemp("", "oddc-release-")
+	dir, err := checkout(root, commit)
 	if err != nil {
 		return Candidate{}, err
 	}
 	defer os.RemoveAll(dir)
-	archive := exec.Command("sh", "-c", `git -C "$1" archive "$2" | tar -x -C "$3"`, "sh", root, commit, dir)
-	if out, err := archive.CombinedOutput(); err != nil {
-		return Candidate{}, fmt.Errorf("git archive %s: %v: %s", commit, err, strings.TrimSpace(string(out)))
+	baseDir, err := checkout(root, base)
+	if err != nil {
+		return Candidate{}, err
 	}
+	defer os.RemoveAll(baseDir)
+	before, _ := oddc.LoadRegistry(baseDir)
 
 	validation := oddc.Validate(dir)
 	for _, problem := range validation.Errors {
@@ -89,9 +95,43 @@ func CheckCandidate(root, ref, base string) (Candidate, error) {
 		if status.Status != oddc.Verified {
 			c.Problems = append(c.Problems, fmt.Sprintf("%s is %s, not verified", id, status.Status))
 		}
+		if before != nil {
+			if old, err := before.Closure(id); err == nil && old == status.Closure {
+				continue
+			}
+		}
+		if c.Notes[id], err = registry.DeviceNotes(id); err != nil {
+			return Candidate{}, err
+		}
 	}
 	sort.Strings(c.Problems)
 	return c, nil
+}
+
+// demote moves every markdown heading two levels down, to sit inside the
+// pull request's own text.
+func demote(text string) string {
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "#") {
+			lines[i] = "##" + line
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// checkout writes the files of a commit to a new temporary directory.
+func checkout(root, ref string) (string, error) {
+	dir, err := os.MkdirTemp("", "oddc-release-")
+	if err != nil {
+		return "", err
+	}
+	archive := exec.Command("sh", "-c", `git -C "$1" archive "$2" | tar -x -C "$3"`, "sh", root, ref, dir)
+	if out, err := archive.CombinedOutput(); err != nil {
+		os.RemoveAll(dir)
+		return "", fmt.Errorf("git archive %s: %v: %s", ref, err, strings.TrimSpace(string(out)))
+	}
+	return dir, nil
 }
 
 // Body is the release pull request's description.
@@ -111,6 +151,14 @@ func (c Candidate) Body() string {
 		fmt.Fprintf(&b, "- %s: %s\n", id, c.Models[id])
 	}
 	b.WriteString("\nChecked by `oddc release`: the catalog is valid and every model is verified on its closure.\n")
+	ids = ids[:0]
+	for id := range c.Notes {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		fmt.Fprintf(&b, "\n<details><summary>%s: what works, what does not yet, what is planned</summary>\n\n%s\n</details>\n", id, demote(c.Notes[id]))
+	}
 	return b.String()
 }
 
@@ -124,7 +172,10 @@ var (
 // waits for its checks, asks before merging, merges with a merge commit
 // and prints the release commit. It never pushes to main and stops when
 // GitHub reports a bypassed rule. --root is a git checkout of the catalog
-// (default the workspace); --check stops after checking staging.
+// (default the workspace); --check stops after checking staging. --notes
+// DIR writes the release notes and, per new or changed device, a QR code
+// (SVG and PNG) that leads to the release pull request, for the people who
+// gave or lent the machine.
 func RunRelease(args []string) error {
 	root := cli.Value(args, "--root", cli.WorkspaceDir())
 
@@ -183,6 +234,12 @@ func RunRelease(args []string) error {
 	} else {
 		fmt.Printf("release pull request #%s is open already\n", number)
 	}
+	if dir := cli.Value(args, "--notes", ""); dir != "" {
+		url := "https://github.com/" + oddc.Repository + "/pull/" + number
+		if err := WriteNotes(dir, url, c); err != nil {
+			return err
+		}
+	}
 
 	head, err := g.run("pr", "view", number, "--repo", oddc.Repository, "--json", "headRefOid", "--jq", ".headRefOid")
 	if err != nil {
@@ -225,4 +282,57 @@ func RunRelease(args []string) error {
 	}
 	fmt.Printf("released: main is %s; consumers pin this commit\n", release)
 	return nil
+}
+
+// WriteNotes writes dir/release-notes.md and, per device in the notes,
+// dir/<vendor>-<model>-qr.svg and .png leading to url.
+func WriteNotes(dir, url string, c Candidate) error {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	text := fmt.Sprintf("# ODDC release %s\n\nPull request: %s\n\n%s", c.Commit[:12], url, c.Body())
+	file := filepath.Join(dir, "release-notes.md")
+	if err := os.WriteFile(file, []byte(text), 0o644); err != nil {
+		return err
+	}
+	fmt.Println("wrote", file)
+	if len(c.Notes) == 0 {
+		return nil
+	}
+
+	qrencode, err := tool("qrencode", "qrencode")
+	if err != nil {
+		return err
+	}
+	ids := make([]string, 0, len(c.Notes))
+	for id := range c.Notes {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		base := filepath.Join(dir, strings.ReplaceAll(strings.TrimPrefix(id, "model/"), "/", "-")+"-qr")
+		for _, kind := range []string{"SVG", "PNG"} {
+			out := base + "." + strings.ToLower(kind)
+			if err := cli.Command(qrencode, "-t", kind, "-s", "10", "-m", "2", "-o", out, url); err != nil {
+				return fmt.Errorf("qrencode %s: %w", out, err)
+			}
+			fmt.Println("wrote", out)
+		}
+	}
+	return nil
+}
+
+// tool finds name on PATH, else builds the nixpkgs attribute for this run
+// only, as `nix shell nixpkgs#attr` would; nothing is installed.
+func tool(name, attr string) (string, error) {
+	if bin, err := exec.LookPath(name); err == nil {
+		return bin, nil
+	}
+	cmd := exec.Command("nix", "build", "nixpkgs#"+attr, "--no-link", "--print-out-paths")
+	cmd.Stderr = os.Stderr
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("%s is not installed and nix build nixpkgs#%s failed: %w", name, attr, err)
+	}
+	return filepath.Join(strings.TrimSpace(string(out)), "bin", name), nil
 }

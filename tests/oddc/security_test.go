@@ -147,3 +147,16 @@ func TestSecurityPathHoldsOnlyFindings(t *testing.T) {
 		t.Errorf("valid %v, errors %v", result.Valid, result.Errors)
 	}
 }
+
+// A planned entry or tip without a summary is refused.
+func TestSupportEntriesNeedSummary(t *testing.T) {
+	root := copyCatalog(t)
+	editEntity(t, entityPath(t, root, "model/hp/zbook-x2-g4"), func(document map[string]any) {
+		support := document["data"].(map[string]any)["support"].(map[string]any)
+		support["notes"] = map[string]any{"empty": map[string]any{"item": "ODDC-1"}}
+	})
+	result := Validate(root)
+	if result.Valid || !strings.Contains(strings.Join(result.Errors, "\n"), "support.notes.empty needs a summary") {
+		t.Errorf("valid %v, errors %v", result.Valid, result.Errors)
+	}
+}
