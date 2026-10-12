@@ -69,6 +69,14 @@ that consume ODDC, not here. Decline it and say where it belongs.
   how bad it is, the fix, and when it gets fixed. Never call one harmless
   without saying why.
 
+## The toolchain
+
+Commands follow the ideology too (CONTRIBUTING, "The toolchain follows the
+same rules"): one inventory (`oddc devices`) that every tool filters, no
+vendor, model or device ID in code, behaviour only where the model
+references it, protocol tools instead of device tools, every behaviour
+proven by evidence, fail closed, debug tools labelled and read-only.
+
 ## Testing on real hardware
 
 - Test that each part **works**, not only that it is present: a ping, a

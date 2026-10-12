@@ -132,7 +132,7 @@ For users:
     oddc rendergpu               # the DRM devices for the compositor, render GPU first
     oddc security                # known security findings for this model (--details, --json)
     oddc notes                   # this model's entry for owners: works, not yet, planned
-    oddc usb [--json]            # built-in USB devices with their fixed port, for USB trust brokers
+    oddc devices [--json]        # every part of the model: placement, port, support, proof
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `main`. `--channel staging` or `--rev COMMIT` (the full

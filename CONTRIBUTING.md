@@ -845,6 +845,39 @@ Consumers must fail closed when the policy is absent.
 This keeps canonical data declarative: it records knowledge that exists rather
 than maintaining duplicated negative capability flags.
 
+## The toolchain follows the same rules
+
+The `oddc` commands are held to the ideology like the catalog is. This is
+how fwupd (one daemon, protocol plugins, device data in quirk files) and
+systemd's hwdb (generic tools, device data keyed by IDs) keep device
+knowledge out of code.
+
+1. **One inventory, many views.** `oddc devices` is the one list of a
+   model's parts: placement, attachment, fixed USB port, Linux support,
+   what the evidence proves, protocol. Tools and consumers filter it; none
+   walks the resolved model for its own view, and there is no command per
+   view (a USB trust broker takes the devices with a `usbPort`).
+2. **No device knowledge in code.** A command never names a vendor, model or
+   device ID. What a device needs lives in its entity.
+3. **Behaviour only by explicit reference.** A command acts on a model only
+   when the model references what it implements (a quirk, a policy, a
+   component's `protocol`). It never detects hardware and decides by
+   itself; without the reference it refuses with an error.
+4. **Protocol tools for the edge cases.** When a device needs code, the
+   command implements the protocol, not the device (`oddc touchpad` speaks
+   `alps-u1-report-passthrough` to any component that names it). It finds
+   its component through the inventory and takes `--device <path>` to aim
+   at one when a model has several.
+5. **Proven by evidence.** Every behaviour a command brings to a model has
+   its result in that model's evidence (the component path, `quirks.KEY`,
+   `policy.KEY`).
+6. **Fail closed.** Missing or contradictory data is an error, never a
+   guess or a fallback.
+7. **Debug tools are labelled and read-only by default.** Probes and guided
+   tests read the same inventory and say they are for contributors. Nothing
+   writes to a device (firmware, ownership, settings) without the owner's
+   explicit decision.
+
 ## Planned work and tips
 
 A model may say what is planned for it and what an owner should know, in
