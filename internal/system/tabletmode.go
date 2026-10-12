@@ -37,7 +37,7 @@ func RunTabletMode(args []string) error {
 	}
 	keyboards := oddc.TabletModeKeyboards(resolved)
 	if len(keyboards) == 0 {
-		return errors.New("the resolved model has no keyboard whose presence signals tablet mode")
+		return errors.New("the resolved model has no policy.input.tabletMode from keyboard-presence with a detachable keyboard that signals it")
 	}
 	sys := cli.Value(args, "--sys", "/sys")
 

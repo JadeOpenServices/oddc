@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -229,4 +230,42 @@ func sortedKeys(values map[string]any) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// Records of one day are ordered DATE, DATE-2, ..., so the newest is last.
+func TestModelEvidenceOrdersSameDayRecords(t *testing.T) {
+	registry, err := LoadRegistry(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checked := 0
+	for _, model := range modelIDs(registry) {
+		records, err := registry.ModelEvidence(model)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i := 1; i < len(records); i++ {
+			a, b := records[i-1], records[i]
+			if a.ObservedAt != b.ObservedAt {
+				continue
+			}
+			checked++
+			if dayNumber(a) >= dayNumber(b) {
+				t.Errorf("%s: %s comes before %s", model, a.ID, b.ID)
+			}
+		}
+	}
+	if checked == 0 {
+		t.Fatal("no model has two records of one day")
+	}
+}
+
+// dayNumber is N of a record named DATE-N, 1 for DATE.
+func dayNumber(record Evidence) int {
+	_, suffix, _ := strings.Cut(record.ID, record.ObservedAt)
+	if n, err := strconv.Atoi(strings.TrimPrefix(suffix, "-")); err == nil {
+		return n
+	}
+	return 1
 }

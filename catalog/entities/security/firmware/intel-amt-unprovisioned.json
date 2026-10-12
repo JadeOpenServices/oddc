@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "kind": "Security",
+  "metadata": {
+    "id": "security/firmware/intel-amt-unprovisioned",
+    "name": "Intel AMT present and not set up"
+  },
+  "data": {
+    "summary": "The machine has Intel's remote management (AMT), switched on but not set up. Someone with physical access could set it up for remote control; disable AMT in the firmware settings if you do not use it.",
+    "severity": "medium",
+    "status": "open",
+    "reported": "2026-10-12",
+    "modified": "2026-10-12",
+    "details": {
+      "what": "Intel Active Management Technology is present and unprovisioned.",
+      "attack": "With physical access, someone can open the ME setup (MEBx) at boot and, if its password was never changed from the default, provision AMT for remote access, including remote screen and keyboard, independent of the operating system.",
+      "fix": "Disable AMT in the firmware settings, or set a strong MEBx password. Whether this firmware offers the switch is to be checked on the machine.",
+      "check": "fwupdmgr get-devices lists \"AMT (unprovisioned)\"",
+      "references": "Intel AMT (https://www.intel.com/content/www/us/en/developer/articles/technical/software-security-guidance/technical-documentation/intel-active-management-technology.html)"
+    },
+    "flags": {
+      "remoteManagementOff": false
+    }
+  },
+  "sources": {
+    "zbookX2G4Fwupd": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "fwupd 2.x on the HP ZBook x2 G4, BIOS P72 01.53: intel_amt plugin reports AMT (unprovisioned), version 11.8.65.3590."
+    }
+  }
+}

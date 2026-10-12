@@ -5,6 +5,7 @@ package oddc_test
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	. "github.com/JadeOpenServices/oddc/pkg/oddc"
@@ -70,4 +71,111 @@ func splitPath(path string) []string {
 		}
 	}
 	return keys
+}
+
+// Each built-in USB device carries its component's attachment, and is
+// unsupported exactly when its entity marks it unusable on Linux.
+func TestInternalUSBDevicesAttachmentAndSupport(t *testing.T) {
+	registry, err := LoadRegistry(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked := 0
+	for _, id := range modelIDs(registry) {
+		resolved, err := registry.ResolveEntity(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		devices, err := InternalUSBDevices(resolved.Resolved)
+		if err != nil {
+			t.Fatal(err)
+		}
+		unsupported := map[string]bool{}
+		for _, part := range UnsupportedComponents(resolved.Resolved) {
+			unsupported[part.Path] = true
+		}
+		for _, d := range devices {
+			checked++
+			attachment, _ := Lookup(resolved.Resolved, d.Path+".attachment")
+			if d.Attachment != attachment {
+				t.Errorf("%s %s: attachment %q, catalog %v", id, d.Path, d.Attachment, attachment)
+			}
+			if d.Supported == unsupported[d.Path] {
+				t.Errorf("%s %s: supported %v, but unsupported in the catalog is %v", id, d.Path, d.Supported, unsupported[d.Path])
+			}
+		}
+	}
+	if checked == 0 {
+		t.Fatal("no model has built-in USB devices")
+	}
+}
+
+// The device inventory holds every component of every model, each with
+// the result its evidence gives, and a USB port exactly for the built-in
+// USB devices.
+func TestDevicesInventory(t *testing.T) {
+	registry, err := LoadRegistry(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range modelIDs(registry) {
+		devices, err := registry.Devices(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resolved, err := registry.ResolveEntity(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		internal, err := InternalUSBDevices(resolved.Resolved)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ported := map[string]bool{}
+		for _, d := range internal {
+			ported[d.Path] = true
+		}
+		status, err := registry.Verify(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(devices) == 0 {
+			t.Errorf("%s: no devices", id)
+		}
+		for _, d := range devices {
+			if (d.USBPort != nil) != ported[d.Path] {
+				t.Errorf("%s %s: usbPort %v, built-in USB %v", id, d.Path, d.USBPort, ported[d.Path])
+			}
+			want := "untested"
+			if status.Evidence != nil {
+				if result, ok := status.Evidence.Results[d.Path].(string); ok {
+					want = result
+				}
+			}
+			if d.Proven != want {
+				t.Errorf("%s %s: proven %q, evidence %q", id, d.Path, d.Proven, want)
+			}
+		}
+	}
+}
+
+// A usbIdentity names its serial kind from a fixed set; anything else is
+// refused.
+func TestUSBIdentityValues(t *testing.T) {
+	for name, identity := range map[string]map[string]any{
+		"unknown serial kind": {"serial": "unique"},
+		"unknown anchor":      {"serial": "none", "anchor": "mac"},
+		"no serial":           {"anchor": "bluetooth-address"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := copyCatalog(t)
+			editEntity(t, entityPath(t, root, "quickkeys/hp/03f0-0a56"), func(document map[string]any) {
+				document["data"].(map[string]any)["usbIdentity"] = identity
+			})
+			result := Validate(root)
+			if result.Valid || !strings.Contains(strings.Join(result.Errors, "\n"), "usbIdentity") {
+				t.Errorf("valid %v, errors %v", result.Valid, result.Errors)
+			}
+		})
+	}
 }

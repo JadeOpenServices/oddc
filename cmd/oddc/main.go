@@ -28,6 +28,8 @@ var commands = []struct {
 	{"touchpad", system.RunTouchpad},
 	{"display", system.RunDisplay},
 	{"rendergpu", system.RunRenderGPU},
+	{"security", system.RunSecurity},
+	{"devices", system.RunDevices},
 	{"validate", catalog.Run},
 	{"list", catalog.Run},
 	{"index", catalog.Run},
@@ -35,11 +37,13 @@ var commands = []struct {
 	{"resolve", catalog.Run},
 	{"explain", catalog.Run},
 	{"status", catalog.Run},
+	{"notes", catalog.RunNotes},
 	{"changes", catalog.RunChanges},
 	{"workspace", contribute.RunWorkspace},
 	{"scaffold", contribute.RunScaffold},
 	{"evidence", contribute.RunEvidence},
 	{"contribute", contribute.RunContribute},
+	{"release", contribute.RunRelease},
 	{"quirk", contribute.RunQuirk},
 }
 

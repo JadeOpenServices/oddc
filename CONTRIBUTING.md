@@ -14,6 +14,14 @@ This document defines how ODDC data is structured, how contributors add hardware
 
 ---
 
+## Using AI
+
+AI use is encouraged. Point your assistant (Claude Code, Codex or your own)
+at [docs/AI.md](docs/AI.md): it holds the rules the maintainers' own
+assistant works by, and `CLAUDE.md` and `AGENTS.md` load it automatically
+for the tools that read them. A contribution whose AI drifted from these
+rules and principles will most likely be rejected and has to be redone.
+
 ## 1. Mental model
 
 ODDC separates four different kinds of information:
@@ -385,11 +393,11 @@ reads a vendor or model ID to decide what to do.
 | `quirks/pch-pme-sci.nix` | `quirks.*.pchPmeSci.{action,rootPorts}`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `quirks/runtime-power.nix` | `quirks.*.runtimePower`, `quirks.*.enabled` | the quirk entity; `enabled` the device model |
 | `capabilities/alps-touchpad.nix` | `hardware.input.keyboard.primary.{deviceId,bluetooth.deviceId,touchpad}` (`touchpad.protocol` `alps-u1-report-passthrough`) | the keyboard component entity |
-| `capabilities/orientation.nix` | `hardware.sensors.hub.provides.orientation`, also exposed read-only as `oddc.sensors.orientation.present` | the device model |
+| `capabilities/orientation.nix` | runs only with `policy.sensors.orientation.service` (`iio-sensor-proxy`); checks `hardware.sensors.hub.provides.orientation`, also exposed read-only as `oddc.sensors.orientation.present` | the device model |
 | `capabilities/quick-keys.nix` | `hardware.input.quickKeys.primary.{deviceId,access.mappable,protocol}` | the Quick Keys component entity |
 | `capabilities/quick-keys.nix` | `policy.input.quickKeys.{keymap,presetKeys}` | the device model |
 | `capabilities/thermald.nix` | `policy.thermal.daemon` (`thermald`) | the device model |
-| `capabilities/tablet-mode.nix` | `hardware.input.keyboard.*.{attachment,detachSignal,bus,deviceId}`, `capabilities.{tabletModeSwitch,kickstandSwitch}` | the device model; `bus`, `deviceId` the keyboard component entity |
+| `capabilities/tablet-mode.nix` | runs only with `policy.input.tabletMode.from` (`keyboard-presence`); reads `hardware.input.keyboard.*.{attachment,detachSignal,bus,deviceId}`, `capabilities.{tabletModeSwitch,kickstandSwitch}` | the device model; `bus`, `deviceId` the keyboard component entity |
 | `deployment.nix` | the whole resolved view, written to `/etc/oddc/resolved.json` | each value's own owner |
 
 Policy no module here reads, such as `vendor.policy.secureBoot` or
@@ -836,6 +844,146 @@ Consumers must fail closed when the policy is absent.
 
 This keeps canonical data declarative: it records knowledge that exists rather
 than maintaining duplicated negative capability flags.
+
+## USB identity of a part
+
+A USB component may say what tells one unit from another, measured
+read-only on a real unit (`tools/usb-identity-probe.py`, a contributor tool: string descriptors, the
+Microsoft OS string, BOS, HID feature reports; values never recorded):
+
+    "usbIdentity": { "serial": "none", "anchor": "bluetooth-address" }
+
+`serial` is `per-unit`, `placeholder` (a template every unit carries, such
+as `ABCD123456789`) or `none`; `anchor` names a per-unit identity beyond USB.
+Leave it out until it is measured. Trust brokers use it to decide whether a
+changed serial means a swapped part.
+
+## The toolchain follows the same rules
+
+The `oddc` commands are held to the ideology like the catalog is. This is
+how fwupd (one daemon, protocol plugins, device data in quirk files) and
+systemd's hwdb (generic tools, device data keyed by IDs) keep device
+knowledge out of code.
+
+1. **One inventory, many views.** `oddc devices` is the one list of a
+   model's parts: placement, attachment, fixed USB port, Linux support,
+   what the evidence proves, protocol. Tools and consumers filter it; none
+   walks the resolved model for its own view, and there is no command per
+   view (a USB trust broker takes the devices with a `usbPort`).
+2. **No device knowledge in code.** A command never names a vendor, model or
+   device ID. What a device needs lives in its entity.
+3. **Behaviour only by explicit reference.** A command acts on a model only
+   when the model references what it implements (a quirk, a policy, a
+   component's `protocol`). It never detects hardware and decides by
+   itself; without the reference it refuses with an error.
+4. **Protocol tools for the edge cases.** When a device needs code, the
+   command implements the protocol, not the device (`oddc touchpad` speaks
+   `alps-u1-report-passthrough` to any component that names it). It finds
+   its component through the inventory and takes `--device <path>` to aim
+   at one when a model has several.
+5. **Proven by evidence.** Every behaviour a command brings to a model has
+   its result in that model's evidence (the component path, `quirks.KEY`,
+   `policy.KEY`).
+6. **Fail closed.** Missing or contradictory data is an error, never a
+   guess or a fallback.
+7. **Debug tools are labelled and read-only by default.** Probes and guided
+   tests read the same inventory and say they are for contributors. Nothing
+   writes to a device (firmware, ownership, settings) without the owner's
+   explicit decision.
+
+## Planned work and tips
+
+A model may say what is planned for it and what an owner should know, in
+plain words for owners, under `support`:
+
+    "support": {
+      "planned": {
+        "fingerprintDriver": {
+          "summary": "An open Linux driver for the fingerprint reader.",
+          "item": "ODDC-96"
+        }
+      },
+      "notes": {
+        "keyboardReconnect": { "summary": "..." }
+      }
+    }
+
+Every entry needs a `summary`; `item` names the work item. Plan only what
+has an open item, and drop the entry when the item is done or dropped.
+`oddc notes` and the release pull request show them next to what the
+evidence proves works and what does not.
+
+## Security findings
+
+The short how-to is [docs/SECURITY.md](docs/SECURITY.md); this section has
+the rules.
+
+A security weakness of hardware or its firmware is a `Security` entity
+below `catalog/entities/security/<area>/<name>.json`. It is the one owner of
+everything known about that weakness. A model or component references it
+under its own `security` section and holds nothing about it itself:
+
+    "security": {
+      "thunderboltDma": {
+        "ref": "security/thunderbolt/no-kernel-dma-protection"
+      }
+    }
+
+Put the reference where the weakness lives. A weakness of a chip goes on
+that chip's component entity, so every model that uses the chip carries it
+with one edit. A weakness of one firmware goes on the model. Facts never
+attach a finding; only a reference does. Below `security/`, only `Security`
+entities live.
+
+The entity holds:
+
+- `summary`: one or two plain sentences for users, at most 240 characters:
+  what it means for them and what to be careful about. A contributor who
+  reports a finding writes it, and review checks that it informs without
+  frightening;
+- `details`: `what`, `attack` and `fix` are required, plus `when`, `check`
+  and `references` where known. This is the full account for contributors;
+- `severity`: `low`, `medium`, `high` or `critical`;
+- `status`: `open`, `mitigated` (the details name the fix) or `withdrawn`
+  (it turned out not to hold; it stays so references and history remain
+  readable);
+- `reported` and `modified`: dates. Every change updates `modified`;
+- `fwupdHsi`: optional, fwupd host security attributes whose failure
+  confirms the finding, each under a name of its own (the catalog holds no
+  lists). fwupd is the established tool for these checks, so a round
+  confirms the finding with it instead of code of its own;
+- `flags`: named properties the finding takes away, always `false`.
+
+Rules:
+
+- **Findings only lower trust.** A flag is false as soon as one active
+  finding says so. A flag no finding names is unknown, and consumers treat
+  unknown as unprotected. A claim that something is protected needs its
+  own per-model policy and evidence, never a finding.
+- **They take effect at once.** A reported finding reaches every install that
+  follows the catalog with its next update, without waiting for a release of
+  the operating system that consumes it.
+- **The proof is per model.** A finding changes the model's closure, so the
+  model shows as changed until its owner records evidence with
+  `security.<key>=confirmed` (by the reference's path), checked on the
+  machine with the finding's `check`.
+- **No override touches a finding.** A project or host override that sets,
+  changes or deletes one, or deletes a node that holds one, is refused:
+  findings change only in the catalog, by reviewed pull request.
+- **Flag names are an interface.** Consumers act on them, so a flag is never
+  renamed or reused for another meaning; a new meaning gets a new name. A
+  consumer that no longer finds a flag treats it as unknown, so a lost flag
+  fails closed, never open.
+- **Live facts only lower trust too.** When a consumer can read a flag live
+  (for example the kernel's `iommu_dma_protection`) and the live value is
+  worse than the catalog's, it shows the worse one and reports the
+  contradiction as a bug against the model. A live fact never grants
+  protection on its own.
+
+`oddc security` gives users a calm notice: each summary, and that the ODDC
+team knows and nothing needs doing. `oddc security --details` is the full
+account for contributors, and `oddc security --json` is for programs (the
+findings and the combined flags). `oddc doctor` shows the same notice.
 
 ## ODDC versus operating-system policy
 

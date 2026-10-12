@@ -37,6 +37,9 @@ One result per part of the resolved model, named by its path:
   `inactiveQuirks`, and its result must be `not-affected`: the kernel in
   use does not have the problem.
 - every policy section, as `policy.thermal`: the system behaves as it says.
+- every security finding the model references, by the reference's path,
+  as `security.thunderboltDma`: `confirmed`, the finding holds on this
+  machine (its `check` shows it). See [SECURITY.md](SECURITY.md).
 
 Every one of them is `pass` unless named otherwise above. You do not have
 to look them up: `oddc evidence record --status hardware-validated` lists

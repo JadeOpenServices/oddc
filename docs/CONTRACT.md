@@ -53,6 +53,12 @@ reused for something else. Renaming or removing an ID is a breaking change.
   (`verified`, `changed` or `unverified`), its current `closure`
   (`sha256:` digest of the resolved model) and the `evidence` that
   decided it. Only `verified` means the model was proven on this closure.
+- `oddc security --json [--resolved FILE]`: the security findings of the
+  deployed model (default `/etc/oddc/resolved.json`) and the combined
+  `flags`. A flag is `false` once any finding says so; a flag not in the
+  map is unknown, which you must treat as unprotected. Flag names never
+  change meaning. Read your security flags from here instead of keeping a
+  per-model copy; see [SECURITY.md](SECURITY.md).
 - The files themselves, described by `schemas/entity.schema.json`,
   `schemas/evidence.schema.json` and `schemas/overlay.schema.json`.
 - In Go, package `github.com/JadeOpenServices/oddc/pkg/oddc`: `LoadRegistry`,
@@ -69,7 +75,19 @@ A built-in USB device carries `usbPort` on its placement: `controller`
 serial numbers can be cloned, so trust a USB device as internal only when
 its ID appears on that port of that controller; the same ID anywhere else
 is external. In Go, `InternalUSBDevices` lists them with the controller's
-PCI ID. Bus numbers are not part of it: they change with boot order.
+PCI ID, the component's `attachment` (`internal`, or `detachable` for a
+part on its own connector) and `supported` (false when the entity marks it
+unusable on Linux). `oddc devices --json [--root DIR] [--device ID]`
+prints every part of the model: `path`, `id`, `name`, `bus`, `deviceId`,
+`attachment`, `usbPort` (only for built-in USB devices), `supported`,
+`proven` (`pass`, `unsupported` or `untested`, from the evidence the
+model's status rests on), `protocol` and `usbIdentity`: what tells one
+unit from another, `serial` `per-unit`, `placeholder` (the same on every
+unit) or `none`, and an `anchor` beyond USB such as `bluetooth-address`.
+Never treat a placeholder serial as identity; where nothing is per-unit,
+the fixed port is the only anchor. Take built-in USB devices from
+there, as the devices with a `usbPort`: a device's `bus` (`usb` or `hid`)
+says how ODDC matches it, not whether it is built in. Bus numbers are not part of it: they change with boot order.
 
 ## Releases
 

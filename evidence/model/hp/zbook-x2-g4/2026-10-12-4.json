@@ -1,0 +1,92 @@
+{
+  "$schema": "../../../../schemas/evidence.schema.json",
+  "schemaVersion": "2.0.0",
+  "id": "zbook-x2-g4-2026-10-12-4",
+  "deviceId": "model/hp/zbook-x2-g4",
+  "observedAt": "2026-10-12",
+  "status": "hardware-validated",
+  "environment": {
+    "bios": "P72 Ver. 01.53",
+    "kernel": "7.2.2",
+    "oddc": "f6003c79d4eac1b4e350083307f44c04f57e1b70",
+    "os": "NixOS 26.05"
+  },
+  "results": {
+    "capabilities.chargeThresholds": "not-exposed",
+    "capabilities.kickstandSwitch": "pass",
+    "capabilities.tabletModeSwitch": "not-exposed",
+    "hardware.audio.controller": "pass",
+    "hardware.camera.front": "pass",
+    "hardware.camera.rear": "pass",
+    "hardware.display.internal.primary": "pass",
+    "hardware.graphics.discrete": "pass",
+    "hardware.input.keyboard.primary": "pass",
+    "hardware.input.pen.primary": "pass",
+    "hardware.input.quickKeys.primary": "pass",
+    "hardware.input.touchscreen.primary": "pass",
+    "hardware.network.bluetooth.primary": "pass",
+    "hardware.network.wifi.primary": "pass",
+    "hardware.security.fingerprint.primary": "unsupported",
+    "hardware.sensors.hub": "pass",
+    "hardware.storage.cardReader.primary": "pass",
+    "hardware.usb.controller": "pass",
+    "hardware.usbC.thunderbolt": "pass",
+    "identity": "pass",
+    "policy.graphics": "pass",
+    "policy.input": "pass",
+    "policy.kernel": "pass",
+    "policy.sensors": "pass",
+    "policy.thermal": "pass",
+    "quirks.pchPmeGpe69Storm": "pass",
+    "quirks.renderOnOutputGpu": "pass",
+    "security.firmwareBootChain": "confirmed",
+    "security.intelAmt": "confirmed",
+    "security.intelMe": "confirmed",
+    "security.thunderboltDma": "confirmed"
+  },
+  "drivers": {
+    "audio/intel/sunrise-point-lp-hda": [
+      "snd_hda_intel"
+    ],
+    "bluetooth/intel/0a2b": [
+      "btusb"
+    ],
+    "camera/chicony/b5e7": [
+      "uvcvideo"
+    ],
+    "camera/realtek/5666": [
+      "uvcvideo"
+    ],
+    "cardreader/realtek/rts522a": [
+      "rtsx_pci"
+    ],
+    "graphics/nvidia/quadro-m620": [
+      "nvidia"
+    ],
+    "keyboard/nxp/1fc9-0088": [
+      "hid-generic"
+    ],
+    "pen/wacom/056a-016c": [
+      "wacom"
+    ],
+    "quickkeys/hp/03f0-0a56": [
+      "hid-generic"
+    ],
+    "sensorhub/intel/sunrise-point-lp-ish": [
+      "intel_ish_ipc"
+    ],
+    "thunderbolt/intel/jhl6540": [
+      "xhci_hcd"
+    ],
+    "touchscreen/03eb-8abb": [
+      "hid-multitouch"
+    ],
+    "usbcontroller/intel/sunrise-point-lp-xhci": [
+      "xhci_hcd"
+    ],
+    "wifi/intel/8265": [
+      "iwlwifi"
+    ]
+  },
+  "closure": "sha256:18cb07c784cc4ea89dc938a69f8bc3f8112a68e82229e255b69df969a2a9c666"
+}
