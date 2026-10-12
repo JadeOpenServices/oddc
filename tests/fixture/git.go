@@ -41,6 +41,12 @@ func GitCatalog(t *testing.T) string {
 
 	for _, args := range [][]string{
 		{"init", "-q"},
+		// A throwaway repo maintains nothing: commit and merge otherwise
+		// launch a detached `git maintenance run --auto` that still touches
+		// .git as the test's TempDir cleanup removes it ("directory not
+		// empty").
+		{"config", "gc.auto", "0"},
+		{"config", "maintenance.auto", "false"},
 		{"add", "."},
 		{"-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base"},
 		{"tag", "base"},

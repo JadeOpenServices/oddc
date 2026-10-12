@@ -21,7 +21,7 @@ An entity ID is lowercase kebab-case segments separated by `/`, such as
 form. The ID is the entity's address: it lives in
 `catalog/entities/<id>.json` and nowhere else.
 
-Once an ID is on `main` it keeps naming the same hardware and is never
+Once an ID is on `stable` it keeps naming the same hardware and is never
 reused for something else. Renaming or removing an ID is a breaking change.
 
 ## What to read
@@ -91,7 +91,7 @@ says how ODDC matches it, not whether it is built in. Bus numbers are not part o
 
 ## Releases
 
-Every commit on `main` is a release. Pin one by its commit hash; `main`
+Every commit on `stable` is a release. Pin one by its commit hash; `stable`
 is never force-pushed, so a pinned commit stays reachable. See
 [RELEASES.md](RELEASES.md).
 
