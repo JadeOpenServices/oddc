@@ -93,10 +93,24 @@ func RunTouchpad(args []string) error {
 	}
 
 	if writable {
-		if err := setAbsolute(device, touchpad, length); err != nil {
-			return err
+		// The keyboard keeps its own battery: detached and attached again,
+		// the chip still runs in absolute mode with the init kept (only this
+		// driver turns absolute mode on, and a chip reset turns it off), but
+		// it leaves register reads unanswered for up to about 20 s. Waiting
+		// for them would leave the pad dead that long, so a chip that is
+		// absolute already, or does not answer yet, is used at once; a chip
+		// in mouse mode gets the full init, here or on its first mouse report.
+		switch mode, answered := currentMode(device, touchpad, length); {
+		case answered && mode == touchpad.AbsoluteMode:
+			fmt.Fprintf(os.Stderr, "touchpad: still in absolute mode over %s; init kept\n", transport)
+		case answered:
+			if err := setAbsolute(device, touchpad, length); err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "touchpad: absolute mode on over %s\n", transport)
+		default:
+			fmt.Fprintf(os.Stderr, "touchpad: no answer to register reads over %s yet; the first reports decide the mode\n", transport)
 		}
-		fmt.Fprintf(os.Stderr, "touchpad: absolute mode on over %s\n", transport)
 	} else {
 		fmt.Fprintf(os.Stderr, "touchpad: %s accepts no writes; reading the mode set over another transport\n", transport)
 	}
@@ -319,6 +333,20 @@ func sendInit(device *os.File, t oddc.AlpsTouchpad, length int) error {
 		time.Sleep(time.Duration(w.PauseMs) * time.Millisecond)
 	}
 	return nil
+}
+
+// currentMode reads the mode register a few times, 50 ms apart; answered
+// is false when the chip acknowledged none of the reads.
+func currentMode(device *os.File, t oddc.AlpsTouchpad, length int) (byte, bool) {
+	for try := 0; try < 3; try++ {
+		if try > 0 {
+			time.Sleep(50 * time.Millisecond)
+		}
+		if mode, ok, err := readMode(device, t, length); err == nil && ok {
+			return mode, true
+		}
+	}
+	return 0, false
 }
 
 // readMode asks the chip for its mode register; ok is false without the
