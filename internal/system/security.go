@@ -66,7 +66,7 @@ func SecurityNotice(active []oddc.Finding) string {
 		return "No known security findings for this model.\n"
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "Known security findings for this model: %d. The ODDC team is on them; nothing for you to do.\n", len(active))
+	fmt.Fprintf(&b, "Known security findings for this model: %d. The ODDC team is working on fixes; nothing to install. Until then, each line says what to be careful with.\n", len(active))
 	for _, f := range active {
 		fmt.Fprintf(&b, "- %s: %s\n", f.Name, f.Summary)
 	}
