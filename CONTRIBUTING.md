@@ -425,7 +425,11 @@ Canonical catalog data describes:
 - reason;
 - source;
 - removal condition;
-- whether it is enabled for a model.
+- whether it is enabled for a model;
+- `summary`: one sentence for the machine's owner saying what they get
+  (the name says what was wrong). It is text for people only: `oddc notes`
+  shows it, and it is not part of the closure, so writing it needs no new
+  evidence.
 
 ### Quirk implementation
 
@@ -505,6 +509,11 @@ Better:
     }
 
 This matters because policy may evolve while the hardware fact remains permanently true.
+
+Each policy section may carry a `summary`: one sentence for the machine's
+owner saying what ODDC makes the machine do ("The screen rotates with the
+tablet."). `oddc notes` lists it under "Works because of ODDC" once the
+section has passing evidence. The summary is not part of the closure.
 
 ---
 

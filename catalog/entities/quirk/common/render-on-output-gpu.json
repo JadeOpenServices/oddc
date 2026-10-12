@@ -13,7 +13,8 @@
     "requires": {
       "discreteDriver": "hardware.graphics.discrete.driver",
       "integratedDriver": "hardware.graphics.integrated.driver"
-    }
+    },
+    "summary": "Rendering on the GPU that drives the screen in use: a smooth cursor and an idle, quiet Quadro on the built-in screen, no lag on an external one."
   },
   "sources": {
     "zbookX2G4Measured": {

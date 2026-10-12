@@ -232,7 +232,8 @@
       "graphics": {
         "discrete": {
           "driverBranch": "legacy_580"
-        }
+        },
+        "summary": "The NVIDIA driver for the Quadro M620, from the driver branch that still supports it."
       },
       "input": {
         "quickKeys": {
@@ -265,6 +266,7 @@
             "preset3": "KEY_MACRO_PRESET3"
           }
         },
+        "summary": "The Quick Keys with three presets, and tablet mode whenever the keyboard is detached or the stand is closed.",
         "tabletMode": {
           "from": "keyboard-presence"
         }
@@ -273,15 +275,18 @@
         "parameters": {
           "intelHid5ButtonArray": "intel_hid.enable_5_button_array=1",
           "memSleepDeep": "mem_sleep_default=deep"
-        }
+        },
+        "summary": "The volume buttons work, and sleep uses the deep state so the battery lasts the night."
       },
       "sensors": {
         "orientation": {
           "service": "iio-sensor-proxy"
-        }
+        },
+        "summary": "The screen rotates with the tablet."
       },
       "thermal": {
-        "daemon": "thermald"
+        "daemon": "thermald",
+        "summary": "Thermal management with HP's own tables, so the machine stays within its limits under load."
       }
     },
     "quirks": {
