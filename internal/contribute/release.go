@@ -250,18 +250,28 @@ func RunRelease(args []string) error {
 	}
 
 	fmt.Println("waiting for the checks of #" + number)
-	// GitHub lists a new pull request's checks only once CI has queued them.
+	// Checks of the staging commit from earlier pushes are listed at once,
+	// while the pull request's own runs may still be queued. So wait until
+	// GitHub itself calls the pull request mergeable, watching whatever
+	// checks run meanwhile.
 	for start := time.Now(); ; time.Sleep(10 * time.Second) {
-		listed, _ := g.run("pr", "checks", number, "--repo", oddc.Repository, "--json", "name", "--jq", "length")
-		if listed != "" && listed != "0" {
+		state, err := g.run("pr", "view", number, "--repo", oddc.Repository, "--json", "mergeStateStatus", "--jq", ".mergeStateStatus")
+		if err != nil {
+			return err
+		}
+		if state == "CLEAN" || state == "HAS_HOOKS" {
 			break
 		}
-		if time.Since(start) > 3*time.Minute {
-			return fmt.Errorf("no checks appeared on #%s within 3 minutes; is CI running?", number)
+		pending, _ := g.run("pr", "checks", number, "--repo", oddc.Repository, "--json", "bucket", "--jq", `map(select(.bucket == "pending")) | length`)
+		if pending != "" && pending != "0" {
+			if err := cli.Command(g.bin, "pr", "checks", number, "--repo", oddc.Repository, "--watch", "--fail-fast"); err != nil {
+				return fmt.Errorf("the checks of #%s did not pass: %w", number, err)
+			}
+			continue
 		}
-	}
-	if err := cli.Command(g.bin, "pr", "checks", number, "--repo", oddc.Repository, "--watch", "--fail-fast"); err != nil {
-		return fmt.Errorf("the checks of #%s did not pass: %w", number, err)
+		if time.Since(start) > 5*time.Minute {
+			return fmt.Errorf("#%s is %s with no check running; see its page for what main's rules still require", number, state)
+		}
 	}
 
 	if !cli.Ask(fmt.Sprintf("Merge #%s into main? This is the release.", number)) {
