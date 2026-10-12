@@ -24,7 +24,10 @@ validator rejects passing evidence on the current closure that does not.
 One result per part of the resolved model, named by its path:
 
 - `identity`
-- every component, as `hardware.network.wifi.primary`: it works.
+- every component, as `hardware.network.wifi.primary`: it works. A
+  component whose entity sets `support.linux.status` to `unsupported` must
+  be `unsupported`: it is present and cannot be used on Linux, for the
+  reason the entity gives.
 - every capability, as `capabilities.usb4`: it works. A capability the
   catalog sets to `false` must be `not-exposed`: the machine really lacks it.
 - every quirk, as `quirks.fprintdResume`: the problem it works around does

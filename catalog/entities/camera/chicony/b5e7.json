@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "usb",
+    "deviceId": "04f2:b5e7",
+    "driver": "uvcvideo",
+    "streams": {
+      "color": {
+        "name": "HP HD Camera"
+      },
+      "infrared": {
+        "emitter": "alternating",
+        "format": "YUYV",
+        "fps": 30,
+        "height": 340,
+        "name": "HP IR Camera",
+        "width": 340
+      }
+    },
+    "vendor": {
+      "name": "Chicony"
+    }
+  },
+  "kind": "CameraComponent",
+  "metadata": {
+    "id": "camera/chicony/b5e7",
+    "name": "HP HD Camera (Chicony 04F2:B5E7)"
+  },
+  "sources": {
+    "streams.infrared": {
+      "observedAt": "2026-10-11",
+      "reason": "On the ZBook x2 G4 the V4L2 node named \"HP IR Camera\" offers YUYV 340x340 at 30 fps only. 30 captured frames alternate lit (mean 72-94, max 255) and dark (mean about 5): the IR emitter pulses on its own every other frame, without any extension-unit control set (unit 4 {1229a78c-47b4-4094-b0ce-db07386fb938}, 2 controls, left untouched).",
+      "type": "validation"
+    }
+  }
+}

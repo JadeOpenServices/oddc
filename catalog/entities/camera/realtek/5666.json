@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../schemas/entity.schema.json",
+  "apiVersion": "oddc.openjade.de/v2",
+  "data": {
+    "bus": "usb",
+    "deviceId": "0bda:5666",
+    "driver": "uvcvideo",
+    "streams": {
+      "color": {
+        "name": "HP 8MP Camera"
+      }
+    },
+    "vendor": {
+      "name": "Realtek"
+    }
+  },
+  "kind": "CameraComponent",
+  "metadata": {
+    "id": "camera/realtek/5666",
+    "name": "HP 8MP Camera (Realtek 0BDA:5666)"
+  }
+}
