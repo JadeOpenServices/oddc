@@ -22,6 +22,50 @@ func git(t *testing.T, root string, args ...string) {
 	}
 }
 
+// A release writes the owner page for every verified model, even when its
+// closure did not change since the last release (a wording-only release):
+// a summary is not part of the closure, so "changed since base" would miss
+// it. Unverified models get no page.
+func TestReleaseWritesPageForEveryVerifiedModel(t *testing.T) {
+	root := fixture.GitCatalog(t)
+	// A change that touches no model's closure (a new file outside the
+	// catalog); against the base the closures are all unchanged.
+	git(t, root, "checkout", "-q", "-b", "work")
+	fixture.Write(t, filepath.Join(root, "NOTES-ONLY"), []byte("wording\n"))
+	git(t, root, "add", ".")
+	git(t, root, "commit", "-q", "-m", "wording only")
+	git(t, root, "checkout", "-q", "-")
+	git(t, root, "merge", "-q", "--no-ff", "-m", "Merge wording", "work")
+
+	c, err := contribute.CheckCandidate(root, "HEAD", "base")
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry, err := oddc.LoadRegistry(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	verified := 0
+	for id := range c.Models {
+		status, err := registry.Verify(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, hasPage := c.Notes[id]
+		if status.Status == oddc.Verified {
+			verified++
+			if !hasPage {
+				t.Errorf("%s is verified but got no owner page", id)
+			}
+		} else if hasPage {
+			t.Errorf("%s is %s but got an owner page", id, status.Status)
+		}
+	}
+	if verified == 0 || len(c.Notes) != verified {
+		t.Errorf("verified %d, pages %d", verified, len(c.Notes))
+	}
+}
+
 // A candidate is released only when it holds something new, is valid, and
 // every model is verified; each problem is named.
 func TestReleaseCandidate(t *testing.T) {

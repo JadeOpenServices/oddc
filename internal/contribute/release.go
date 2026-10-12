@@ -70,12 +70,6 @@ func CheckCandidate(root, ref, base string) (Candidate, error) {
 		return Candidate{}, err
 	}
 	defer os.RemoveAll(dir)
-	baseDir, err := checkout(root, base)
-	if err != nil {
-		return Candidate{}, err
-	}
-	defer os.RemoveAll(baseDir)
-	before, _ := oddc.LoadRegistry(baseDir)
 
 	validation := oddc.Validate(dir)
 	for _, problem := range validation.Errors {
@@ -99,12 +93,12 @@ func CheckCandidate(root, ref, base string) (Candidate, error) {
 		c.Models[id] = status.Status
 		if status.Status != oddc.Verified {
 			c.Problems = append(c.Problems, fmt.Sprintf("%s is %s, not verified", id, status.Status))
+			continue
 		}
-		if before != nil {
-			if old, err := before.Closure(id); err == nil && old == status.Closure {
-				continue
-			}
-		}
+		// Every verified model gets its owner page in the release, so a
+		// release that only improved the wording still ships the new page
+		// (a summary is not part of the closure, so "changed since base"
+		// would miss it). The page is a snapshot, not a changelog.
 		if c.Notes[id], err = registry.DeviceNotes(id); err != nil {
 			return Candidate{}, err
 		}

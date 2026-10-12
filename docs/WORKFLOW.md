@@ -351,8 +351,8 @@ a checkout of the catalog (`--root DIR`, default the workspace):
 
 It never pushes to `main`. When GitHub reports a bypassed rule it stops.
 
-The pull request carries the entry of every device that is new or changed
-in the release (`oddc notes`, below). `--notes DIR` also writes
+The pull request carries the entry of every verified device in the
+release (`oddc notes`, below). `--notes DIR` also writes
 `DIR/release-notes.md` for maintainers and, per such device, the page for
 its owner `DIR/<vendor>-<model>.md` with a QR code (`-qr.svg`, `-qr.png`)
 that leads to `--notes-url` (`{device}` = `<vendor>-<model>`), else to the
