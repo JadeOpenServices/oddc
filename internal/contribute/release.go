@@ -1,0 +1,228 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+package contribute
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"regexp"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/JadeOpenServices/oddc/internal/cli"
+	"github.com/JadeOpenServices/oddc/pkg/oddc"
+)
+
+// Candidate is staging checked as a release: the commit, what main lacks
+// of it, and whether it may become a release.
+type Candidate struct {
+	Commit string
+	// Merges are the subjects of staging's first-parent merges main lacks.
+	Merges []string
+	// Models maps every model to its verification status.
+	Models map[string]string
+	// Problems say why the candidate may not be released; empty when it may.
+	Problems []string
+}
+
+// CheckCandidate checks ref (a commit of the git checkout at root) against
+// base the way CI guards main: the catalog at ref is valid, every model is
+// verified on its closure, and ref holds something base does not.
+func CheckCandidate(root, ref, base string) (Candidate, error) {
+	commit, err := cli.Git(root, "rev-parse", "--verify", ref+"^{commit}")
+	if err != nil {
+		return Candidate{}, err
+	}
+	c := Candidate{Commit: commit, Models: map[string]string{}}
+
+	ahead, err := cli.Git(root, "rev-list", "--count", base+".."+commit)
+	if err != nil {
+		return Candidate{}, err
+	}
+	if ahead == "0" {
+		c.Problems = append(c.Problems, fmt.Sprintf("%s holds nothing that %s lacks", ref, base))
+		return c, nil
+	}
+	merges, err := cli.Git(root, "log", "--first-parent", "--merges", "--format=%s", base+".."+commit)
+	if err != nil {
+		return Candidate{}, err
+	}
+	for _, line := range strings.Split(merges, "\n") {
+		if line != "" {
+			c.Merges = append(c.Merges, line)
+		}
+	}
+
+	dir, err := os.MkdirTemp("", "oddc-release-")
+	if err != nil {
+		return Candidate{}, err
+	}
+	defer os.RemoveAll(dir)
+	archive := exec.Command("sh", "-c", `git -C "$1" archive "$2" | tar -x -C "$3"`, "sh", root, commit, dir)
+	if out, err := archive.CombinedOutput(); err != nil {
+		return Candidate{}, fmt.Errorf("git archive %s: %v: %s", commit, err, strings.TrimSpace(string(out)))
+	}
+
+	validation := oddc.Validate(dir)
+	for _, problem := range validation.Errors {
+		c.Problems = append(c.Problems, "invalid: "+problem)
+	}
+	if !validation.Valid {
+		return c, nil
+	}
+	registry, err := oddc.LoadRegistry(dir)
+	if err != nil {
+		return Candidate{}, err
+	}
+	for id, entity := range registry.Entities {
+		if entity.Kind != "DeviceModel" {
+			continue
+		}
+		status, err := registry.Verify(id)
+		if err != nil {
+			return Candidate{}, err
+		}
+		c.Models[id] = status.Status
+		if status.Status != oddc.Verified {
+			c.Problems = append(c.Problems, fmt.Sprintf("%s is %s, not verified", id, status.Status))
+		}
+	}
+	sort.Strings(c.Problems)
+	return c, nil
+}
+
+// Body is the release pull request's description.
+func (c Candidate) Body() string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "Promotes staging (%s) to main.\n\nMerged since the last release:\n\n", c.Commit[:12])
+	for _, merge := range c.Merges {
+		fmt.Fprintf(&b, "- %s\n", merge)
+	}
+	b.WriteString("\nModels:\n\n")
+	ids := make([]string, 0, len(c.Models))
+	for id := range c.Models {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		fmt.Fprintf(&b, "- %s: %s\n", id, c.Models[id])
+	}
+	b.WriteString("\nChecked by `oddc release`: the catalog is valid and every model is verified on its closure.\n")
+	return b.String()
+}
+
+var (
+	prNumber = regexp.MustCompile(`/pull/(\d+)$`)
+	mergedPR = regexp.MustCompile(`^Merge pull request #(\d+) `)
+)
+
+// RunRelease promotes staging to main for a maintainer: it checks staging
+// as CI does, opens the release pull request (or reuses the open one),
+// waits for its checks, asks before merging, merges with a merge commit
+// and prints the release commit. It never pushes to main and stops when
+// GitHub reports a bypassed rule. --root is a git checkout of the catalog
+// (default the workspace); --check stops after checking staging.
+func RunRelease(args []string) error {
+	root := cli.Value(args, "--root", cli.WorkspaceDir())
+
+	g, err := findGh()
+	if err != nil {
+		return err
+	}
+	defer g.done()
+
+	remote := "https://github.com/" + oddc.Repository + ".git"
+	if _, err := cli.GitEnv(root, g.git(), "fetch", "--quiet", remote,
+		"+refs/heads/staging:refs/oddc-release/staging", "+refs/heads/main:refs/oddc-release/main"); err != nil {
+		return err
+	}
+	c, err := CheckCandidate(root, "refs/oddc-release/staging", "refs/oddc-release/main")
+	if err != nil {
+		return err
+	}
+	// "Merge pull request #N from ..." says little; name each by its title.
+	for i, merge := range c.Merges {
+		if m := mergedPR.FindStringSubmatch(merge); m != nil {
+			if title, err := g.run("pr", "view", m[1], "--repo", oddc.Repository, "--json", "title", "--jq", ".title"); err == nil {
+				c.Merges[i] = "#" + m[1] + " " + title
+			}
+		}
+	}
+	fmt.Printf("staging %s:\n", c.Commit[:12])
+	for _, merge := range c.Merges {
+		fmt.Printf("  %s\n", merge)
+	}
+	if len(c.Problems) > 0 {
+		return fmt.Errorf("staging cannot be released:\n  %s", strings.Join(c.Problems, "\n  "))
+	}
+	fmt.Println("valid, every model verified")
+	if cli.Has(args, "--check") {
+		return nil
+	}
+
+	number, err := g.run("pr", "list", "--repo", oddc.Repository, "--base", "main", "--head", "staging",
+		"--state", "open", "--json", "number", "--jq", ".[0].number // empty")
+	if err != nil {
+		return err
+	}
+	if number == "" {
+		url, err := g.run("pr", "create", "--repo", oddc.Repository, "--base", "main", "--head", "staging",
+			"--title", "Release: staging "+c.Commit[:12], "--body", c.Body())
+		if err != nil {
+			return err
+		}
+		match := prNumber.FindStringSubmatch(url)
+		if match == nil {
+			return fmt.Errorf("gh pr create printed %q, not a pull request URL", url)
+		}
+		number = match[1]
+		fmt.Println("opened", url)
+	} else {
+		fmt.Printf("release pull request #%s is open already\n", number)
+	}
+
+	head, err := g.run("pr", "view", number, "--repo", oddc.Repository, "--json", "headRefOid", "--jq", ".headRefOid")
+	if err != nil {
+		return err
+	}
+	if head != c.Commit {
+		return fmt.Errorf("pull request #%s is at %s, but the checked staging is %s; run oddc release again", number, head, c.Commit)
+	}
+
+	fmt.Println("waiting for the checks of #" + number)
+	// GitHub lists a new pull request's checks only once CI has queued them.
+	for start := time.Now(); ; time.Sleep(10 * time.Second) {
+		listed, _ := g.run("pr", "checks", number, "--repo", oddc.Repository, "--json", "name", "--jq", "length")
+		if listed != "" && listed != "0" {
+			break
+		}
+		if time.Since(start) > 3*time.Minute {
+			return fmt.Errorf("no checks appeared on #%s within 3 minutes; is CI running?", number)
+		}
+	}
+	if err := cli.Command(g.bin, "pr", "checks", number, "--repo", oddc.Repository, "--watch", "--fail-fast"); err != nil {
+		return fmt.Errorf("the checks of #%s did not pass: %w", number, err)
+	}
+
+	if !cli.Ask(fmt.Sprintf("Merge #%s into main? This is the release.", number)) {
+		return errors.New("not merged; run oddc release again to continue")
+	}
+	out, err := exec.Command(g.bin, "pr", "merge", number, "--repo", oddc.Repository, "--merge",
+		"--match-head-commit", c.Commit).CombinedOutput()
+	if strings.Contains(strings.ToLower(string(out)), "bypass") {
+		return fmt.Errorf("GitHub reports a bypassed rule; stop and tell the maintainers:\n%s", out)
+	}
+	if err != nil {
+		return fmt.Errorf("gh pr merge: %v: %s", err, strings.TrimSpace(string(out)))
+	}
+
+	release, err := g.run("api", "repos/"+oddc.Repository+"/commits/main", "--jq", ".sha")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("released: main is %s; consumers pin this commit\n", release)
+	return nil
+}

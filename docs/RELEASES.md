@@ -8,5 +8,9 @@
 - Recommended: GitHub branch protection on `main` that blocks force-pushes
   and deletion and requires CI to pass.
 
+Maintainers release with `oddc release` ([WORKFLOW.md](WORKFLOW.md#maintainers)):
+it checks `staging`, opens the pull request to `main`, waits for CI and
+merges only after asking.
+
 To check a pinned revision, run `oddc validate --root . --json` in a
 checkout of that commit.
