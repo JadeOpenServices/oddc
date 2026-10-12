@@ -153,6 +153,11 @@
       "observedAt": "2026-10-11",
       "reason": "The Alps HID driver package 8.2206.1717.634 (HP SoftPaq SP112035, ApHidFiltr, subtype-1 table selected by Common_ASIC_SUB_TYPE=1 in the keyboard's INF section) writes these 15 registers at start, in this order, reading back all but 0x800051 and 0x8000F1 and waiting 500 ms after 0x8000F1. Sent over USB on the ZBook x2 G4: all confirmed; factory values before were different (e.g. 0x800091 0xC8, 0x80008D 0xC8); finger dropouts in 15 s of three-finger swipes went from 9 (64-200 ms) to 7 (mostly shorter).",
       "type": "validation"
+    },
+    "touchpadSwipes20261012": {
+      "type": "validation",
+      "observedAt": "2026-10-12",
+      "reason": "Light three-finger swipes on the ZBook x2 G4 over USB, with the 15 init registers written and no pressure axis on the virtual touchpad: the chip lost a finger mid-touch 0 times in 10 s of normal swipes and twice (94 ms each) in 10 s of light ones; in 11 of 14 light touches three fingers were seen in 71-99% of frames, fingers land within about 5 frames of each other. libinput turned them into 16 swipe gestures of 330 to 1,830 units dx (unaccelerated 125 to 790) each, far above what a compositor needs to switch workspace. Two-finger scrolling: 2 finger-count drops in 8 s. So light swipes reach the desktop intact; a swipe that feels heavy is not lost in the chip, the driver or libinput."
     }
   }
 }
