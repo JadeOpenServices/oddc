@@ -283,7 +283,12 @@ func RunRelease(args []string) error {
 		return fmt.Errorf("GitHub reports a bypassed rule; stop and tell the maintainers:\n%s", out)
 	}
 	if err != nil {
-		return fmt.Errorf("gh pr merge: %v: %s", err, strings.TrimSpace(string(out)))
+		// A server error can come after GitHub merged; trust the pull request.
+		state, _ := g.run("pr", "view", number, "--repo", oddc.Repository, "--json", "state", "--jq", ".state")
+		if state != "MERGED" {
+			return fmt.Errorf("gh pr merge: %v: %s", err, strings.TrimSpace(string(out)))
+		}
+		fmt.Printf("GitHub answered with an error, but #%s is merged\n", number)
 	}
 
 	release, err := g.run("api", "repos/"+oddc.Repository+"/commits/main", "--jq", ".sha")
