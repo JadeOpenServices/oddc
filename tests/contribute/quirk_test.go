@@ -33,6 +33,9 @@ func quirkAndModel(t *testing.T, registry *oddc.Registry, referencing bool) (str
 			if registry.Entities[model].Kind != "DeviceModel" {
 				continue
 			}
+			if !referencing && !fits(t, registry, quirk, model) {
+				continue
+			}
 			if referencesQuirk(registry.Entities[model].Data, quirk) == referencing {
 				return quirk, model
 			}
@@ -40,6 +43,27 @@ func quirkAndModel(t *testing.T, registry *oddc.Registry, referencing bool) (str
 	}
 	t.Skip("the catalog has no such quirk and model")
 	return "", ""
+}
+
+// fits reports whether a model has every path a quirk requires.
+func fits(t *testing.T, registry *oddc.Registry, quirk, model string) bool {
+	t.Helper()
+
+	requires, _ := registry.Entities[quirk].Data["requires"].(map[string]any)
+	if len(requires) == 0 {
+		return true
+	}
+	resolved, err := registry.ResolveModel(model, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, value := range requires {
+		path, _ := value.(string)
+		if _, found := oddc.Lookup(resolved.Resolved, path); !found {
+			return false
+		}
+	}
+	return true
 }
 
 func referencesQuirk(model map[string]any, quirk string) bool {
@@ -80,8 +104,28 @@ func TestQuirkEnableAdoptsSharedQuirk(t *testing.T) {
 	}
 	quirk, model := quirkAndModel(t, before, false)
 	args := []string{"quirk", "enable", quirk, "--device", model, "--root", workspace}
+	modelPath := oddc.EntityPath(filepath.Join(workspace, "catalog", "entities"), model)
+	original, err := os.ReadFile(modelPath)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	out := stdout(t, func() error { return contribute.RunQuirk(args) })
+
+	// Only lines are added: every line of the model is still there, in
+	// its order (a line may gain the comma before an added key).
+	edited, _ := os.ReadFile(modelPath)
+	next := strings.Split(string(edited), "\n")
+	at := 0
+	for _, line := range strings.Split(string(original), "\n") {
+		for at < len(next) && strings.TrimSuffix(next[at], ",") != strings.TrimSuffix(line, ",") {
+			at++
+		}
+		if at == len(next) {
+			t.Fatalf("enable reordered or changed %s; lost line %q", model, line)
+		}
+		at++
+	}
 	if !strings.Contains(out, "oddc evidence record") {
 		t.Errorf("no evidence step in %q", out)
 	}
@@ -109,7 +153,7 @@ func TestQuirkEnableChecksRequirements(t *testing.T) {
 	}
 	quirk, model := quirkAndModel(t, registry, false)
 	editFile(t, oddc.EntityPath(filepath.Join(workspace, "catalog", "entities"), quirk), func(document map[string]any) {
-		document["data"].(map[string]any)["requires"] = map[string]any{"hardware.noSuchPart": true}
+		document["data"].(map[string]any)["requires"] = map[string]any{"noSuchPart": "hardware.noSuchPart"}
 	})
 	modelPath := oddc.EntityPath(filepath.Join(workspace, "catalog", "entities"), model)
 	before, _ := os.ReadFile(modelPath)
