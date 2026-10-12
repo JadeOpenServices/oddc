@@ -71,3 +71,40 @@ func splitPath(path string) []string {
 	}
 	return keys
 }
+
+// Each built-in USB device carries its component's attachment, and is
+// unsupported exactly when its entity marks it unusable on Linux.
+func TestInternalUSBDevicesAttachmentAndSupport(t *testing.T) {
+	registry, err := LoadRegistry(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked := 0
+	for _, id := range modelIDs(registry) {
+		resolved, err := registry.ResolveEntity(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		devices, err := InternalUSBDevices(resolved.Resolved)
+		if err != nil {
+			t.Fatal(err)
+		}
+		unsupported := map[string]bool{}
+		for _, part := range UnsupportedComponents(resolved.Resolved) {
+			unsupported[part.Path] = true
+		}
+		for _, d := range devices {
+			checked++
+			attachment, _ := Lookup(resolved.Resolved, d.Path+".attachment")
+			if d.Attachment != attachment {
+				t.Errorf("%s %s: attachment %q, catalog %v", id, d.Path, d.Attachment, attachment)
+			}
+			if d.Supported == unsupported[d.Path] {
+				t.Errorf("%s %s: supported %v, but unsupported in the catalog is %v", id, d.Path, d.Supported, unsupported[d.Path])
+			}
+		}
+	}
+	if checked == 0 {
+		t.Fatal("no model has built-in USB devices")
+	}
+}
