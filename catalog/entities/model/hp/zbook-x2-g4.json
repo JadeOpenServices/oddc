@@ -273,10 +273,11 @@
       },
       "kernel": {
         "parameters": {
+          "ecNoWakeup": "acpi.ec_no_wakeup=1",
           "intelHid5ButtonArray": "intel_hid.enable_5_button_array=1",
-          "memSleepDeep": "mem_sleep_default=deep"
+          "memSleepS2idle": "mem_sleep_default=s2idle"
         },
-        "summary": "The volume buttons work, and sleep uses the deep state so the battery lasts the night."
+        "summary": "The volume buttons work. Asleep, the battery drains about 1.5 % an hour; the power button wakes the machine, plugging in the charger or pressing the Quick Keys does not."
       },
       "sensors": {
         "orientation": {
@@ -375,9 +376,14 @@
       "reason": "Guided test on the machine: Intel Virtual Switches (INT33D6) sets SW_TABLET_MODE to 0 when the stand opens and 1 when it closes, with the keyboard attached in front. Folding the keyboard behind (only possible with the stand closed) and detaching it change nothing there. The switch flips at one stand angle; opening further changes nothing. A guided test of the combined switch (stand, detach, reattach in both stand positions) gave tablet mode exactly when the stand was closed or the keyboard gone.",
       "type": "validation"
     },
-    "memSleepDeep": {
-      "observedAt": "2026-10-11",
-      "reason": "The FADT declares no Low Power S0 support and the DSDT has no LPS0 _DSM, but _S3 is declared: s2idle never reaches S0ix here, so suspend must use S3. The kernel picks deep by itself today (/sys/power/mem_sleep 's2idle [deep]'); the parameter pins it. Overnight in suspend the battery stayed at 86 %.",
+    "ecNoWakeup": {
+      "observedAt": "2026-10-13",
+      "reason": "BIOS P72 01.53, kernel 7.2.2. The embedded controller's GPE (0x6E, kernel: 'ACPI: EC: GPE=0x6e') is an s2idle wake source, and the EC raises it for every transaction (battery reads several times a second while awake) and for its query events, so s2idle ended within about a second. The ACPI EC driver's ec_no_wakeup parameter (drivers/acpi/ec.c) stops the EC from waking s2idle. Set at runtime (/sys/module/acpi/parameters/ec_no_wakeup), s2idle held 300 s and 1800 s runs until the RTC alarm, and the power button, a fixed ACPI event outside the EC, still woke it at once. Cost, from the DSDT's EC query methods: AC plug and unplug, battery, thermal, lid and HP WMI events (Quick Keys, USB-C power delivery) no longer wake it from s2idle.",
+      "type": "validation"
+    },
+    "memSleepS2idle": {
+      "observedAt": "2026-10-13",
+      "reason": "s2idle in place of S3 because fwupd's host security check fails SuspendToRam: resuming from S3 runs firmware code, resuming from s2idle does not. The FADT declares no Low Power S0 support and the DSDT has no LPS0 _DSM, so s2idle never reaches S0ix here (slp_s0 residency stayed 0): it is a plain freeze. BIOS P72 01.53, kernel 7.2.2, on battery, with mem_sleep and ec_no_wakeup set at runtime to what these parameters set: 30 minutes asleep drained 56 mAh an hour (1.47 % of a full battery an hour) and woke on the RTC alarm. Without ec_no_wakeup it woke within about a second (see ecNoWakeup).",
       "type": "validation"
     },
     "tabletModeSwitch": {
