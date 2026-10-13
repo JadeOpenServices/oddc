@@ -34,8 +34,8 @@ esac
 : "${REPO:?}" "${PR:?}" "${AUTHOR:?}" "${ASSOCIATION:?}" "${BASE:?}" "${HEAD_REPO:?}" "${HEAD_REF:?}" "${HEAD_SHA:?}"
 rules="https://github.com/$REPO/blob/staging/docs/WORKFLOW.md#contribution-rules"
 
-# Promotion is the only change main takes.
-if [ "$BASE" = main ] && [ "$HEAD_REPO/$HEAD_REF" = "$REPO/staging" ]; then
+# Promotion is the only change stable takes.
+if [ "$BASE" = stable ] && [ "$HEAD_REPO/$HEAD_REF" = "$REPO/staging" ]; then
   exit 0
 fi
 
