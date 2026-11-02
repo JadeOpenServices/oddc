@@ -184,6 +184,10 @@ matches each `/sys/class/drm/cardN` to a GPU under `hardware.graphics` by
 the driver bound to it. A model without the quirk gets an error, never a
 guess. A compositor keeps its render GPU until it restarts, so the
 session runs it at login; `--explain` writes the reasoning to stderr.
+`devices` on a machine no model matches lists what is present instead,
+each GPU with the driver bound now and whether it runs natively, the
+drivers verified models with the same chip use, and how to add the
+machine to ODDC ([CONTRACT.md](CONTRACT.md)).
 `notes` prints a model's entry for the people who own the machine
 (`--device ID`, default the deployed one; `--root DIR`): what works and
 what works because of ODDC (from its newest passing evidence), what does
