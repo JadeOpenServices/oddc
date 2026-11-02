@@ -117,6 +117,12 @@ machine's IDs from `/sys` (`--sys DIR`) or `--facts FILE` and prints:
 
 Two models matching is an error, never best effort.
 
+`oddc bootcheck --expect pci:VVVV:DDDD=DRIVER [--expect ...] [--sys DIR]`
+exits non-zero unless each named PCI device has that driver bound and, for
+a display controller, a DRM card of its own. An installer runs it before
+`boot-complete.target` in a generation that tries a graphics option, so a
+failed try falls back to the previous generation.
+
 ## Releases
 
 Every commit on `stable` is a release. Pin one by its commit hash; `stable`

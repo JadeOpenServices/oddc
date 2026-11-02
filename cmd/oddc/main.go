@@ -30,6 +30,7 @@ var commands = []struct {
 	{"rendergpu", system.RunRenderGPU},
 	{"security", system.RunSecurity},
 	{"devices", system.RunDevices},
+	{"bootcheck", system.RunBootCheck},
 	{"validate", catalog.Run},
 	{"list", catalog.Run},
 	{"index", catalog.Run},

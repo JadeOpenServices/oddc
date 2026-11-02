@@ -4,6 +4,7 @@ package system_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -201,6 +202,35 @@ func TestDevicesClassifiesTheLiveMachine(t *testing.T) {
 		if got.Model == nil || *got.Model != model {
 			t.Errorf("%s: model %v", model, got.Model)
 		}
+	}
+}
+
+// The boot check passes only when each expected driver is bound to its
+// device and, for a GPU, made a DRM card.
+func TestBootCheck(t *testing.T) {
+	registry, models := fixture.Catalog(t)
+	for _, gpu := range provenGPUs(t, registry, models) {
+		expect := fmt.Sprintf("pci:%s=%s", gpu.deviceID, gpu.driver)
+		for _, c := range []struct {
+			name       string
+			driver     string
+			card, pass bool
+		}{
+			{"bound with a card", gpu.driver, true, true},
+			{"bound without a card", gpu.driver, false, false},
+			{"other driver", "simpledrm", true, false},
+			{"no driver", "", false, false},
+		} {
+			sys := t.TempDir()
+			addGPU(t, sys, "0000:01:00.0", gpu.deviceID, c.driver, c.card, false)
+			err := system.RunBootCheck([]string{"bootcheck", "--sys", sys, "--expect", expect})
+			if (err == nil) != c.pass {
+				t.Errorf("%s %s: %v", gpu.model, c.name, err)
+			}
+		}
+	}
+	if system.RunBootCheck([]string{"bootcheck"}) == nil {
+		t.Error("no --expect passed")
 	}
 }
 
