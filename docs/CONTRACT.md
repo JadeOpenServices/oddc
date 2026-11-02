@@ -89,6 +89,40 @@ the fixed port is the only anchor. Take built-in USB devices from
 there, as the devices with a `usbPort`: a device's `bus` (`usb` or `hid`)
 says how ODDC matches it, not whether it is built in. Bus numbers are not part of it: they change with boot order.
 
+When no model matches the machine and no `--device` is given, `oddc
+devices --json` answers best effort instead of failing. It reads the
+machine's IDs from `/sys` (`--sys DIR`) or `--facts FILE` and prints:
+
+- `model`: `null`.
+- `devices`: every part present, as `bus`, `deviceId`, `id` (the catalog
+  component with that bus and ID, `""` when there is none), `name`,
+  `supported` and `unsupportedReason`, `drivers` bound now, and `proven`,
+  always `untested`.
+- `graphics`: every PCI display controller (class 0x03), as `slot`,
+  `deviceId`, `id`, `driver` bound now, `mode` (`native` when that driver
+  made a DRM card for it, `basic` when the screen runs on the firmware
+  framebuffer or not at all), `removable` (behind Thunderbolt or USB4) and
+  `options`. An option is a verified model that uses a GPU with the same
+  PCI vendor and device ID: its `driverBranch` (that model's
+  `policy.graphics.<role>.driverBranch`), the `drivers` bound to the GPU in
+  its evidence, and `provenOn` (`model`, `name`, `evidence`, `kernel`,
+  `os`). Only the exact chip matches, never a family. None of it is proven
+  on this machine. A removable GPU has no options.
+- `liveBoot.parameters`: the graphics-safety parameters (`nomodeset`,
+  `DRIVER.modeset=0`) on the running kernel's command line (`--proc DIR`),
+  so an installer can give the installed base what its live system needed.
+- `contribute`: `guide`, `commands` (in order) and `reportEndpoint`, which
+  is `null` until ODDC runs a server for reports. Send nothing while it is
+  `null`, and only with the owner's consent once it is set.
+
+Two models matching is an error, never best effort.
+
+`oddc bootcheck --expect pci:VVVV:DDDD=DRIVER [--expect ...] [--sys DIR]`
+exits non-zero unless each named PCI device has that driver bound and, for
+a display controller, a DRM card of its own. An installer runs it before
+`boot-complete.target` in a generation that tries a graphics option, so a
+failed try falls back to the previous generation.
+
 ## Releases
 
 Every commit on `stable` is a release. Pin one by its commit hash; `stable`
