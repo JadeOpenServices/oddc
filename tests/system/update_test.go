@@ -118,8 +118,11 @@ func TestUntracked(t *testing.T) {
 		t.Fatalf("outside git: %q", got)
 	}
 
+	if out, err := exec.Command("git", "-C", flake, "init", "-q").CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, out)
+	}
+	fixture.NoMaintenance(t, flake)
 	for _, args := range [][]string{
-		{"init", "-q"},
 		{"add", "flake.nix"},
 		{"-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "flake"},
 	} {
