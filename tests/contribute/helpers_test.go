@@ -50,11 +50,13 @@ func catalogUpstream(t *testing.T, without ...string) (origin, workspace string)
 	if out, err := exec.Command("git", "clone", "-q", "--bare", source, origin).CombinedOutput(); err != nil {
 		t.Fatalf("%v\n%s", err, out)
 	}
+	fixture.NoMaintenance(t, origin)
 
 	workspace = filepath.Join(t.TempDir(), "workspace")
 	if err := contribute.RunWorkspace([]string{"workspace", "--root", workspace, "--from", origin}); err != nil {
 		t.Fatal(err)
 	}
+	fixture.NoMaintenance(t, workspace)
 
 	return origin, workspace
 }
