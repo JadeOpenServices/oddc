@@ -133,6 +133,7 @@ For users:
     oddc security                # known security findings for this model (--details, --json)
     oddc notes                   # this model's entry for owners: works, not yet, planned
     oddc devices [--json]        # every part of the model: placement, port, support, proof
+    oddc bootcheck --expect pci:ID=DRIVER  # did this boot bring up the driver? (for trial generations)
 
 `detect`, `setup` and `fetch` read the local workspace when present,
 else GitHub at `stable`. `--channel staging` or `--rev COMMIT` (the full
@@ -184,6 +185,13 @@ matches each `/sys/class/drm/cardN` to a GPU under `hardware.graphics` by
 the driver bound to it. A model without the quirk gets an error, never a
 guess. A compositor keeps its render GPU until it restarts, so the
 session runs it at login; `--explain` writes the reasoning to stderr.
+`devices` on a machine no model matches lists what is present instead,
+each GPU with the driver bound now and whether it runs natively, the
+drivers verified models with the same chip use, and how to add the
+machine to ODDC ([CONTRACT.md](CONTRACT.md)). `bootcheck` fails unless the
+named PCI devices have the named drivers bound, and a GPU a DRM card of
+its own; an installer runs it before `boot-complete.target` so a trial
+generation that does not come up is rolled back.
 `notes` prints a model's entry for the people who own the machine
 (`--device ID`, default the deployed one; `--root DIR`): what works and
 what works because of ODDC (from its newest passing evidence), what does
