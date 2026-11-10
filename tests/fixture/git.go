@@ -39,14 +39,11 @@ func GitCatalog(t *testing.T) string {
 		}
 	}
 
+	if out, err := exec.Command("git", "-C", root, "init", "-q").CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, out)
+	}
+	NoMaintenance(t, root)
 	for _, args := range [][]string{
-		{"init", "-q"},
-		// A throwaway repo maintains nothing: commit and merge otherwise
-		// launch a detached `git maintenance run --auto` that still touches
-		// .git as the test's TempDir cleanup removes it ("directory not
-		// empty").
-		{"config", "gc.auto", "0"},
-		{"config", "maintenance.auto", "false"},
 		{"add", "."},
 		{"-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base"},
 		{"tag", "base"},
@@ -57,6 +54,26 @@ func GitCatalog(t *testing.T) string {
 	}
 
 	return root
+}
+
+// NoMaintenance keeps git from maintaining the throwaway repository at
+// dir. commit, merge and fetch in it, and receive-pack after a push to it,
+// otherwise launch a detached `git maintenance run --auto`. git's default
+// geometric strategy then repacks the loose objects of a fresh local clone
+// once objects/17 holds two of them, writing objects/pack and info/refs
+// while the test's TempDir cleanup removes the repository ("directory not
+// empty").
+func NoMaintenance(t *testing.T, dir string) {
+	t.Helper()
+
+	for _, args := range [][]string{
+		{"config", "gc.auto", "0"},
+		{"config", "maintenance.auto", "false"},
+	} {
+		if out, err := exec.Command("git", append([]string{"-C", dir}, args...)...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
 }
 
 // FirstEvidence is the first evidence file below root.
